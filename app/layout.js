@@ -1,11 +1,11 @@
 import "./globals.css";
-import { Noto_Serif_JP } from "next/font/google";
+import { Zen_Maru_Gothic } from "next/font/google";
 
-// 明朝体（Noto Serif JP）でサイト全体に高級感を出す
-const notoSerifJp = Noto_Serif_JP({
-  weight: ["400", "500", "600", "700"],
+// 丸ゴシック（Zen Maru Gothic）で明るく親しみやすいトーンに
+const zenMaru = Zen_Maru_Gothic({
+  weight: ["400", "500", "700", "900"],
   subsets: ["latin"],
-  variable: "--font-noto-serif-jp",
+  variable: "--font-zen-maru",
   display: "swap",
 });
 
@@ -17,8 +17,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ja" className={notoSerifJp.variable}>
-      <body className="flex min-h-screen flex-col bg-neutral-950 font-sans text-stone-200 antialiased">
+    <html lang="ja" className={zenMaru.variable}>
+      <body className="flex min-h-screen flex-col bg-orange-50 font-sans text-stone-800 antialiased">
         <main className="flex flex-1 flex-col">{children}</main>
       </body>
     </html>

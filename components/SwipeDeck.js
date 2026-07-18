@@ -6,8 +6,20 @@ const SWIPE_THRESHOLD = 90;
 
 // カードの山をスワイプで消化する共通コンポーネント（Tinder風）。
 // ドラッグで判定、画面全体が方向に応じて色づく。ボタンは補助。
-// cards: { id, ... } の配列。全カード消化後に onFinish(likedIds) を呼ぶ。
-export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ", nopeLabel = "パス" }) {
+// props:
+//   loop     : true でカードを無限ループ（トップのデモ用）
+//   controls : false でカウンター・ボタン・ヒントを非表示（デモ用）
+//   heightClass : カード領域の高さ
+export function SwipeDeck({
+  cards,
+  renderCard,
+  onFinish,
+  likeLabel = "アリ",
+  nopeLabel = "パス",
+  loop = false,
+  controls = true,
+  heightClass = "h-[60vh] max-h-[560px] min-h-[400px]",
+}) {
   const [index, setIndex] = useState(0);
   const [drag, setDrag] = useState({ x: 0, y: 0, active: false });
   const [leaving, setLeaving] = useState(null); // { dir: 1 | -1 }
@@ -15,7 +27,7 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ", n
   const startRef = useRef(null);
 
   const current = cards[index];
-  const next = cards[index + 1];
+  const next = cards[index + 1] ?? (loop ? cards[0] : undefined);
 
   const commit = (liked) => {
     if (!current || leaving) return;
@@ -25,7 +37,8 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ", n
       setLeaving(null);
       setDrag({ x: 0, y: 0, active: false });
       if (index + 1 >= cards.length) {
-        onFinish(likedRef.current);
+        if (loop) setIndex(0);
+        else onFinish(likedRef.current);
       } else {
         setIndex(index + 1);
       }
@@ -55,37 +68,37 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ", n
 
   if (!current) return null;
 
-  // 飛んでいく時は画面外まで大きく移動
   const x = leaving ? leaving.dir * 900 : drag.x;
   const y = leaving ? -60 : drag.y * 0.25;
   const rot = x / 14;
   const likeOpacity = Math.min(Math.max(x, 0) / SWIPE_THRESHOLD, 1);
   const nopeOpacity = Math.min(Math.max(-x, 0) / SWIPE_THRESHOLD, 1);
-  // 背後の次カードはドラッグに応じてせり上がる
   const progress = Math.min(Math.abs(drag.x) / (SWIPE_THRESHOLD * 2.2), 1);
   const nextScale = 0.92 + 0.08 * progress;
-  const nextOpacity = 0.5 + 0.5 * progress;
+  const nextOpacity = 0.55 + 0.45 * progress;
 
   return (
     <>
       {/* 画面全体が方向に応じて色づく（Tinder風の全画面フィードバック） */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-l from-amber-400/30 via-amber-400/5 to-transparent"
+        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-l from-emerald-400/30 via-emerald-300/5 to-transparent"
         style={{ opacity: leaving ? (leaving.dir > 0 ? 1 : 0) : likeOpacity }}
       />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-r from-rose-600/25 via-rose-600/5 to-transparent"
+        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-r from-rose-400/30 via-rose-300/5 to-transparent"
         style={{ opacity: leaving ? (leaving.dir < 0 ? 1 : 0) : nopeOpacity }}
       />
 
       <div className="relative z-10 flex w-full flex-col items-center">
-        <p className="mb-4 text-xs font-medium tracking-[0.3em] text-stone-500">
-          {index + 1} / {cards.length}
-        </p>
+        {controls && (
+          <p className="mb-4 text-xs font-bold tracking-[0.3em] text-stone-400">
+            {index + 1} / {cards.length}
+          </p>
+        )}
 
-        <div className="relative h-[60vh] max-h-[560px] min-h-[400px] w-full max-w-sm select-none">
+        <div className={`relative w-full max-w-sm select-none ${heightClass}`}>
           {next && (
             <div
               className="absolute inset-0"
@@ -112,15 +125,14 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ", n
           >
             {renderCard(current)}
 
-            {/* LIKE / NOPE スタンプ */}
             <span
-              className="pointer-events-none absolute left-5 top-6 rotate-[-14deg] rounded-xl border-2 border-amber-300 px-4 py-1.5 text-2xl font-semibold tracking-[0.2em] text-amber-300"
+              className="pointer-events-none absolute left-5 top-6 rotate-[-14deg] rounded-2xl border-4 border-emerald-400 px-4 py-1.5 text-2xl font-black tracking-[0.15em] text-emerald-400"
               style={{ opacity: likeOpacity }}
             >
               {likeLabel}
             </span>
             <span
-              className="pointer-events-none absolute right-5 top-6 rotate-[14deg] rounded-xl border-2 border-rose-400 px-4 py-1.5 text-2xl font-semibold tracking-[0.2em] text-rose-400"
+              className="pointer-events-none absolute right-5 top-6 rotate-[14deg] rounded-2xl border-4 border-rose-400 px-4 py-1.5 text-2xl font-black tracking-[0.15em] text-rose-400"
               style={{ opacity: nopeOpacity }}
             >
               {nopeLabel}
@@ -128,28 +140,35 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ", n
           </div>
         </div>
 
-        {/* 補助ボタン（スワイプが苦手な人向け） */}
-        <div className="mt-6 flex items-center gap-10">
-          <button
-            type="button"
-            onClick={() => commit(false)}
-            aria-label={nopeLabel}
-            className="flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-neutral-900/80 text-xl text-stone-400 shadow-lg shadow-black/50 transition hover:border-rose-400/40 hover:text-rose-300 active:scale-90"
-          >
-            ✕
-          </button>
-          <button
-            type="button"
-            onClick={() => commit(true)}
-            aria-label={likeLabel}
-            className="flex h-14 w-14 items-center justify-center rounded-full border border-amber-300/40 bg-amber-300/10 text-xl shadow-lg shadow-amber-500/10 transition hover:bg-amber-300/20 active:scale-90"
-          >
-            ❤️
-          </button>
-        </div>
-        <p className="mt-4 text-xs tracking-wide text-stone-600">
-          左右にスワイプして選ぶ
-        </p>
+        {controls ? (
+          <>
+            <div className="mt-6 flex items-center gap-10">
+              <button
+                type="button"
+                onClick={() => commit(false)}
+                aria-label={nopeLabel}
+                className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-rose-200 bg-white text-xl shadow-md transition hover:border-rose-300 active:scale-90"
+              >
+                ✕
+              </button>
+              <button
+                type="button"
+                onClick={() => commit(true)}
+                aria-label={likeLabel}
+                className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-emerald-200 bg-white text-xl shadow-md transition hover:border-emerald-300 active:scale-90"
+              >
+                ❤️
+              </button>
+            </div>
+            <p className="mt-4 text-xs font-medium tracking-wide text-stone-400">
+              左右にスワイプして選ぶ
+            </p>
+          </>
+        ) : (
+          <p className="mt-5 text-xs font-bold tracking-wide text-stone-400">
+            👈 スワイプして試してみて 👉
+          </p>
+        )}
       </div>
     </>
   );

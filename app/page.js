@@ -6,90 +6,23 @@ import { SwipeDeck } from "@/components/SwipeDeck";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 
-// トップ画面の背景：実写の料理写真を横に流し続ける
-const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
-const PHOTOS = Array.from(
-  { length: 9 },
-  (_, i) => `food-${String(i + 1).padStart(2, "0")}.jpg`
-);
-
-// 各行で開始位置をずらして同じ写真が縦に並ばないようにする
-const PHOTO_ROWS = [
-  { offset: 0, dir: "left", dur: "55s" },
-  { offset: 3, dir: "right", dur: "72s" },
-  { offset: 6, dir: "left", dur: "62s" },
-  { offset: 1, dir: "right", dur: "80s" },
-];
-
-function rotate(arr, n) {
-  const k = ((n % arr.length) + arr.length) % arr.length;
-  return [...arr.slice(k), ...arr.slice(0, k)];
-}
-
-function PhotoMarqueeRow({ offset, dir, dur }) {
-  // items+items で translateX(-50%) がちょうど1周分になり継ぎ目なくループする
-  const seq = [...rotate(PHOTOS, offset), ...rotate(PHOTOS, offset)];
-  return (
-    <div
-      className="food-marquee-row flex"
-      style={{ animation: `food-marquee-${dir} ${dur} linear infinite` }}
-    >
-      {seq.map((name, i) => (
-        <div
-          key={i}
-          className="mx-2 h-32 w-48 shrink-0 overflow-hidden rounded-2xl border border-white/10 shadow-xl sm:h-40 sm:w-60"
-        >
-          <img
-            src={`${ASSET_BASE}/photos/${name}`}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FoodMarqueeBackground() {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-neutral-950" />
-      {/* 横に流れ続ける料理写真 */}
-      <div className="absolute inset-0 flex flex-col justify-center gap-3 sm:gap-4">
-        {PHOTO_ROWS.map((row, i) => (
-          <PhotoMarqueeRow key={i} offset={row.offset} dir={row.dir} dur={row.dur} />
-        ))}
-      </div>
-      {/* 黒基調のシックなスクリム（写真を落ち着かせ高級感を出す） */}
-      <div className="absolute inset-0 bg-neutral-950/65" />
-      <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/45 to-neutral-950/85" />
-    </div>
-  );
-}
-
-// 金の細い区切り線（高級感のアクセント）
-function GoldRule() {
-  return <div className="my-4 h-px w-12 bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />;
-}
+// 主要CTA（暖色）
+const primaryBtn =
+  "rounded-full bg-orange-500 px-10 py-4 text-base font-black tracking-wide text-white shadow-lg shadow-orange-500/30 transition hover:bg-orange-600 active:scale-95";
+// 補助ボタン
+const outlineBtn =
+  "rounded-full border-2 border-stone-200 bg-white px-8 py-4 text-sm font-bold tracking-wide text-stone-600 transition hover:border-stone-300 active:scale-95";
 
 function GenreCard({ card }) {
   return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 p-8 text-center shadow-2xl shadow-black/60">
-      {/* ジャンルの色をほのかな光として残す */}
-      <div
-        className={`pointer-events-none absolute inset-x-10 top-8 h-36 rounded-full bg-gradient-to-br ${card.gradient} opacity-25 blur-3xl`}
-      />
-      <span className="relative text-8xl drop-shadow-lg">{card.emoji}</span>
-      <p className="relative mt-6 text-3xl font-semibold tracking-[0.15em] text-amber-50">
+    <div
+      className={`flex h-full w-full flex-col items-center justify-center rounded-[2rem] bg-gradient-to-br ${card.gradient} p-8 text-center text-white shadow-xl`}
+    >
+      <span className="text-8xl drop-shadow-lg">{card.emoji}</span>
+      <p className="mt-6 text-3xl font-black tracking-wide drop-shadow">
         {card.label}
       </p>
-      <p className="relative mt-3 text-xs tracking-widest text-stone-400">
-        今日の気分はコレ？
-      </p>
+      <p className="mt-2 text-sm font-bold text-white/85">今日の気分はコレ？</p>
     </div>
   );
 }
@@ -97,26 +30,25 @@ function GenreCard({ card }) {
 function StoreCard({ card }) {
   const genre = getGenre(card.genre);
   return (
-    <div className="flex h-full w-full flex-col rounded-3xl border border-white/10 bg-neutral-900 p-6 shadow-2xl shadow-black/60">
+    <div className="flex h-full w-full flex-col rounded-[2rem] border border-orange-100 bg-white p-6 shadow-xl">
       <div
-        className={`relative flex h-40 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${genre.gradient}`}
+        className={`flex h-40 w-full items-center justify-center rounded-2xl bg-gradient-to-br ${genre.gradient}`}
       >
-        <div className="absolute inset-0 bg-neutral-950/25" />
-        <span className="relative text-7xl drop-shadow-lg">{genre.emoji}</span>
+        <span className="text-7xl drop-shadow-lg">{genre.emoji}</span>
       </div>
-      <p className="mt-5 text-xl font-semibold tracking-wide text-amber-50">
-        {card.name}
+      <p className="mt-5 text-xl font-black text-stone-800">{card.name}</p>
+      <p className="mt-2 text-sm font-medium leading-relaxed text-stone-500">
+        {card.copy}
       </p>
-      <p className="mt-2 text-sm leading-relaxed text-stone-400">{card.copy}</p>
       <div className="mt-auto space-y-2 pt-4">
-        <p className="text-sm font-medium text-amber-200/90">
+        <p className="text-sm font-bold text-orange-600">
           {card.price} ・ 四ツ谷駅 徒歩{card.walk}分
         </p>
         <div className="flex flex-wrap gap-2">
           {card.tags.map((t) => (
             <span
               key={t}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-stone-300"
+              className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700"
             >
               {t}
             </span>
@@ -131,31 +63,20 @@ function Handoff({ player, phase, onReady }) {
   return (
     <div className="flex flex-col items-center text-center">
       <span className="text-6xl">📱</span>
-      <h2 className="mt-6 text-2xl font-semibold tracking-wide text-amber-50">
-        {player}の番
+      <h2 className="mt-6 text-2xl font-black text-stone-800">
+        {player}の番！
       </h2>
-      <p className="mt-4 text-sm leading-relaxed text-stone-400">
-        スマホを{player}に渡してください。
+      <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">
+        スマホを{player}に渡してね。
         <br />
-        {phase === "genre" ? "食べたいジャンル" : "気になるお店"}を直感でスワイプ。
+        {phase === "genre" ? "食べたいジャンル" : "気になるお店"}を直感でスワイプ！
       </p>
-      <button
-        type="button"
-        onClick={onReady}
-        className="mt-8 rounded-full border border-amber-200/40 bg-white/5 px-10 py-4 text-base font-medium tracking-wide text-amber-100 backdrop-blur-sm transition hover:bg-white/10 active:scale-95"
-      >
+      <button type="button" onClick={onReady} className={`mt-8 ${primaryBtn}`}>
         準備OK、スタート
       </button>
     </div>
   );
 }
-
-// 主要CTA（金）
-const goldBtn =
-  "rounded-full bg-gradient-to-br from-amber-200 via-amber-300 to-amber-500 px-10 py-4 text-base font-bold tracking-wide text-neutral-950 shadow-lg shadow-amber-500/20 transition hover:brightness-110 active:scale-95";
-// 補助ボタン（アウトライン）
-const outlineBtn =
-  "rounded-full border border-white/20 bg-white/5 px-8 py-4 text-sm font-medium tracking-wide text-stone-200 transition hover:bg-white/10 active:scale-95";
 
 export default function MeshiMatchPage() {
   // step: intro → g1 → g1swipe → g2 → g2swipe → genreResult → gate → s1 → s1swipe → s2 → s2swipe → storeResult → notYotsuya
@@ -184,37 +105,31 @@ export default function MeshiMatchPage() {
   };
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden bg-neutral-950 px-5 py-10">
-      {step === "intro" && <FoodMarqueeBackground />}
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-gradient-to-b from-orange-50 via-rose-50 to-amber-50 px-5 py-8">
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center">
-        {/* ===== イントロ ===== */}
+        {/* ===== トップ：着地した瞬間にスワイプを試せる ===== */}
         {step === "intro" && (
-          <div className="flex w-full flex-col items-center rounded-[2rem] border border-amber-200/25 bg-neutral-950/70 px-6 py-9 text-center shadow-2xl shadow-black/60 backdrop-blur-md">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.45em] text-amber-300">
-              MESHIMACHI
-            </p>
-            <GoldRule />
-            <h1 className="text-3xl font-semibold leading-snug tracking-wide text-stone-50">
+          <div className="flex w-full flex-col items-center">
+            <h1 className="mb-6 text-center text-3xl font-black leading-snug tracking-wide text-stone-800">
               今日なに食べる？は
               <br />
-              スワイプで決める
+              <span className="text-orange-500">スワイプ</span>で決める
             </h1>
-            <p className="mt-5 text-sm leading-relaxed text-stone-300">
-              二人で交代でスワイプして、
-              <br />
-              お互い惹かれたジャンルがマッチ。
-              <br />
-              全国どこでも、今日から。
-            </p>
-            <div className="mt-7 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-left text-xs leading-relaxed text-stone-300">
-              <p className="font-semibold tracking-wide text-amber-200">二層構成</p>
-              <p className="mt-2">壱 ― ジャンルマッチ（全国どこでも）</p>
-              <p className="mt-1">弐 ― 店マッチ（四谷限定・厳選30店）</p>
-            </div>
+
+            <SwipeDeck
+              key="demo"
+              cards={genreCards}
+              loop
+              controls={false}
+              heightClass="h-[42vh] max-h-[400px] min-h-[280px]"
+              renderCard={(card) => <GenreCard card={card} />}
+              onFinish={() => {}}
+            />
+
             <button
               type="button"
               onClick={() => setStep("g1")}
-              className={`mt-8 px-12 ${goldBtn}`}
+              className={`mt-7 px-12 ${primaryBtn}`}
             >
               二人ではじめる
             </button>
@@ -255,15 +170,12 @@ export default function MeshiMatchPage() {
           <div className="flex w-full flex-col items-center text-center">
             {genreMatches.length > 0 ? (
               <>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-amber-300">
-                  MATCH
-                </p>
-                <GoldRule />
-                <h2 className="text-2xl font-semibold tracking-wide text-stone-50">
-                  マッチ成立
+                <span className="text-6xl">🎉</span>
+                <h2 className="mt-4 text-2xl font-black text-stone-800">
+                  マッチ成立！
                 </h2>
-                <p className="mt-3 text-sm text-stone-400">
-                  二人がともに惹かれたジャンル
+                <p className="mt-2 text-sm font-medium text-stone-500">
+                  二人とも「アリ」だったジャンル
                 </p>
                 <div className="mt-6 flex w-full flex-col gap-3">
                   {genreMatches.map((id) => {
@@ -271,15 +183,12 @@ export default function MeshiMatchPage() {
                     return (
                       <div
                         key={id}
-                        className="relative flex items-center justify-between overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 px-6 py-4 text-left"
+                        className={`flex items-center justify-between rounded-2xl bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-md`}
                       >
-                        <div
-                          className={`pointer-events-none absolute inset-y-0 left-0 w-32 bg-gradient-to-r ${g.gradient} opacity-30 blur-2xl`}
-                        />
-                        <span className="relative text-lg font-semibold tracking-wide text-amber-50">
+                        <span className="text-lg font-black">
                           {g.emoji} {g.label}
                         </span>
-                        <span className="relative text-[0.65rem] font-semibold tracking-[0.3em] text-amber-300">
+                        <span className="text-xs font-black tracking-widest text-white/90">
                           MATCH
                         </span>
                       </div>
@@ -289,24 +198,21 @@ export default function MeshiMatchPage() {
                 <button
                   type="button"
                   onClick={() => setStep("gate")}
-                  className={`mt-8 w-full ${goldBtn}`}
+                  className={`mt-8 w-full ${primaryBtn}`}
                 >
-                  次へ ― お店を決める
+                  次へ：お店を決める
                 </button>
               </>
             ) : (
               <>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-stone-500">
-                  NO MATCH
-                </p>
-                <GoldRule />
-                <h2 className="text-2xl font-semibold tracking-wide text-stone-50">
-                  マッチなし
+                <span className="text-6xl">😢</span>
+                <h2 className="mt-4 text-2xl font-black text-stone-800">
+                  マッチなし…
                 </h2>
-                <p className="mt-4 text-sm leading-relaxed text-stone-400">
-                  二人の「好き」が重なりませんでした。
+                <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">
+                  二人の「アリ」が重なりませんでした。
                   <br />
-                  少しゆるめに、もう一周。
+                  少しゆるめに、もう一周！
                 </p>
                 <button
                   type="button"
@@ -314,7 +220,7 @@ export default function MeshiMatchPage() {
                     setGenreLikes({ p1: [], p2: [] });
                     setStep("g1");
                   }}
-                  className={`mt-8 ${goldBtn}`}
+                  className={`mt-8 ${primaryBtn}`}
                 >
                   もう一周する
                 </button>
@@ -323,7 +229,7 @@ export default function MeshiMatchPage() {
             <button
               type="button"
               onClick={reset}
-              className="mt-5 text-xs tracking-wide text-stone-500 underline underline-offset-4 transition hover:text-stone-300"
+              className="mt-5 text-xs font-bold tracking-wide text-stone-400 underline underline-offset-4 transition hover:text-stone-600"
             >
               最初からやり直す
             </button>
@@ -333,14 +239,12 @@ export default function MeshiMatchPage() {
         {/* ===== 2階への分岐ゲート ===== */}
         {step === "gate" && (
           <div className="flex w-full flex-col items-center text-center">
-            <span className="text-5xl">📍</span>
-            <h2 className="mt-5 text-2xl font-semibold tracking-wide text-stone-50">
-              いま、四ツ谷にいますか
+            <span className="text-6xl">📍</span>
+            <h2 className="mt-4 text-2xl font-black text-stone-800">
+              いま、四ツ谷にいる？
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-stone-400">
-              四ツ谷エリアにいるなら、厳選30店の
-              <br />
-              「店マッチ」へ進めます（四谷限定）。
+            <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">
+              四ツ谷にいるなら、厳選30店の店マッチへ！
             </p>
             <div className="mt-8 flex w-full flex-col gap-3">
               {genreMatches.map((id) => {
@@ -350,14 +254,9 @@ export default function MeshiMatchPage() {
                     key={id}
                     type="button"
                     onClick={() => startStoreMatch(id)}
-                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 px-6 py-4 text-base font-semibold tracking-wide text-amber-50 transition hover:border-amber-200/40 active:scale-95"
+                    className={`rounded-2xl bg-gradient-to-r ${g.gradient} px-6 py-4 text-base font-black text-white shadow-md transition active:scale-95`}
                   >
-                    <span
-                      className={`pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r ${g.gradient} opacity-30 blur-2xl`}
-                    />
-                    <span className="relative">
-                      {g.emoji} {g.label}のお店を選ぶ
-                    </span>
+                    {g.emoji} {g.label}のお店を選ぶ
                   </button>
                 );
               })}
@@ -375,18 +274,16 @@ export default function MeshiMatchPage() {
         {/* ===== 四谷圏外エンド ===== */}
         {step === "notYotsuya" && (
           <div className="flex flex-col items-center text-center">
-            <span className="text-5xl">🗾</span>
-            <h2 className="mt-5 text-2xl font-semibold tracking-wide text-stone-50">
-              ジャンルは決まった
+            <span className="text-6xl">🗾</span>
+            <h2 className="mt-4 text-2xl font-black text-stone-800">
+              ジャンルは決まった！
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-stone-400">
-              マッチしたジャンルのお店を、地図アプリで探そう。
+            <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">
+              マッチしたジャンルのお店を地図アプリで探そう。
               <br />
-              <span className="text-amber-200/90">
-                店マッチは現在、四谷エリア限定。
+              <span className="font-bold text-orange-500">
+                店マッチは今のところ四谷限定。
               </span>
-              <br />
-              あなたの街にも欲しかったら、声を。
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               {genreMatches.map((id) => {
@@ -394,15 +291,15 @@ export default function MeshiMatchPage() {
                 return (
                   <span
                     key={id}
-                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium tracking-wide text-amber-50"
+                    className={`rounded-full bg-gradient-to-r ${g.gradient} px-4 py-2 text-sm font-black text-white shadow`}
                   >
                     {g.emoji} {g.label}
                   </span>
                 );
               })}
             </div>
-            <button type="button" onClick={reset} className={`mt-8 ${goldBtn}`}>
-              もう一度あそぶ
+            <button type="button" onClick={reset} className={`mt-8 ${primaryBtn}`}>
+              もう一回あそぶ
             </button>
           </div>
         )}
@@ -445,27 +342,24 @@ export default function MeshiMatchPage() {
           <div className="flex w-full flex-col items-center text-center">
             {storeMatches.length > 0 ? (
               <>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-amber-300">
-                  DECIDED
-                </p>
-                <GoldRule />
-                <h2 className="text-2xl font-semibold tracking-wide text-stone-50">
-                  お店が決まった
+                <span className="text-6xl">🥳</span>
+                <h2 className="mt-4 text-2xl font-black text-stone-800">
+                  お店が決まった！
                 </h2>
-                <p className="mt-3 text-sm text-stone-400">
-                  二人がともに「行きたい」お店
+                <p className="mt-2 text-sm font-medium text-stone-500">
+                  二人とも「行きたい」お店
                 </p>
                 <div className="mt-6 flex w-full flex-col gap-4">
                   {storeMatches.map((s) => (
                     <div
                       key={s.id}
-                      className="rounded-2xl border border-amber-200/30 bg-neutral-900 p-5 text-left shadow-lg shadow-black/50"
+                      className="rounded-2xl border-2 border-orange-200 bg-white p-5 text-left shadow-md"
                     >
-                      <p className="text-lg font-semibold tracking-wide text-amber-50">
-                        {s.name}
+                      <p className="text-lg font-black text-stone-800">{s.name}</p>
+                      <p className="mt-1 text-sm font-medium text-stone-500">
+                        {s.copy}
                       </p>
-                      <p className="mt-1 text-sm text-stone-400">{s.copy}</p>
-                      <p className="mt-3 text-sm font-medium text-amber-200/90">
+                      <p className="mt-3 text-sm font-bold text-orange-600">
                         {s.price} ・ 四ツ谷駅 徒歩{s.walk}分
                       </p>
                     </div>
@@ -474,15 +368,12 @@ export default function MeshiMatchPage() {
               </>
             ) : (
               <>
-                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-stone-500">
-                  ALMOST
-                </p>
-                <GoldRule />
-                <h2 className="text-2xl font-semibold tracking-wide text-stone-50">
-                  完全一致はなし
+                <span className="text-6xl">🤔</span>
+                <h2 className="mt-4 text-2xl font-black text-stone-800">
+                  完全一致はなし…
                 </h2>
-                <p className="mt-4 text-sm leading-relaxed text-stone-400">
-                  どちらかが「行きたい」お店から選んでみよう。
+                <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">
+                  どちらかが「行きたい」お店から選んでみよう
                 </p>
                 <div className="mt-6 flex w-full flex-col gap-3">
                   {storeDeck
@@ -493,12 +384,10 @@ export default function MeshiMatchPage() {
                     .map((s) => (
                       <div
                         key={s.id}
-                        className="rounded-2xl border border-white/10 bg-neutral-900 p-4 text-left"
+                        className="rounded-2xl border border-orange-100 bg-white p-4 text-left shadow-sm"
                       >
-                        <p className="font-semibold tracking-wide text-amber-50">
-                          {s.name}
-                        </p>
-                        <p className="mt-1 text-xs text-stone-500">
+                        <p className="font-black text-stone-800">{s.name}</p>
+                        <p className="mt-1 text-xs font-medium text-stone-400">
                           {s.price} ・ 徒歩{s.walk}分
                         </p>
                       </div>
@@ -506,14 +395,14 @@ export default function MeshiMatchPage() {
                 </div>
               </>
             )}
-            <button type="button" onClick={reset} className={`mt-8 ${goldBtn}`}>
-              もう一度あそぶ
+            <button type="button" onClick={reset} className={`mt-8 ${primaryBtn}`}>
+              もう一回あそぶ
             </button>
           </div>
         )}
       </div>
 
-      <p className="relative z-10 mt-10 text-center text-[10px] tracking-widest text-stone-600">
+      <p className="relative z-10 mt-8 text-center text-[10px] font-medium tracking-wide text-stone-400">
         ※ 店舗情報はデモ用のサンプルデータです
       </p>
     </div>

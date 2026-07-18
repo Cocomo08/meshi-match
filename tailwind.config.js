@@ -8,19 +8,14 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        // 明朝体（serif）を全体のデフォルトに
+        // 丸ゴシックを全体のデフォルトに
         sans: [
-          "var(--font-noto-serif-jp)",
-          "Hiragino Mincho ProN",
-          "Yu Mincho",
-          "YuMincho",
-          "serif",
-        ],
-        serif: [
-          "var(--font-noto-serif-jp)",
-          "Hiragino Mincho ProN",
-          "Yu Mincho",
-          "serif",
+          "var(--font-zen-maru)",
+          "Hiragino Maru Gothic ProN",
+          "Hiragino Sans",
+          "Yu Gothic",
+          "Meiryo",
+          "sans-serif",
         ],
       },
     },
