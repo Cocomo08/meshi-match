@@ -4,9 +4,10 @@ import { useRef, useState } from "react";
 
 const SWIPE_THRESHOLD = 90;
 
-// カードの山をスワイプ（ドラッグ or ボタン）で消化する共通コンポーネント。
-// cards: { id, render } の配列。onSwipe(card, liked) を全カード消化まで呼び、最後に onFinish(likedIds)。
-export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ！", nopeLabel = "パス" }) {
+// カードの山をスワイプで消化する共通コンポーネント（Tinder風）。
+// ドラッグで判定、画面全体が方向に応じて色づく。ボタンは補助。
+// cards: { id, ... } の配列。全カード消化後に onFinish(likedIds) を呼ぶ。
+export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ", nopeLabel = "パス" }) {
   const [index, setIndex] = useState(0);
   const [drag, setDrag] = useState({ x: 0, y: 0, active: false });
   const [leaving, setLeaving] = useState(null); // { dir: 1 | -1 }
@@ -28,7 +29,7 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ！"
       } else {
         setIndex(index + 1);
       }
-    }, 260);
+    }, 300);
   };
 
   const onPointerDown = (e) => {
@@ -54,74 +55,102 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ！"
 
   if (!current) return null;
 
-  const x = leaving ? leaving.dir * 600 : drag.x;
-  const y = leaving ? -40 : drag.y * 0.3;
-  const rot = x / 18;
+  // 飛んでいく時は画面外まで大きく移動
+  const x = leaving ? leaving.dir * 900 : drag.x;
+  const y = leaving ? -60 : drag.y * 0.25;
+  const rot = x / 14;
   const likeOpacity = Math.min(Math.max(x, 0) / SWIPE_THRESHOLD, 1);
   const nopeOpacity = Math.min(Math.max(-x, 0) / SWIPE_THRESHOLD, 1);
+  // 背後の次カードはドラッグに応じてせり上がる
+  const progress = Math.min(Math.abs(drag.x) / (SWIPE_THRESHOLD * 2.2), 1);
+  const nextScale = 0.92 + 0.08 * progress;
+  const nextOpacity = 0.5 + 0.5 * progress;
 
   return (
-    <div className="flex w-full flex-col items-center">
-      <p className="mb-3 text-xs font-medium tracking-widest text-stone-500">
-        {index + 1} / {cards.length}
-      </p>
+    <>
+      {/* 画面全体が方向に応じて色づく（Tinder風の全画面フィードバック） */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-l from-amber-400/30 via-amber-400/5 to-transparent"
+        style={{ opacity: leaving ? (leaving.dir > 0 ? 1 : 0) : likeOpacity }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-r from-rose-600/25 via-rose-600/5 to-transparent"
+        style={{ opacity: leaving ? (leaving.dir < 0 ? 1 : 0) : nopeOpacity }}
+      />
 
-      <div className="relative h-[420px] w-full max-w-sm select-none">
-        {next && (
-          <div className="absolute inset-0 scale-[0.94] translate-y-3 opacity-60">
-            {renderCard(next)}
+      <div className="relative z-10 flex w-full flex-col items-center">
+        <p className="mb-4 text-xs font-medium tracking-[0.3em] text-stone-500">
+          {index + 1} / {cards.length}
+        </p>
+
+        <div className="relative h-[60vh] max-h-[560px] min-h-[400px] w-full max-w-sm select-none">
+          {next && (
+            <div
+              className="absolute inset-0"
+              style={{
+                transform: `scale(${nextScale}) translateY(${(1 - progress) * 12}px)`,
+                opacity: nextOpacity,
+                transition: drag.active && !leaving ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
+              }}
+            >
+              {renderCard(next)}
+            </div>
+          )}
+
+          <div
+            className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
+            style={{
+              transform: `translate(${x}px, ${y}px) rotate(${rot}deg)`,
+              transition: drag.active && !leaving ? "none" : "transform 0.3s ease-out",
+            }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+          >
+            {renderCard(current)}
+
+            {/* LIKE / NOPE スタンプ */}
+            <span
+              className="pointer-events-none absolute left-5 top-6 rotate-[-14deg] rounded-xl border-2 border-amber-300 px-4 py-1.5 text-2xl font-semibold tracking-[0.2em] text-amber-300"
+              style={{ opacity: likeOpacity }}
+            >
+              {likeLabel}
+            </span>
+            <span
+              className="pointer-events-none absolute right-5 top-6 rotate-[14deg] rounded-xl border-2 border-rose-400 px-4 py-1.5 text-2xl font-semibold tracking-[0.2em] text-rose-400"
+              style={{ opacity: nopeOpacity }}
+            >
+              {nopeLabel}
+            </span>
           </div>
-        )}
-
-        <div
-          className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
-          style={{
-            transform: `translate(${x}px, ${y}px) rotate(${rot}deg)`,
-            transition: drag.active && !leaving ? "none" : "transform 0.26s ease-out",
-          }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        >
-          {renderCard(current)}
-
-          <span
-            className="absolute left-4 top-4 rotate-[-12deg] rounded-lg border-2 border-amber-300 px-3 py-1 text-xl font-semibold tracking-widest text-amber-300"
-            style={{ opacity: likeOpacity }}
-          >
-            {likeLabel}
-          </span>
-          <span
-            className="absolute right-4 top-4 rotate-[12deg] rounded-lg border-2 border-stone-400 px-3 py-1 text-xl font-semibold tracking-widest text-stone-400"
-            style={{ opacity: nopeOpacity }}
-          >
-            {nopeLabel}
-          </span>
         </div>
-      </div>
 
-      <div className="mt-6 flex items-center gap-8">
-        <button
-          type="button"
-          onClick={() => commit(false)}
-          aria-label={nopeLabel}
-          className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-neutral-900 text-2xl text-stone-300 shadow-lg shadow-black/50 transition hover:border-white/30 active:scale-90"
-        >
-          ✕
-        </button>
-        <button
-          type="button"
-          onClick={() => commit(true)}
-          aria-label={likeLabel}
-          className="flex h-16 w-16 items-center justify-center rounded-full border border-amber-300/50 bg-amber-300/10 text-2xl shadow-lg shadow-amber-500/10 transition hover:bg-amber-300/20 active:scale-90"
-        >
-          ❤️
-        </button>
+        {/* 補助ボタン（スワイプが苦手な人向け） */}
+        <div className="mt-6 flex items-center gap-10">
+          <button
+            type="button"
+            onClick={() => commit(false)}
+            aria-label={nopeLabel}
+            className="flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-neutral-900/80 text-xl text-stone-400 shadow-lg shadow-black/50 transition hover:border-rose-400/40 hover:text-rose-300 active:scale-90"
+          >
+            ✕
+          </button>
+          <button
+            type="button"
+            onClick={() => commit(true)}
+            aria-label={likeLabel}
+            className="flex h-14 w-14 items-center justify-center rounded-full border border-amber-300/40 bg-amber-300/10 text-xl shadow-lg shadow-amber-500/10 transition hover:bg-amber-300/20 active:scale-90"
+          >
+            ❤️
+          </button>
+        </div>
+        <p className="mt-4 text-xs tracking-wide text-stone-600">
+          左右にスワイプして選ぶ
+        </p>
       </div>
-      <p className="mt-3 text-xs tracking-wide text-stone-600">
-        左右にスワイプ、またはボタンで選択
-      </p>
-    </div>
+    </>
   );
 }
