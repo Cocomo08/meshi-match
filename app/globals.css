@@ -6,3 +6,33 @@ html,
 body {
   height: 100%;
 }
+
+/* トップ画面：料理を横に流し続けるマーキー背景 */
+@keyframes food-marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes food-marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.food-marquee-row {
+  width: max-content;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-marquee-row {
+    animation: none !important;
+  }
+}

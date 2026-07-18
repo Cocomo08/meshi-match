@@ -6,6 +6,54 @@ import { SwipeDeck } from "@/components/SwipeDeck";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 
+// トップ画面の背景：ジャンル横断でよだれが出そうな料理を横に流し続ける
+const MARQUEE_ROWS = [
+  { items: "🍜🍣🍕🍔🍟🌮🍤🍱🍛🥟🍲🍢🌭🥘", dir: "left", dur: "42s" },
+  { items: "🥩🍖🍗🥓🧀🥪🍝🍠🍥🥮🍚🍙🫕🍲", dir: "right", dur: "58s" },
+  { items: "🍩🍰🧁🍨🍧🍦🍫🍬🍭🥞🧇🥐🍮🍯", dir: "left", dur: "50s" },
+  { items: "🍎🍓🍇🍑🍊🍌🥑🍅🌽🥕🫐🍒🥝🍉", dir: "right", dur: "64s" },
+  { items: "🍜🍣🍕🍔🍟🌮🍤🍱🍛🥟🍲🍢🌭🥘", dir: "left", dur: "46s" },
+];
+
+function MarqueeRow({ items, dir, dur }) {
+  const seq = [...(items + items)];
+  return (
+    <div
+      className="food-marquee-row flex"
+      style={{ animation: `food-marquee-${dir} ${dur} linear infinite` }}
+    >
+      {seq.map((emoji, i) => (
+        <span
+          key={i}
+          className="mx-1.5 select-none text-6xl drop-shadow-lg sm:mx-3 sm:text-7xl"
+        >
+          {emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function FoodMarqueeBackground() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+    >
+      {/* 食欲をそそる暖色グラデーション */}
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-300 via-orange-400 to-rose-500" />
+      {/* 横に流れ続ける料理たち（画面いっぱいに敷き詰める） */}
+      <div className="absolute inset-0 flex flex-col justify-center gap-1 sm:gap-2">
+        {MARQUEE_ROWS.map((row, i) => (
+          <MarqueeRow key={i} items={row.items} dir={row.dir} dur={row.dur} />
+        ))}
+      </div>
+      {/* ほんのり温かみを足す程度のごく薄いビネット（色は残す） */}
+      <div className="absolute inset-0 bg-gradient-to-t from-orange-900/15 via-transparent to-amber-100/10" />
+    </div>
+  );
+}
+
 function GenreCard({ card }) {
   return (
     <div
@@ -98,27 +146,28 @@ export default function MeshiMatchPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col bg-gradient-to-b from-orange-50 via-rose-50 to-slate-50 px-5 py-10">
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center">
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-gradient-to-b from-orange-50 via-rose-50 to-slate-50 px-5 py-10">
+      {step === "intro" && <FoodMarqueeBackground />}
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center">
         {/* ===== イントロ ===== */}
         {step === "intro" && (
-          <div className="flex flex-col items-center text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-rose-500">
+          <div className="flex w-full flex-col items-center rounded-[2rem] border border-white/70 bg-white/60 px-6 py-8 text-center shadow-2xl shadow-orange-900/20 backdrop-blur-xl">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-rose-600">
               メシマチ
             </p>
-            <h1 className="mt-4 text-3xl font-black text-slate-900">
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900 drop-shadow-sm">
               今日なに食べる？は
               <br />
               スワイプで決める
             </h1>
-            <p className="mt-4 text-sm leading-relaxed text-slate-600">
+            <p className="mt-4 text-sm font-medium leading-relaxed text-slate-700">
               二人で交代でスワイプして、
               <br />
               お互い「アリ！」だったジャンルがマッチ。
               <br />
               全国どこでも、今日から使えます。
             </p>
-            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-left text-xs leading-relaxed text-amber-800">
+            <div className="mt-6 w-full rounded-2xl border border-amber-200 bg-amber-50/90 px-5 py-4 text-left text-xs leading-relaxed text-amber-800">
               <p className="font-bold">🏢 2階構成</p>
               <p className="mt-1">1階：ジャンルマッチ（全国どこでも）</p>
               <p>2階：店マッチ（四谷限定・厳選30店）</p>
@@ -126,7 +175,7 @@ export default function MeshiMatchPage() {
             <button
               type="button"
               onClick={() => setStep("g1")}
-              className="mt-8 rounded-full bg-rose-500 px-12 py-4 text-lg font-black text-white shadow-lg shadow-rose-200 transition active:scale-95"
+              className="mt-8 rounded-full bg-rose-500 px-12 py-4 text-lg font-black text-white shadow-lg shadow-rose-300/60 transition hover:bg-rose-600 active:scale-95"
             >
               二人でスタート 🍽️
             </button>
