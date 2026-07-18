@@ -1,16 +1,11 @@
 import "./globals.css";
-import { Inter, Noto_Sans_JP } from "next/font/google";
+import { Noto_Serif_JP } from "next/font/google";
 
-const inter = Inter({
+// 明朝体（Noto Serif JP）でサイト全体に高級感を出す
+const notoSerifJp = Noto_Serif_JP({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const notoSansJp = Noto_Sans_JP({
-  weight: ["400", "500", "700"],
-  subsets: ["latin"],
-  variable: "--font-noto-sans-jp",
+  variable: "--font-noto-serif-jp",
   display: "swap",
 });
 
@@ -22,8 +17,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ja" className={`${inter.variable} ${notoSansJp.variable}`}>
-      <body className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-800 antialiased">
+    <html lang="ja" className={notoSerifJp.variable}>
+      <body className="flex min-h-screen flex-col bg-neutral-950 font-sans text-stone-200 antialiased">
         <main className="flex flex-1 flex-col">{children}</main>
       </body>
     </html>

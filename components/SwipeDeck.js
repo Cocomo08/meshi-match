@@ -62,7 +62,7 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ！"
 
   return (
     <div className="flex w-full flex-col items-center">
-      <p className="mb-3 text-xs font-medium text-slate-500">
+      <p className="mb-3 text-xs font-medium tracking-widest text-stone-500">
         {index + 1} / {cards.length}
       </p>
 
@@ -87,13 +87,13 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ！"
           {renderCard(current)}
 
           <span
-            className="absolute left-4 top-4 rotate-[-12deg] rounded-lg border-4 border-emerald-400 px-3 py-1 text-2xl font-black text-emerald-400"
+            className="absolute left-4 top-4 rotate-[-12deg] rounded-lg border-2 border-amber-300 px-3 py-1 text-xl font-semibold tracking-widest text-amber-300"
             style={{ opacity: likeOpacity }}
           >
             {likeLabel}
           </span>
           <span
-            className="absolute right-4 top-4 rotate-[12deg] rounded-lg border-4 border-rose-400 px-3 py-1 text-2xl font-black text-rose-400"
+            className="absolute right-4 top-4 rotate-[12deg] rounded-lg border-2 border-stone-400 px-3 py-1 text-xl font-semibold tracking-widest text-stone-400"
             style={{ opacity: nopeOpacity }}
           >
             {nopeLabel}
@@ -106,7 +106,7 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ！"
           type="button"
           onClick={() => commit(false)}
           aria-label={nopeLabel}
-          className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-rose-300 bg-white text-2xl shadow-md transition active:scale-90"
+          className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-neutral-900 text-2xl text-stone-300 shadow-lg shadow-black/50 transition hover:border-white/30 active:scale-90"
         >
           ✕
         </button>
@@ -114,12 +114,12 @@ export function SwipeDeck({ cards, renderCard, onFinish, likeLabel = "アリ！"
           type="button"
           onClick={() => commit(true)}
           aria-label={likeLabel}
-          className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-emerald-300 bg-white text-2xl shadow-md transition active:scale-90"
+          className="flex h-16 w-16 items-center justify-center rounded-full border border-amber-300/50 bg-amber-300/10 text-2xl shadow-lg shadow-amber-500/10 transition hover:bg-amber-300/20 active:scale-90"
         >
           ❤️
         </button>
       </div>
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs tracking-wide text-stone-600">
         左右にスワイプ、またはボタンで選択
       </p>
     </div>
