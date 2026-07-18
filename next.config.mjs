@@ -4,6 +4,10 @@ const isGitHubPages = process.env.GITHUB_PAGES === "true";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // public/ 配下の画像をbasePath込みで参照できるようにクライアントへ公開
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isGitHubPages ? "/meshi-match" : "",
+  },
   ...(isGitHubPages && {
     output: "export",
     basePath: "/meshi-match",

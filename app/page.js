@@ -6,29 +6,46 @@ import { SwipeDeck } from "@/components/SwipeDeck";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 
-// トップ画面の背景：ジャンル横断でよだれが出そうな料理を横に流し続ける
-const MARQUEE_ROWS = [
-  { items: "🍜🍣🍕🍔🍟🌮🍤🍱🍛🥟🍲🍢🌭🥘", dir: "left", dur: "42s" },
-  { items: "🥩🍖🍗🥓🧀🥪🍝🍠🍥🥮🍚🍙🫕🍲", dir: "right", dur: "58s" },
-  { items: "🍩🍰🧁🍨🍧🍦🍫🍬🍭🥞🧇🥐🍮🍯", dir: "left", dur: "50s" },
-  { items: "🍎🍓🍇🍑🍊🍌🥑🍅🌽🥕🫐🍒🥝🍉", dir: "right", dur: "64s" },
-  { items: "🍜🍣🍕🍔🍟🌮🍤🍱🍛🥟🍲🍢🌭🥘", dir: "left", dur: "46s" },
+// トップ画面の背景：実写の料理写真を横に流し続ける
+const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+const PHOTOS = Array.from(
+  { length: 9 },
+  (_, i) => `food-${String(i + 1).padStart(2, "0")}.jpg`
+);
+
+// 各行で開始位置をずらして同じ写真が縦に並ばないようにする
+const PHOTO_ROWS = [
+  { offset: 0, dir: "left", dur: "55s" },
+  { offset: 3, dir: "right", dur: "72s" },
+  { offset: 6, dir: "left", dur: "62s" },
+  { offset: 1, dir: "right", dur: "80s" },
 ];
 
-function MarqueeRow({ items, dir, dur }) {
-  const seq = [...(items + items)];
+function rotate(arr, n) {
+  const k = ((n % arr.length) + arr.length) % arr.length;
+  return [...arr.slice(k), ...arr.slice(0, k)];
+}
+
+function PhotoMarqueeRow({ offset, dir, dur }) {
+  // items+items で translateX(-50%) がちょうど1周分になり継ぎ目なくループする
+  const seq = [...rotate(PHOTOS, offset), ...rotate(PHOTOS, offset)];
   return (
     <div
       className="food-marquee-row flex"
       style={{ animation: `food-marquee-${dir} ${dur} linear infinite` }}
     >
-      {seq.map((emoji, i) => (
-        <span
+      {seq.map((name, i) => (
+        <div
           key={i}
-          className="mx-1.5 select-none text-6xl drop-shadow-lg sm:mx-3 sm:text-7xl"
+          className="mx-2 h-32 w-48 shrink-0 overflow-hidden rounded-2xl border border-white/40 shadow-xl sm:h-40 sm:w-60"
         >
-          {emoji}
-        </span>
+          <img
+            src={`${ASSET_BASE}/photos/${name}`}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        </div>
       ))}
     </div>
   );
@@ -40,16 +57,17 @@ function FoodMarqueeBackground() {
       aria-hidden
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
-      {/* 食欲をそそる暖色グラデーション */}
+      {/* 写真の隙間を埋める暖色ベース */}
       <div className="absolute inset-0 bg-gradient-to-br from-amber-300 via-orange-400 to-rose-500" />
-      {/* 横に流れ続ける料理たち（画面いっぱいに敷き詰める） */}
-      <div className="absolute inset-0 flex flex-col justify-center gap-1 sm:gap-2">
-        {MARQUEE_ROWS.map((row, i) => (
-          <MarqueeRow key={i} items={row.items} dir={row.dir} dur={row.dur} />
+      {/* 横に流れ続ける料理写真 */}
+      <div className="absolute inset-0 flex flex-col justify-center gap-3 sm:gap-4">
+        {PHOTO_ROWS.map((row, i) => (
+          <PhotoMarqueeRow key={i} offset={row.offset} dir={row.dir} dur={row.dur} />
         ))}
       </div>
-      {/* ほんのり温かみを足す程度のごく薄いビネット（色は残す） */}
-      <div className="absolute inset-0 bg-gradient-to-t from-orange-900/15 via-transparent to-amber-100/10" />
+      {/* 写真を少し落ち着かせて文字を読みやすくするスクリム */}
+      <div className="absolute inset-0 bg-slate-900/25" />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-slate-900/20" />
     </div>
   );
 }
