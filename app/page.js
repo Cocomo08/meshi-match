@@ -132,7 +132,8 @@ export default function MeshiMatchPage() {
   const startStoreMatch = (genreId) => {
     setChosenGenre(genreId);
     setStoreLikes({ p1: [], p2: [] });
-    setStep("s1");
+    // このジャンルの四谷サンプル店が無ければ「準備中」画面へ
+    setStep(getStoresByGenre(genreId).length > 0 ? "s1" : "storeEmpty");
   };
 
   return (
@@ -332,6 +333,33 @@ export default function MeshiMatchPage() {
             <button type="button" onClick={reset} className={`mt-8 ${primaryBtn}`}>
               もう一回あそぶ
             </button>
+          </div>
+        )}
+
+        {/* ===== このジャンルの店が未登録 ===== */}
+        {step === "storeEmpty" && (
+          <div className="flex w-full flex-col items-center text-center">
+            <span className="text-6xl">🙇</span>
+            <h2 className="mt-4 text-2xl font-black text-stone-800">
+              {getGenre(chosenGenre)?.label}のお店は準備中
+            </h2>
+            <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">
+              このジャンルの四谷のお店は、まだ登録されていません。
+              <br />
+              別のジャンルを選んでみてね。
+            </p>
+            <div className="mt-8 flex w-full flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => setStep("gate")}
+                className={primaryBtn}
+              >
+                別のジャンルを選ぶ
+              </button>
+              <button type="button" onClick={reset} className={outlineBtn}>
+                最初からやり直す
+              </button>
+            </div>
           </div>
         )}
 
