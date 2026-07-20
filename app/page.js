@@ -9,12 +9,39 @@ const genreCards = GENRES.map((g) => ({ ...g }));
 // 画像は public/images/<id>.jpg を参照（basePath込み）。無ければ絵文字にフォールバック
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
-// 主要CTA（暖色）
-const primaryBtn =
-  "rounded-full bg-orange-500 px-10 py-4 text-base font-black tracking-wide text-white shadow-lg shadow-orange-500/30 transition hover:bg-orange-600 active:scale-95";
-// 補助ボタン
-const outlineBtn =
-  "rounded-full border-2 border-stone-200 bg-white px-8 py-4 text-sm font-bold tracking-wide text-stone-600 transition hover:border-stone-300 active:scale-95";
+// 立体感＋つや＋押し込み演出の共通ボタン
+const BTN_TONES = {
+  primary:
+    "bg-gradient-to-b from-orange-400 to-orange-600 text-white ring-orange-300/60 shadow-[0_7px_0_0_#9a3412,0_12px_18px_-4px_rgba(234,88,12,0.55)] hover:from-orange-400 hover:to-orange-500 active:shadow-[0_1px_0_0_#9a3412,0_4px_10px_-3px_rgba(234,88,12,0.5)]",
+  neutral:
+    "bg-gradient-to-b from-white to-stone-100 text-stone-700 ring-stone-300/70 shadow-[0_6px_0_0_#d6d3d1,0_10px_16px_-4px_rgba(120,113,108,0.35)] hover:to-stone-50 active:shadow-[0_1px_0_0_#d6d3d1,0_4px_8px_-3px_rgba(120,113,108,0.3)]",
+};
+
+function Button3D({ children, onClick, tone = "primary", gradient, className = "", type = "button" }) {
+  const light = tone === "neutral";
+  const toneCls =
+    tone === "genre"
+      ? `bg-gradient-to-b ${gradient} text-white ring-white/40 shadow-[0_6px_0_0_rgba(0,0,0,0.30),0_12px_18px_-5px_rgba(0,0,0,0.35)] active:shadow-[0_1px_0_0_rgba(0,0,0,0.30),0_4px_10px_-4px_rgba(0,0,0,0.3)]`
+      : BTN_TONES[tone];
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full py-4 font-black tracking-wide ring-1 transition-all duration-100 ease-out active:translate-y-[6px] ${toneCls} ${className}`}
+    >
+      {/* 上部のつや（光沢ハイライト） */}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-1.5 top-1 h-[45%] rounded-full bg-gradient-to-b ${light ? "from-white/70" : "from-white/55"} to-transparent`}
+      />
+      {/* 走るツヤ */}
+      <span aria-hidden className="btn-shine pointer-events-none absolute inset-0" />
+      <span className={`relative ${light ? "" : "drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"}`}>
+        {children}
+      </span>
+    </button>
+  );
+}
 
 function GenreCard({ card }) {
   // 画像が読み込めたら全面写真、失敗したら絵文字表示にフォールバック
@@ -109,9 +136,9 @@ function Handoff({ player, phase, onReady }) {
         <br />
         {phase === "genre" ? "食べたいジャンル" : "気になるお店"}を直感でスワイプ！
       </p>
-      <button type="button" onClick={onReady} className={`mt-8 ${primaryBtn}`}>
+      <Button3D onClick={onReady} className="mt-8 px-10 text-base">
         準備OK、スタート
-      </button>
+      </Button3D>
     </div>
   );
 }
@@ -165,22 +192,9 @@ export default function MeshiMatchPage() {
               onFinish={() => {}}
             />
 
-            <button
-              type="button"
-              onClick={() => setStep("g1")}
-              className="group relative mt-8 overflow-hidden rounded-full bg-gradient-to-b from-orange-400 to-orange-600 px-14 py-4 text-lg font-black tracking-wide text-white ring-1 ring-orange-300/60 shadow-[0_7px_0_0_#9a3412,0_12px_18px_-4px_rgba(234,88,12,0.55)] transition-all duration-100 ease-out hover:from-orange-400 hover:to-orange-500 active:translate-y-[6px] active:shadow-[0_1px_0_0_#9a3412,0_4px_10px_-3px_rgba(234,88,12,0.5)]"
-            >
-              {/* 上部のつや（光沢ハイライト） */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-x-1.5 top-1 h-[45%] rounded-full bg-gradient-to-b from-white/55 to-transparent"
-              />
-              {/* 走るツヤ */}
-              <span aria-hidden className="btn-shine pointer-events-none absolute inset-0" />
-              <span className="relative drop-shadow-[0_1px_1px_rgba(124,45,18,0.5)]">
-                二人ではじめる
-              </span>
-            </button>
+            <Button3D onClick={() => setStep("g1")} className="mt-8 px-14 text-lg">
+              二人ではじめる
+            </Button3D>
           </div>
         )}
 
@@ -243,13 +257,12 @@ export default function MeshiMatchPage() {
                     );
                   })}
                 </div>
-                <button
-                  type="button"
+                <Button3D
                   onClick={() => setStep("gate")}
-                  className={`mt-8 w-full ${primaryBtn}`}
+                  className="mt-8 w-full px-8 text-base"
                 >
                   次へ：お店を決める
-                </button>
+                </Button3D>
               </>
             ) : (
               <>
@@ -262,16 +275,15 @@ export default function MeshiMatchPage() {
                   <br />
                   少しゆるめに、もう一周！
                 </p>
-                <button
-                  type="button"
+                <Button3D
                   onClick={() => {
                     setGenreLikes({ p1: [], p2: [] });
                     setStep("g1");
                   }}
-                  className={`mt-8 ${primaryBtn}`}
+                  className="mt-8 px-10 text-base"
                 >
                   もう一周する
-                </button>
+                </Button3D>
               </>
             )}
             <button
@@ -298,24 +310,25 @@ export default function MeshiMatchPage() {
               {genreMatches.map((id) => {
                 const g = getGenre(id);
                 return (
-                  <button
+                  <Button3D
                     key={id}
-                    type="button"
+                    tone="genre"
+                    gradient={g.gradient}
                     onClick={() => startStoreMatch(id)}
-                    className={`rounded-2xl bg-gradient-to-r ${g.gradient} px-6 py-4 text-base font-black text-white shadow-md transition active:scale-95`}
+                    className="w-full px-6 text-base"
                   >
                     {g.emoji} {g.label}のお店を選ぶ
-                  </button>
+                  </Button3D>
                 );
               })}
             </div>
-            <button
-              type="button"
+            <Button3D
+              tone="neutral"
               onClick={() => setStep("notYotsuya")}
-              className={`mt-6 w-full ${outlineBtn}`}
+              className="mt-6 w-full px-8 text-sm"
             >
               四ツ谷にはいない
-            </button>
+            </Button3D>
           </div>
         )}
 
@@ -346,9 +359,9 @@ export default function MeshiMatchPage() {
                 );
               })}
             </div>
-            <button type="button" onClick={reset} className={`mt-8 ${primaryBtn}`}>
+            <Button3D onClick={reset} className="mt-8 px-10 text-base">
               もう一回あそぶ
-            </button>
+            </Button3D>
           </div>
         )}
 
@@ -365,16 +378,19 @@ export default function MeshiMatchPage() {
               別のジャンルを選んでみてね。
             </p>
             <div className="mt-8 flex w-full flex-col gap-3">
-              <button
-                type="button"
+              <Button3D
                 onClick={() => setStep("gate")}
-                className={primaryBtn}
+                className="w-full px-8 text-base"
               >
                 別のジャンルを選ぶ
-              </button>
-              <button type="button" onClick={reset} className={outlineBtn}>
+              </Button3D>
+              <Button3D
+                tone="neutral"
+                onClick={reset}
+                className="w-full px-8 text-sm"
+              >
                 最初からやり直す
-              </button>
+              </Button3D>
             </div>
           </div>
         )}
@@ -470,9 +486,9 @@ export default function MeshiMatchPage() {
                 </div>
               </>
             )}
-            <button type="button" onClick={reset} className={`mt-8 ${primaryBtn}`}>
+            <Button3D onClick={reset} className="mt-8 px-10 text-base">
               もう一回あそぶ
-            </button>
+            </Button3D>
           </div>
         )}
       </div>

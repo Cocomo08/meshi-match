@@ -188,17 +188,25 @@ export function SwipeDeck({
                 type="button"
                 onClick={() => commit(false)}
                 aria-label={nopeLabel}
-                className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-rose-200 bg-white text-xl shadow-md transition hover:border-rose-300 active:scale-90"
+                className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-white to-stone-100 text-xl text-stone-500 ring-1 ring-rose-200 shadow-[0_5px_0_0_#fecdd3,0_9px_12px_-4px_rgba(120,113,108,0.4)] transition-all duration-100 ease-out active:translate-y-[4px] active:shadow-[0_1px_0_0_#fecdd3,0_3px_6px_-3px_rgba(120,113,108,0.35)]"
               >
-                ✕
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-1 top-1 h-[40%] rounded-full bg-gradient-to-b from-white/80 to-transparent"
+                />
+                <span className="relative">✕</span>
               </button>
               <button
                 type="button"
                 onClick={() => commit(true)}
                 aria-label={likeLabel}
-                className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-emerald-200 bg-white text-xl shadow-md transition hover:border-emerald-300 active:scale-90"
+                className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-white to-stone-100 text-xl ring-1 ring-emerald-200 shadow-[0_5px_0_0_#a7f3d0,0_9px_12px_-4px_rgba(120,113,108,0.4)] transition-all duration-100 ease-out active:translate-y-[4px] active:shadow-[0_1px_0_0_#a7f3d0,0_3px_6px_-3px_rgba(120,113,108,0.35)]"
               >
-                ❤️
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-1 top-1 h-[40%] rounded-full bg-gradient-to-b from-white/80 to-transparent"
+                />
+                <span className="relative">❤️</span>
               </button>
             </div>
             <p className="mt-4 text-xs font-medium tracking-wide text-stone-400">
