@@ -17,7 +17,7 @@ export const GENRES = [
   { id: "curry", label: "カレー", emoji: "🍛", category: "アジア・エスニック", gradient: "from-amber-500 via-orange-600 to-yellow-700" },
   { id: "gyoza", label: "餃子・中華", emoji: "🥟", category: "アジア・エスニック", gradient: "from-amber-400 via-yellow-500 to-lime-600" },
   { id: "korean", label: "韓国料理", emoji: "🌶️", category: "アジア・エスニック", gradient: "from-red-500 via-rose-500 to-pink-500" },
-  { id: "chahan", label: "チャーハン", emoji: "🥡", category: "アジア・エスニック", gradient: "from-yellow-500 via-amber-500 to-orange-600" },
+  { id: "yakitori", label: "焼き鳥", emoji: "🍢", category: "アジア・エスニック", gradient: "from-amber-500 via-orange-600 to-red-700" },
   { id: "ethnic", label: "タイ・エスニック", emoji: "🥘", category: "アジア・エスニック", gradient: "from-green-400 via-teal-500 to-cyan-600" },
   // がっつり・ごちそう
   { id: "yakiniku", label: "焼肉", emoji: "🍖", category: "がっつり・ごちそう", gradient: "from-rose-500 via-red-600 to-orange-600" },

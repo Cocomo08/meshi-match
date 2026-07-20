@@ -22,7 +22,7 @@
 | curry.jpg | カレー | アジア・エスニック |
 | gyoza.jpg | 餃子・中華 | アジア・エスニック |
 | korean.jpg | 韓国料理 | アジア・エスニック |
-| chahan.jpg | チャーハン | アジア・エスニック |
+| yakitori.jpg | 焼き鳥 | アジア・エスニック |
 | ethnic.jpg | タイ・エスニック | アジア・エスニック |
 | yakiniku.jpg | 焼肉 | がっつり・ごちそう |
 | nabe.jpg | 鍋 | がっつり・ごちそう |
