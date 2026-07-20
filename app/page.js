@@ -150,9 +150,9 @@ export default function MeshiMatchPage() {
         {step === "intro" && (
           <div className="flex w-full flex-col items-center">
             <h1 className="mb-6 text-center text-3xl font-black leading-snug tracking-wide text-stone-800">
-              今日なに食べる？は
+              「どこでもいい」を
               <br />
-              <span className="text-orange-500">スワイプ</span>で決める
+              <span className="text-orange-500">卒業</span>しよう
             </h1>
 
             <SwipeDeck
