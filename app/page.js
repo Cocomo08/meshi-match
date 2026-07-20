@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GENRES, getGenre, getStoresByGenre } from "./data";
 import { SwipeDeck } from "@/components/SwipeDeck";
 
@@ -19,6 +19,12 @@ const outlineBtn =
 function GenreCard({ card }) {
   // 画像が読み込めたら全面写真、失敗したら絵文字表示にフォールバック
   const [hasPhoto, setHasPhoto] = useState(false);
+  const imgRef = useRef(null);
+  // SSRで既に読み込み完了している画像は onLoad が発火しないため、マウント時に判定
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) setHasPhoto(true);
+  }, []);
   return (
     <div
       className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[2rem] bg-gradient-to-br ${card.gradient} text-center text-white shadow-xl`}
@@ -38,6 +44,7 @@ function GenreCard({ card }) {
 
       {/* 全面写真（object-cover）＋下部グラデ＋白のジャンル名 */}
       <img
+        ref={imgRef}
         src={`${ASSET_BASE}/images/${card.id}.jpg`}
         alt=""
         onLoad={() => setHasPhoto(true)}
@@ -154,7 +161,7 @@ export default function MeshiMatchPage() {
               loop
               controls={false}
               heightClass="h-[42vh] max-h-[400px] min-h-[280px]"
-              renderCard={(card) => <GenreCard card={card} />}
+              renderCard={(card) => <GenreCard key={card.id} card={card} />}
               onFinish={() => {}}
             />
 
@@ -176,7 +183,7 @@ export default function MeshiMatchPage() {
           <SwipeDeck
             key="g1"
             cards={genreCards}
-            renderCard={(card) => <GenreCard card={card} />}
+            renderCard={(card) => <GenreCard key={card.id} card={card} />}
             onFinish={(liked) => {
               setGenreLikes((prev) => ({ ...prev, p1: liked }));
               setStep("g2");
@@ -190,7 +197,7 @@ export default function MeshiMatchPage() {
           <SwipeDeck
             key="g2"
             cards={genreCards}
-            renderCard={(card) => <GenreCard card={card} />}
+            renderCard={(card) => <GenreCard key={card.id} card={card} />}
             onFinish={(liked) => {
               setGenreLikes((prev) => ({ ...prev, p2: liked }));
               setStep("genreResult");
