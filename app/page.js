@@ -6,6 +6,9 @@ import { SwipeDeck } from "@/components/SwipeDeck";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 
+// 画像は public/images/<id>.jpg を参照（basePath込み）。無ければ絵文字にフォールバック
+const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 // 主要CTA（暖色）
 const primaryBtn =
   "rounded-full bg-orange-500 px-10 py-4 text-base font-black tracking-wide text-white shadow-lg shadow-orange-500/30 transition hover:bg-orange-600 active:scale-95";
@@ -14,15 +17,43 @@ const outlineBtn =
   "rounded-full border-2 border-stone-200 bg-white px-8 py-4 text-sm font-bold tracking-wide text-stone-600 transition hover:border-stone-300 active:scale-95";
 
 function GenreCard({ card }) {
+  // 画像が読み込めたら全面写真、失敗したら絵文字表示にフォールバック
+  const [hasPhoto, setHasPhoto] = useState(false);
   return (
     <div
-      className={`flex h-full w-full flex-col items-center justify-center rounded-[2rem] bg-gradient-to-br ${card.gradient} p-8 text-center text-white shadow-xl`}
+      className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[2rem] bg-gradient-to-br ${card.gradient} text-center text-white shadow-xl`}
     >
-      <span className="text-8xl drop-shadow-lg">{card.emoji}</span>
-      <p className="mt-6 text-3xl font-black tracking-wide drop-shadow">
-        {card.label}
-      </p>
-      <p className="mt-2 text-sm font-bold text-white/85">今日の気分はコレ？</p>
+      {/* 絵文字ベース（写真が無い/読込前はこれが見える） */}
+      {!hasPhoto && (
+        <>
+          <span className="text-8xl drop-shadow-lg">{card.emoji}</span>
+          <p className="mt-6 text-3xl font-black tracking-wide drop-shadow">
+            {card.label}
+          </p>
+          <p className="mt-2 text-sm font-bold text-white/85">
+            今日の気分はコレ？
+          </p>
+        </>
+      )}
+
+      {/* 全面写真（object-cover）＋下部グラデ＋白のジャンル名 */}
+      <img
+        src={`${ASSET_BASE}/images/${card.id}.jpg`}
+        alt=""
+        onLoad={() => setHasPhoto(true)}
+        onError={() => setHasPhoto(false)}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+          hasPhoto ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      {hasPhoto && (
+        <>
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+          <p className="absolute inset-x-0 bottom-8 text-3xl font-black tracking-wide text-white drop-shadow-lg">
+            {card.label}
+          </p>
+        </>
+      )}
     </div>
   );
 }

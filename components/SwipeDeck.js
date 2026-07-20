@@ -4,6 +4,16 @@ import { useRef, useState } from "react";
 
 const SWIPE_THRESHOLD = 90;
 
+// ハート弾け演出の飛び散り方向
+const HEART_PARTICLES = [
+  { dx: "-72px", dy: "-64px", rot: "-25deg" },
+  { dx: "72px", dy: "-64px", rot: "25deg" },
+  { dx: "-96px", dy: "8px", rot: "-15deg" },
+  { dx: "96px", dy: "8px", rot: "15deg" },
+  { dx: "-44px", dy: "-96px", rot: "-8deg" },
+  { dx: "44px", dy: "-96px", rot: "8deg" },
+];
+
 // カードの山をスワイプで消化する共通コンポーネント（Tinder風）。
 // ドラッグで判定、画面全体が方向に応じて色づく。ボタンは補助。
 // props:
@@ -23,6 +33,7 @@ export function SwipeDeck({
   const [index, setIndex] = useState(0);
   const [drag, setDrag] = useState({ x: 0, y: 0, active: false });
   const [leaving, setLeaving] = useState(null); // { dir: 1 | -1 }
+  const [burst, setBurst] = useState(0); // 右スワイプでインクリメントしハート弾け再生
   const likedRef = useRef([]);
   const startRef = useRef(null);
 
@@ -31,7 +42,10 @@ export function SwipeDeck({
 
   const commit = (liked) => {
     if (!current || leaving) return;
-    if (liked) likedRef.current.push(current.id);
+    if (liked) {
+      likedRef.current.push(current.id);
+      setBurst((b) => b + 1);
+    }
     setLeaving({ dir: liked ? 1 : -1 });
     setTimeout(() => {
       setLeaving(null);
@@ -42,7 +56,7 @@ export function SwipeDeck({
       } else {
         setIndex(index + 1);
       }
-    }, 300);
+    }, 200);
   };
 
   const onPointerDown = (e) => {
@@ -68,8 +82,8 @@ export function SwipeDeck({
 
   if (!current) return null;
 
-  const x = leaving ? leaving.dir * 900 : drag.x;
-  const y = leaving ? -60 : drag.y * 0.25;
+  const x = leaving ? leaving.dir * 1150 : drag.x;
+  const y = leaving ? -70 : drag.y * 0.25;
   const rot = x / 14;
   const likeOpacity = Math.min(Math.max(x, 0) / SWIPE_THRESHOLD, 1);
   const nopeOpacity = Math.min(Math.max(-x, 0) / SWIPE_THRESHOLD, 1);
@@ -91,10 +105,32 @@ export function SwipeDeck({
         style={{ opacity: leaving ? (leaving.dir < 0 ? 1 : 0) : nopeOpacity }}
       />
 
+      {/* 右スワイプでハートが弾ける演出 */}
+      {burst > 0 && (
+        <div
+          key={burst}
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center"
+        >
+          <div className="relative flex items-center justify-center">
+            <span className="heart-pop text-8xl drop-shadow-lg">❤️</span>
+            {HEART_PARTICLES.map((p, i) => (
+              <span
+                key={i}
+                className="heart-fly absolute text-3xl"
+                style={{ "--dx": p.dx, "--dy": p.dy, "--rot": p.rot }}
+              >
+                ❤️
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 flex w-full flex-col items-center">
         {controls && (
           <p className="mb-4 text-xs font-bold tracking-[0.3em] text-stone-400">
-            {index + 1} / {cards.length}
+            あと{cards.length - index}枚
           </p>
         )}
 
@@ -116,7 +152,12 @@ export function SwipeDeck({
             className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
             style={{
               transform: `translate(${x}px, ${y}px) rotate(${rot}deg)`,
-              transition: drag.active && !leaving ? "none" : "transform 0.3s ease-out",
+              transition:
+                drag.active && !leaving
+                  ? "none"
+                  : leaving
+                    ? "transform 0.17s cubic-bezier(0.4, 0, 0.9, 0.5)"
+                    : "transform 0.3s ease-out",
             }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
