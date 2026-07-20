@@ -52,3 +52,38 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* 立体ボタンを走るツヤ（シャイン） */
+@keyframes btn-shine {
+  0% {
+    transform: translateX(-140%) skewX(-20deg);
+  }
+  55%,
+  100% {
+    transform: translateX(320%) skewX(-20deg);
+  }
+}
+
+.btn-shine::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transform: translateX(-140%) skewX(-20deg);
+  animation: btn-shine 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-shine::before {
+    animation: none;
+    opacity: 0;
+  }
+}

@@ -168,9 +168,18 @@ export default function MeshiMatchPage() {
             <button
               type="button"
               onClick={() => setStep("g1")}
-              className={`mt-7 px-12 ${primaryBtn}`}
+              className="group relative mt-8 overflow-hidden rounded-full bg-gradient-to-b from-orange-400 to-orange-600 px-14 py-4 text-lg font-black tracking-wide text-white ring-1 ring-orange-300/60 shadow-[0_7px_0_0_#9a3412,0_12px_18px_-4px_rgba(234,88,12,0.55)] transition-all duration-100 ease-out hover:from-orange-400 hover:to-orange-500 active:translate-y-[6px] active:shadow-[0_1px_0_0_#9a3412,0_4px_10px_-3px_rgba(234,88,12,0.5)]"
             >
-              二人ではじめる
+              {/* 上部のつや（光沢ハイライト） */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-1.5 top-1 h-[45%] rounded-full bg-gradient-to-b from-white/55 to-transparent"
+              />
+              {/* 走るツヤ */}
+              <span aria-hidden className="btn-shine pointer-events-none absolute inset-0" />
+              <span className="relative drop-shadow-[0_1px_1px_rgba(124,45,18,0.5)]">
+                二人ではじめる
+              </span>
             </button>
           </div>
         )}
