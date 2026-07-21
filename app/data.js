@@ -1,30 +1,31 @@
 // 1階：ジャンルマッチ用データ（全国どこでも使える）
 // 4カテゴリ・計20ジャンル
+// tech = メシバトル用の必殺技名（ジャンルごとの食べ物モチーフ）
 export const GENRES = [
   // 和食
-  { id: "sushi", label: "寿司", emoji: "🍣", category: "和食", gradient: "from-sky-400 via-cyan-500 to-teal-500" },
-  { id: "ramen", label: "ラーメン", emoji: "🍜", category: "和食", gradient: "from-amber-400 via-orange-500 to-red-500" },
-  { id: "udon_soba", label: "うどん・そば", emoji: "🍲", category: "和食", gradient: "from-stone-400 via-neutral-500 to-slate-600" },
-  { id: "teishoku", label: "定食", emoji: "🍱", category: "和食", gradient: "from-lime-400 via-green-500 to-emerald-600" },
-  { id: "donburi", label: "丼もの", emoji: "🍚", category: "和食", gradient: "from-amber-500 via-yellow-600 to-orange-600" },
+  { id: "sushi", label: "寿司", emoji: "🍣", category: "和食", gradient: "from-sky-400 via-cyan-500 to-teal-500", tech: "大トロ一貫斬り" },
+  { id: "ramen", label: "ラーメン", emoji: "🍜", category: "和食", gradient: "from-amber-400 via-orange-500 to-red-500", tech: "替え玉ラッシュ" },
+  { id: "udon_soba", label: "うどん・そば", emoji: "🍲", category: "和食", gradient: "from-stone-400 via-neutral-500 to-slate-600", tech: "だしすすり返し" },
+  { id: "teishoku", label: "定食", emoji: "🍱", category: "和食", gradient: "from-lime-400 via-green-500 to-emerald-600", tech: "銀シャリ乱れ盛り" },
+  { id: "donburi", label: "丼もの", emoji: "🍚", category: "和食", gradient: "from-amber-500 via-yellow-600 to-orange-600", tech: "特盛りダイブ" },
   // 洋食
-  { id: "hamburg", label: "ハンバーグ", emoji: "🍔", category: "洋食", gradient: "from-orange-500 via-red-600 to-rose-700" },
-  { id: "pasta", label: "パスタ", emoji: "🍝", category: "洋食", gradient: "from-green-500 via-emerald-500 to-lime-500" },
-  { id: "pizza", label: "ピザ", emoji: "🍕", category: "洋食", gradient: "from-red-500 via-rose-500 to-orange-500" },
-  { id: "omurice", label: "オムライス", emoji: "🍳", category: "洋食", gradient: "from-yellow-400 via-amber-500 to-orange-500" },
-  { id: "steak", label: "ステーキ", emoji: "🥩", category: "洋食", gradient: "from-rose-600 via-red-700 to-stone-800" },
+  { id: "hamburg", label: "ハンバーグ", emoji: "🍔", category: "洋食", gradient: "from-orange-500 via-red-600 to-rose-700", tech: "肉汁ジューシー爆弾" },
+  { id: "pasta", label: "パスタ", emoji: "🍝", category: "洋食", gradient: "from-green-500 via-emerald-500 to-lime-500", tech: "アルデンテ渦巻き" },
+  { id: "pizza", label: "ピザ", emoji: "🍕", category: "洋食", gradient: "from-red-500 via-rose-500 to-orange-500", tech: "窯焼きボンバー" },
+  { id: "omurice", label: "オムライス", emoji: "🍳", category: "洋食", gradient: "from-yellow-400 via-amber-500 to-orange-500", tech: "とろとろ包み込み" },
+  { id: "steak", label: "ステーキ", emoji: "🥩", category: "洋食", gradient: "from-rose-600 via-red-700 to-stone-800", tech: "ミディアムレア斬撃" },
   // アジア・エスニック
-  { id: "curry", label: "カレー", emoji: "🍛", category: "アジア・エスニック", gradient: "from-amber-500 via-orange-600 to-yellow-700" },
-  { id: "gyoza", label: "餃子・中華", emoji: "🥟", category: "アジア・エスニック", gradient: "from-amber-400 via-yellow-500 to-lime-600" },
-  { id: "korean", label: "韓国料理", emoji: "🌶️", category: "アジア・エスニック", gradient: "from-red-500 via-rose-500 to-pink-500" },
-  { id: "yakitori", label: "焼き鳥", emoji: "🍢", category: "アジア・エスニック", gradient: "from-amber-500 via-orange-600 to-red-700" },
-  { id: "ethnic", label: "タイ・エスニック", emoji: "🥘", category: "アジア・エスニック", gradient: "from-green-400 via-teal-500 to-cyan-600" },
+  { id: "curry", label: "カレー", emoji: "🍛", category: "アジア・エスニック", gradient: "from-amber-500 via-orange-600 to-yellow-700", tech: "スパイス地獄変" },
+  { id: "gyoza", label: "餃子・中華", emoji: "🥟", category: "アジア・エスニック", gradient: "from-amber-400 via-yellow-500 to-lime-600", tech: "焼き餃子パリパリ砲" },
+  { id: "korean", label: "韓国料理", emoji: "🌶️", category: "アジア・エスニック", gradient: "from-red-500 via-rose-500 to-pink-500", tech: "激辛ヤンニョム乱舞" },
+  { id: "yakitori", label: "焼き鳥", emoji: "🍢", category: "アジア・エスニック", gradient: "from-amber-500 via-orange-600 to-red-700", tech: "炭火串刺し連打" },
+  { id: "ethnic", label: "タイ・エスニック", emoji: "🥘", category: "アジア・エスニック", gradient: "from-green-400 via-teal-500 to-cyan-600", tech: "パクチー旋風" },
   // がっつり・ごちそう
-  { id: "yakiniku", label: "焼肉", emoji: "🍖", category: "がっつり・ごちそう", gradient: "from-rose-500 via-red-600 to-orange-600" },
-  { id: "nabe", label: "鍋", emoji: "🫕", category: "がっつり・ごちそう", gradient: "from-orange-500 via-red-500 to-rose-600" },
-  { id: "karaage", label: "唐揚げ・フライドチキン", emoji: "🍗", category: "がっつり・ごちそう", gradient: "from-amber-400 via-orange-500 to-yellow-600" },
-  { id: "okonomiyaki", label: "お好み焼き・たこ焼き", emoji: "🐙", category: "がっつり・ごちそう", gradient: "from-orange-400 via-amber-600 to-yellow-700" },
-  { id: "tempura", label: "天ぷら・とんかつ", emoji: "🍤", category: "がっつり・ごちそう", gradient: "from-yellow-400 via-amber-500 to-orange-600" },
+  { id: "yakiniku", label: "焼肉", emoji: "🍖", category: "がっつり・ごちそう", gradient: "from-rose-500 via-red-600 to-orange-600", tech: "カルビ火力全開" },
+  { id: "nabe", label: "鍋", emoji: "🫕", category: "がっつり・ごちそう", gradient: "from-orange-500 via-red-500 to-rose-600", tech: "煮え立ち大回転" },
+  { id: "karaage", label: "唐揚げ・フライドチキン", emoji: "🍗", category: "がっつり・ごちそう", gradient: "from-amber-400 via-orange-500 to-yellow-600", tech: "ザクザク油淋撃" },
+  { id: "okonomiyaki", label: "お好み焼き・たこ焼き", emoji: "🐙", category: "がっつり・ごちそう", gradient: "from-orange-400 via-amber-600 to-yellow-700", tech: "鉄板返し乱舞" },
+  { id: "tempura", label: "天ぷら・とんかつ", emoji: "🍤", category: "がっつり・ごちそう", gradient: "from-yellow-400 via-amber-500 to-orange-600", tech: "サクサク衣クラッシュ" },
 ];
 
 // 2階：店マッチ用データ（四谷限定・厳選30店）

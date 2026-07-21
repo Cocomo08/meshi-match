@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { GENRES, getGenre, getStoresByGenre } from "./data";
 import { SwipeDeck } from "@/components/SwipeDeck";
+import { MeshiBattle } from "@/components/MeshiBattle";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 
@@ -149,18 +150,34 @@ export default function MeshiMatchPage() {
   const [genreLikes, setGenreLikes] = useState({ p1: [], p2: [] });
   const [storeLikes, setStoreLikes] = useState({ p1: [], p2: [] });
   const [chosenGenre, setChosenGenre] = useState(null);
+  const [battlePair, setBattlePair] = useState(null); // メシバトルの対戦カード
+  const [battleWinner, setBattleWinner] = useState(null); // バトルで決まったジャンルID
 
   const genreMatches = genreLikes.p1.filter((id) => genreLikes.p2.includes(id));
+  // マッチ成立ならその一覧、なければバトルの勝者を「決まったジャンル」として扱う
+  const decidedGenres =
+    genreMatches.length > 0 ? genreMatches : battleWinner ? [battleWinner] : [];
   const storeDeck = chosenGenre ? getStoresByGenre(chosenGenre) : [];
   const storeMatches = storeDeck.filter(
     (s) => storeLikes.p1.includes(s.id) && storeLikes.p2.includes(s.id)
   );
+
+  // 好みが重ならなかった二人の「代表選手」を1品ずつ選ぶ（p1/p2は重複なし）
+  const pickChampions = (p1, p2) => {
+    const pool = GENRES.map((g) => g.id);
+    const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const youId = p1[0] || rand(pool);
+    const oppId = p2.find((id) => id !== youId) || rand(pool.filter((id) => id !== youId));
+    return { you: getGenre(youId), opp: getGenre(oppId) };
+  };
 
   const reset = () => {
     setStep("intro");
     setGenreLikes({ p1: [], p2: [] });
     setStoreLikes({ p1: [], p2: [] });
     setChosenGenre(null);
+    setBattlePair(null);
+    setBattleWinner(null);
   };
 
   const startStoreMatch = (genreId) => {
@@ -223,69 +240,70 @@ export default function MeshiMatchPage() {
             renderCard={(card) => <GenreCard key={card.id} card={card} />}
             onFinish={(liked) => {
               setGenreLikes((prev) => ({ ...prev, p2: liked }));
-              setStep("genreResult");
+              const matches = genreLikes.p1.filter((id) => liked.includes(id));
+              if (matches.length > 0) {
+                setStep("genreResult");
+              } else {
+                // マッチなし → メシバトルで決着をつける
+                setBattlePair(pickChampions(genreLikes.p1, liked));
+                setBattleWinner(null);
+                setStep("battle");
+              }
+            }}
+          />
+        )}
+
+        {/* ===== マッチしなかったらメシバトルで決着 ===== */}
+        {step === "battle" && battlePair && (
+          <MeshiBattle
+            you={battlePair.you}
+            opp={battlePair.opp}
+            onDecided={(genreId) => {
+              setBattleWinner(genreId);
+              setStep("gate");
+            }}
+            onQuit={() => {
+              // バトルをやめる → もう一周ジャンル選びからやり直す
+              setBattlePair(null);
+              setGenreLikes({ p1: [], p2: [] });
+              setStep("g1");
             }}
           />
         )}
 
         {step === "genreResult" && (
           <div className="flex w-full flex-col items-center text-center">
-            {genreMatches.length > 0 ? (
-              <>
-                <span className="text-6xl">🎉</span>
-                <h2 className="mt-4 text-2xl font-black text-stone-800">
-                  マッチ成立！
-                </h2>
-                <p className="mt-2 text-sm font-medium text-stone-500">
-                  二人とも「アリ」だったジャンル
-                </p>
-                <div className="mt-6 flex w-full flex-col gap-3">
-                  {genreMatches.map((id) => {
-                    const g = getGenre(id);
-                    return (
-                      <div
-                        key={id}
-                        className={`flex items-center justify-between rounded-2xl bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-md`}
-                      >
-                        <span className="text-lg font-black">
-                          {g.emoji} {g.label}
-                        </span>
-                        <span className="text-xs font-black tracking-widest text-white/90">
-                          MATCH
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <Button3D
-                  onClick={() => setStep("gate")}
-                  className="mt-8 w-full px-8 text-base"
-                >
-                  次へ：お店を決める
-                </Button3D>
-              </>
-            ) : (
-              <>
-                <span className="text-6xl">😢</span>
-                <h2 className="mt-4 text-2xl font-black text-stone-800">
-                  マッチなし…
-                </h2>
-                <p className="mt-3 text-sm font-medium leading-relaxed text-stone-500">
-                  二人の「アリ」が重なりませんでした。
-                  <br />
-                  少しゆるめに、もう一周！
-                </p>
-                <Button3D
-                  onClick={() => {
-                    setGenreLikes({ p1: [], p2: [] });
-                    setStep("g1");
-                  }}
-                  className="mt-8 px-10 text-base"
-                >
-                  もう一周する
-                </Button3D>
-              </>
-            )}
+            <span className="text-6xl">🎉</span>
+            <h2 className="mt-4 text-2xl font-black text-stone-800">
+              マッチ成立！
+            </h2>
+            <p className="mt-2 text-sm font-medium text-stone-500">
+              二人とも「アリ」だったジャンル
+            </p>
+            <div className="mt-6 flex w-full flex-col gap-3">
+              {genreMatches.map((id) => {
+                const g = getGenre(id);
+                return (
+                  <div
+                    key={id}
+                    className={`flex items-center justify-between rounded-2xl bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-md`}
+                  >
+                    <span className="text-lg font-black">
+                      {g.emoji} {g.label}
+                    </span>
+                    <span className="text-xs font-black tracking-widest text-white/90">
+                      MATCH
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <Button3D
+              onClick={() => setStep("gate")}
+              className="mt-8 w-full px-8 text-base"
+            >
+              次へ：お店を決める
+            </Button3D>
             <button
               type="button"
               onClick={reset}
@@ -299,6 +317,12 @@ export default function MeshiMatchPage() {
         {/* ===== 2階への分岐ゲート ===== */}
         {step === "gate" && (
           <div className="flex w-full flex-col items-center text-center">
+            {battleWinner && genreMatches.length === 0 && (
+              <div className="mb-5 rounded-full bg-orange-100 px-5 py-2 text-sm font-black text-orange-700 shadow-sm">
+                🔥 メシバトルの結果、{getGenre(battleWinner)?.emoji}
+                {getGenre(battleWinner)?.label}に決定！
+              </div>
+            )}
             <span className="text-6xl">📍</span>
             <h2 className="mt-4 text-2xl font-black text-stone-800">
               いま、四ツ谷にいる？
@@ -307,7 +331,7 @@ export default function MeshiMatchPage() {
               四ツ谷にいるなら、厳選30店の店マッチへ！
             </p>
             <div className="mt-8 flex w-full flex-col gap-3">
-              {genreMatches.map((id) => {
+              {decidedGenres.map((id) => {
                 const g = getGenre(id);
                 return (
                   <Button3D
@@ -347,7 +371,7 @@ export default function MeshiMatchPage() {
               </span>
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {genreMatches.map((id) => {
+              {decidedGenres.map((id) => {
                 const g = getGenre(id);
                 return (
                   <span
