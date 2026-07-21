@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { GENRES, getGenre, getStoresByGenre } from "./data";
 import { SwipeDeck } from "@/components/SwipeDeck";
 import { MeshiBattle } from "@/components/MeshiBattle";
+import { MeshiSlot } from "@/components/MeshiSlot";
+import { MeshiAmida } from "@/components/MeshiAmida";
 import {
   playPush,
   hydrateSound,
@@ -13,6 +15,13 @@ import {
 } from "@/components/sound";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
+
+// 選べる3種のミニゲーム
+const MINI_GAMES = [
+  { id: "battle", emoji: "🥊", name: "メシバトル", desc: "リズムタップで殴り合い", gradient: "from-rose-500 via-red-600 to-orange-600" },
+  { id: "slot", emoji: "🎰", name: "メシスロット", desc: "そろえて一発勝負", gradient: "from-amber-400 via-orange-500 to-yellow-600" },
+  { id: "amida", emoji: "🪜", name: "運命のあみだ", desc: "たどって運だめし", gradient: "from-sky-500 via-blue-600 to-indigo-600" },
+];
 
 // 画像は public/images/<id>.jpg を参照（basePath込み）。無ければ絵文字にフォールバック
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -192,8 +201,9 @@ export default function MeshiMatchPage() {
   const [genreLikes, setGenreLikes] = useState({ p1: [], p2: [] });
   const [storeLikes, setStoreLikes] = useState({ p1: [], p2: [] });
   const [chosenGenre, setChosenGenre] = useState(null);
-  const [battlePair, setBattlePair] = useState(null); // メシバトルの対戦カード
-  const [battleWinner, setBattleWinner] = useState(null); // バトルで決まったジャンルID
+  const [battlePair, setBattlePair] = useState(null); // ミニゲームの対戦カード
+  const [battleWinner, setBattleWinner] = useState(null); // 勝負で決まったジャンルID
+  const [selectedGame, setSelectedGame] = useState("battle"); // 選んだミニゲーム
 
   const genreMatches = genreLikes.p1.filter((id) => genreLikes.p2.includes(id));
   // マッチ成立ならその一覧、なければバトルの勝者を「決まったジャンル」として扱う
@@ -220,6 +230,7 @@ export default function MeshiMatchPage() {
     setChosenGenre(null);
     setBattlePair(null);
     setBattleWinner(null);
+    setSelectedGame("battle");
   };
 
   const startStoreMatch = (genreId) => {
@@ -247,8 +258,8 @@ export default function MeshiMatchPage() {
               <span className="mm-gold">卒業</span>しよう
             </h1>
             <p className="mb-5 mt-3 text-center text-xs font-bold tracking-wide text-white/70">
-              二人でスワイプ → 意見が割れたら
-              <span className="text-amber-300">メシバトル</span>で決着！
+              二人でスワイプ → 割れたら
+              <span className="text-amber-300">3つのミニゲーム</span>で決着！
             </p>
 
             <SwipeDeck
@@ -296,13 +307,72 @@ export default function MeshiMatchPage() {
               if (matches.length > 0) {
                 setStep("genreResult");
               } else {
-                // マッチなし → メシバトルで決着をつける
+                // マッチなし → ミニゲームで決着をつける（ゲーム選択へ）
                 setBattlePair(pickChampions(genreLikes.p1, liked));
                 setBattleWinner(null);
-                setStep("battle");
+                setStep("gamePick");
               }
             }}
           />
+        )}
+
+        {/* ===== 意見が割れた！ミニゲームを選ぶ ===== */}
+        {step === "gamePick" && battlePair && (
+          <div className="flex w-full flex-col items-center text-center">
+            <span className="-skew-x-6 rounded-md border-2 border-rose-400/70 bg-rose-500/15 px-4 py-1 text-xs font-black italic tracking-widest text-rose-200">
+              意見、真っ二つ！
+            </span>
+            <h2 className="mt-3 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+              勝負の<span className="mm-gold">しかた</span>を選ぼう
+            </h2>
+
+            {/* 対戦カード */}
+            <div className="mt-4 flex w-full items-center justify-center gap-2 text-white">
+              <span className="flex-1 rounded-xl border-2 border-rose-400/70 bg-rose-500/10 px-2 py-2 text-sm font-black">
+                {battlePair.you.emoji} {battlePair.you.label}
+              </span>
+              <span className="text-lg font-black italic text-amber-300">VS</span>
+              <span className="flex-1 rounded-xl border-2 border-sky-400/70 bg-sky-500/10 px-2 py-2 text-sm font-black">
+                {battlePair.opp.emoji} {battlePair.opp.label}
+              </span>
+            </div>
+
+            <div className="mt-6 flex w-full flex-col gap-3">
+              {MINI_GAMES.map((game) => (
+                <button
+                  key={game.id}
+                  type="button"
+                  onClick={() => {
+                    playPush();
+                    setSelectedGame(game.id);
+                    setStep("battle");
+                  }}
+                  className={`group relative flex items-center gap-4 overflow-hidden rounded-2xl border-[3px] border-white bg-gradient-to-r ${game.gradient} px-5 py-4 text-left text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.12)] transition-all duration-100 ease-out active:translate-y-[4px] active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]`}
+                >
+                  <span className="btn-shine pointer-events-none absolute inset-0" />
+                  <span className="relative text-4xl drop-shadow">{game.emoji}</span>
+                  <span className="relative">
+                    <span className="block text-lg font-black italic drop-shadow">{game.name}</span>
+                    <span className="block text-xs font-bold text-white/85">{game.desc}</span>
+                  </span>
+                  <span className="relative ml-auto text-xl font-black italic text-white/80">▶</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                playPush();
+                setBattlePair(null);
+                setGenreLikes({ p1: [], p2: [] });
+                setStep("g1");
+              }}
+              className="mt-5 text-xs font-bold tracking-wide text-white/50 underline underline-offset-4 transition hover:text-white/80"
+            >
+              スワイプからやり直す
+            </button>
+          </div>
         )}
 
         {step === "genreResult" && (
@@ -558,23 +628,24 @@ export default function MeshiMatchPage() {
         ※ 店舗情報はデモ用のサンプルデータです
       </p>
 
-      {/* ===== マッチしなかったらメシバトルで決着（全画面オーバーレイ・ルート直下）===== */}
-      {step === "battle" && battlePair && (
-        <MeshiBattle
-          you={battlePair.you}
-          opp={battlePair.opp}
-          onDecided={(genreId) => {
-            setBattleWinner(genreId);
-            setStep("gate");
-          }}
-          onQuit={() => {
-            // バトルをやめる → もう一周ジャンル選びからやり直す
-            setBattlePair(null);
-            setGenreLikes({ p1: [], p2: [] });
-            setStep("g1");
-          }}
-        />
-      )}
+      {/* ===== マッチしなかったら、選んだミニゲームで決着（全画面・ルート直下）===== */}
+      {step === "battle" &&
+        battlePair &&
+        (() => {
+          const gameProps = {
+            you: battlePair.you,
+            opp: battlePair.opp,
+            onDecided: (genreId) => {
+              setBattleWinner(genreId);
+              setStep("gate");
+            },
+            onQuit: () => setStep("gamePick"), // ✕：ゲーム選択にもどる
+            onPickAgain: () => setStep("gamePick"), // 別のゲームを選ぶ
+          };
+          if (selectedGame === "slot") return <MeshiSlot {...gameProps} />;
+          if (selectedGame === "amida") return <MeshiAmida {...gameProps} />;
+          return <MeshiBattle {...gameProps} />;
+        })()}
     </div>
   );
 }

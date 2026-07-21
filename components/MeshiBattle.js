@@ -51,7 +51,7 @@ function makeConfetti() {
 // 二人の食べ物（you=きみ/赤・opp=あいて/青）をリズムタップ対決させ、
 // 勝者ジャンルを onDecided(genreId) で返すミニゲーム。
 // you / opp は GENRES の要素（{ id, label, emoji, tech }）。
-export function MeshiBattle({ you, opp, onDecided, onQuit }) {
+export function MeshiBattle({ you, opp, onDecided, onQuit, onPickAgain }) {
   const [, force] = useReducer((n) => n + 1, 0);
   const appRef = useRef(null);
   const markerRef = useRef(null);
@@ -508,15 +508,28 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
           >
             このジャンルでお店を探す
           </button>
-          <button
-            className="mb-ghost"
-            onClick={() => {
-              SFX.click();
-              backToVS();
-            }}
-          >
-            もう一回たたかう
-          </button>
+          <div className="mb-overbtns">
+            <button
+              className="mb-ghost"
+              onClick={() => {
+                SFX.click();
+                backToVS();
+              }}
+            >
+              もう一回
+            </button>
+            {onPickAgain && (
+              <button
+                className="mb-ghost"
+                onClick={() => {
+                  SFX.click();
+                  onPickAgain();
+                }}
+              >
+                ゲームを変える
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

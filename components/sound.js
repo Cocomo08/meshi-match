@@ -117,6 +117,42 @@ export function playLike() {
   });
 }
 
+// 短いティック（スロットの停止・あみだの1歩）
+export function playTick() {
+  const c = ac();
+  if (!c || !enabled) return;
+  const t = c.currentTime;
+  const o = c.createOscillator();
+  const g = c.createGain();
+  o.type = "square";
+  o.frequency.setValueAtTime(760, t);
+  g.gain.setValueAtTime(0.16, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  o.connect(g).connect(c.destination);
+  o.start(t);
+  o.stop(t + 0.09);
+}
+
+// 勝利のファンファーレ
+export function playFanfare() {
+  const c = ac();
+  if (!c || !enabled) return;
+  const t = c.currentTime;
+  [523, 659, 784, 1047, 1319].forEach((f, i) => {
+    const at = t + i * 0.09;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = "square";
+    o.frequency.setValueAtTime(f, at);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.2, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.2);
+    o.connect(g).connect(c.destination);
+    o.start(at);
+    o.stop(at + 0.22);
+  });
+}
+
 // 「パス」ときの軽い下向きスワイプ音
 export function playNope() {
   const c = ac();

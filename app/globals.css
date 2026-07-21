@@ -368,6 +368,48 @@ body {
 .mb-confetti-piece { position: absolute; top: -24px; width: 9px; height: 14px; border-radius: 2px; will-change: transform, opacity; animation: mbConfetti linear forwards; }
 @keyframes mbConfetti { 0%{ transform: translateY(-24px) rotate(0deg); opacity: 1; } 100%{ transform: translateY(112vh) rotate(720deg); opacity: .85; } }
 
+/* オーバーレイの副ボタン行（共通）*/
+.mb-overbtns { display: flex; gap: 10px; }
+
+/* ── 対戦タグ（スロット/あみだ共通）── */
+.slot-vs { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 2px; }
+.slot-vs-tag { font-weight: 900; font-size: 12px; padding: 4px 10px; border-radius: 8px; border: 2px solid; }
+.slot-vs-tag.you { color: #ff9ea0; border-color: rgba(229,72,77,.7); background: rgba(229,72,77,.12); }
+.slot-vs-tag.opp { color: #9dbcff; border-color: rgba(47,111,237,.7); background: rgba(47,111,237,.12); }
+.slot-vs-x { font-weight: 900; font-style: italic; color: #ffd76a; }
+.slot-msg { text-align: center; font-weight: 900; font-style: italic; font-size: 15px; color: #ffd76a; text-shadow: 0 2px 4px rgba(0,0,0,.5); }
+
+/* ── メシスロット ── */
+.slot-machine { position: relative; margin: 8px auto 0; padding: 16px; border-radius: 18px; border: 4px solid #ffd76a; background: linear-gradient(180deg, #2a1c3a, #17101f); box-shadow: 0 0 26px rgba(255,215,120,.35), inset 0 0 20px rgba(0,0,0,.6); }
+.slot-reels { display: flex; gap: 10px; }
+.slot-reel { width: 84px; height: 104px; border-radius: 12px; background: linear-gradient(180deg,#fffef7,#e6e1d3); box-shadow: inset 0 4px 10px rgba(0,0,0,.35); display: grid; place-items: center; overflow: hidden; }
+.slot-reel .slot-sym { font-size: 54px; line-height: 1; }
+.slot-reel.spin .slot-sym { filter: blur(1.5px); animation: slotShake .12s linear infinite; }
+@keyframes slotShake { 0%,100%{ transform: translateY(-3px); } 50%{ transform: translateY(3px); } }
+.slot-reel.stopped .slot-sym { animation: slotLand .26s ease-out; }
+@keyframes slotLand { 0%{ transform: scale(1.18); } 60%{ transform: scale(.94); } 100%{ transform: scale(1); } }
+.slot-reels.reach .slot-reel.spin { box-shadow: inset 0 4px 10px rgba(0,0,0,.35), 0 0 16px 3px #ffd400; }
+.slot-payline { position: absolute; left: 12px; right: 12px; top: 50%; height: 3px; transform: translateY(-50%); background: rgba(255,90,90,.65); box-shadow: 0 0 8px rgba(255,90,90,.8); pointer-events: none; }
+.slot-jackpot { font-weight: 900; font-style: italic; font-size: 26px; color: #ffd400; -webkit-text-stroke: 2px #7c2d12; text-shadow: 0 3px 0 rgba(0,0,0,.35); animation: mbTelop .9s ease-out; }
+
+/* ── 運命のあみだ ── */
+.amida-canvas { position: relative; width: 100%; max-width: 320px; margin: 4px auto 0; }
+.amida-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.amida-vline { stroke: rgba(255,255,255,.5); stroke-width: 4; stroke-linecap: round; }
+.amida-rung { stroke: #ffd76a; stroke-width: 4; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(255,215,120,.6)); }
+.amida-token { font-size: 24px; text-anchor: middle; dominant-baseline: middle; }
+.amida-token.dice { opacity: .55; }
+.amida-box { fill: rgba(255,255,255,.08); stroke: rgba(255,255,255,.4); stroke-width: 2; }
+.amida-box.win { fill: rgba(255,215,120,.25); stroke: #ffd400; filter: drop-shadow(0 0 8px rgba(255,215,120,.85)); }
+.amida-boxtext { font-size: 20px; text-anchor: middle; dominant-baseline: middle; fill: #fff; }
+.amida-dot { position: absolute; transform: translate(-50%,-50%); font-size: 27px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); transition: left .28s linear, top .28s linear; z-index: 2; }
+.amida-dot.you { text-shadow: 0 0 10px rgba(229,72,77,.95); }
+.amida-dot.opp { text-shadow: 0 0 10px rgba(47,111,237,.95); }
+@media (prefers-reduced-motion: reduce) {
+  .slot-reel.spin .slot-sym, .slot-reel.stopped .slot-sym, .slot-jackpot { animation-duration: .01ms !important; }
+  .amida-dot { transition: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mb-avatar.hurt, .mb-avatar.you.hurt, .mb-avatar.opp.hurt, .mb-win-emoji,
   .mb-vs .mb-slot.you, .mb-vs .mb-slot.opp, .mb-vs .mb-vs-mark, .mb-go,
