@@ -183,34 +183,105 @@ body {
 .mb-sound.off { opacity: .6; }
 .mb-quit { position: absolute; top: 10px; left: 10px; z-index: 6; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(0,0,0,.08); background: var(--mb-panel); color: #9a5a2c; font-size: 18px; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.14); display: grid; place-items: center; font-family: inherit; line-height: 1; }
 
-/* VS対決画面 */
-.mb-vs { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); text-align: center; z-index: 4; overflow: hidden;
-  background: linear-gradient(105deg, rgba(229,72,77,.16) 0 46%, transparent 46% 54%, rgba(47,111,237,.16) 54% 100%), radial-gradient(120% 90% at 50% 0%, #ffe9cf, #ffcf9c); }
-.mb-vs .mb-eyebrow { margin-top: 44px; font-weight: 900; font-size: 17px; color: #c2410c; text-shadow: 0 2px 0 #fff; }
-.mb-vs .mb-eyebrow small { display: block; font-size: 12px; color: #9a5a2c; letter-spacing: .15em; margin-top: 2px; }
-.mb-cards { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; gap: 6px; }
-.mb-card { flex: 1; background: var(--mb-panel); border-radius: 22px; padding: 18px 10px; box-shadow: 0 6px 0 rgba(0,0,0,.16); border: 3px solid rgba(0,0,0,.06); }
-.mb-card.you { border-color: var(--mb-you); }
-.mb-card.opp { border-color: var(--mb-opp); }
-.mb-card .mb-side { display: inline-block; color: #fff; font-weight: 900; font-size: 12px; padding: 2px 12px; border-radius: 999px; letter-spacing: .1em; }
-.mb-card.you .mb-side { background: var(--mb-you); }
-.mb-card.opp .mb-side { background: var(--mb-opp); }
-.mb-card .mb-big { font-size: 62px; margin: 8px 0; filter: drop-shadow(0 6px 6px rgba(0,0,0,.2)); }
-.mb-card.you .mb-big { transform: scaleX(-1); }
-.mb-card .mb-nm { font-weight: 900; font-size: 20px; }
-.mb-card .mb-cardtech { margin-top: 8px; font-size: 12px; font-weight: 800; padding: 4px 8px; border-radius: 8px; display: inline-block; }
-.mb-card.you .mb-cardtech { background: #ffe4e4; color: var(--mb-you-dark); }
-.mb-card.opp .mb-cardtech { background: #e0ebff; color: var(--mb-opp-dark); }
-.mb-clash { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-weight: 900; font-size: 54px; color: #fff; -webkit-text-stroke: 4px #1f2937; text-shadow: 0 6px 0 rgba(0,0,0,.25); z-index: 2; }
-.mb-vs .mb-card.you { animation: mbSlideL .5s cubic-bezier(.2,.9,.3,1.2) both; }
-.mb-vs .mb-card.opp { animation: mbSlideR .5s cubic-bezier(.2,.9,.3,1.2) both; }
-.mb-vs .mb-clash { animation: mbVspop .55s cubic-bezier(.2,.9,.3,1.4) .35s both; }
+/* ── VS対決画面（スマブラ風バトルスプラッシュ）── */
+.mb-vs {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px 14px calc(20px + env(safe-area-inset-bottom));
+  text-align: center; z-index: 4; overflow: hidden; background: #0b0d18;
+}
+/* 斜め2分割の背景 */
+.mb-vs-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.mb-vs-bg .half { position: absolute; top: -12%; bottom: -12%; width: 66%; }
+.mb-vs-bg .half.you {
+  left: -10%; transform: skewX(-11deg);
+  background:
+    radial-gradient(55% 50% at 55% 45%, rgba(255,150,150,.55), transparent 72%),
+    linear-gradient(160deg, #7f1d1d, #e5484d 62%, #b42318);
+}
+.mb-vs-bg .half.opp {
+  right: -10%; transform: skewX(-11deg);
+  background:
+    radial-gradient(55% 50% at 45% 55%, rgba(150,185,255,.55), transparent 72%),
+    linear-gradient(160deg, #1e3a8a, #2f6fed 62%, #1d4ed8);
+}
+/* 中央の閃光シーム */
+.mb-vs-bg .seam {
+  position: absolute; top: -12%; bottom: -12%; left: 50%; width: 4%;
+  transform: translateX(-50%) skewX(-11deg);
+  background: linear-gradient(180deg, #fff, #ffe9a8 45%, #fff);
+  box-shadow: 0 0 30px 8px rgba(255,225,150,.85), 0 0 90px 26px rgba(255,120,120,.35);
+}
+/* 集中線（スピードライン） */
+.mb-vs-bg .lines {
+  position: absolute; left: 50%; top: 50%; width: 220%; padding-top: 220%;
+  transform: translate(-50%,-50%);
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.85) 0deg 0.9deg, transparent 0.9deg 6deg);
+  opacity: .1; mix-blend-mode: screen; animation: mbSpin 26s linear infinite;
+}
+/* 上下の黒帯（シネマティック） */
+.mb-vs::before, .mb-vs::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 6%; z-index: 3;
+  background: linear-gradient(180deg, rgba(0,0,0,.55), transparent);
+}
+.mb-vs::before { top: 0; }
+.mb-vs::after { bottom: 0; transform: scaleY(-1); }
+
+.mb-vs-fighters { position: relative; z-index: 2; width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.mb-slot { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.mb-portrait { font-size: 96px; line-height: 1; filter: drop-shadow(0 10px 16px rgba(0,0,0,.6)); }
+.mb-slot.you .mb-portrait { transform: scaleX(-1); }
+.mb-nameplate {
+  margin-top: 12px; transform: skewX(-9deg);
+  border: 3px solid #fff; border-radius: 6px; padding: 5px 16px;
+  box-shadow: 0 4px 0 rgba(0,0,0,.45), inset 0 0 12px rgba(255,255,255,.25);
+}
+.mb-slot.you .mb-nameplate { background: linear-gradient(180deg, #ff7a7d, #b42318); }
+.mb-slot.opp .mb-nameplate { background: linear-gradient(180deg, #6f9bff, #1d4ed8); }
+.mb-nameplate .inner { transform: skewX(9deg); display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.mb-nameplate .side { font-size: 10px; font-weight: 900; letter-spacing: .2em; color: rgba(255,255,255,.9); }
+.mb-nameplate .nm { font-size: 17px; font-weight: 900; color: #fff; line-height: 1.08; text-shadow: 0 2px 2px rgba(0,0,0,.45); }
+.mb-slot .mb-cardtech {
+  margin-top: 9px; transform: skewX(-9deg);
+  font-size: 11px; font-weight: 900; color: #fff; letter-spacing: .02em;
+  background: rgba(0,0,0,.4); border: 1.5px solid rgba(255,255,255,.55);
+  padding: 3px 10px; border-radius: 4px;
+}
+.mb-slot .mb-cardtech span { display: inline-block; transform: skewX(9deg); }
+
+/* 中央の巨大VS */
+.mb-vs-mark {
+  position: absolute; left: 50%; top: 50%; z-index: 3;
+  transform: translate(-50%,-50%) rotate(-8deg);
+  font-size: 88px; font-weight: 900; font-style: italic; letter-spacing: -.04em;
+  background: linear-gradient(180deg, #fffbe6 0%, #ffd76a 46%, #f59e0b 54%, #ffffff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  -webkit-text-stroke: 3px #1f2937;
+  filter: drop-shadow(0 4px 0 #1f2937) drop-shadow(0 0 20px rgba(255,215,120,.9));
+}
+
+.mb-vs-caption { position: relative; z-index: 2; margin-top: 30px; font-weight: 900; font-size: 15px; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,.7); }
+.mb-vs-caption small { display: block; font-size: 11px; opacity: .82; letter-spacing: .12em; margin-top: 3px; }
+
+.mb-go {
+  position: relative; z-index: 2; margin-top: 22px;
+  border: 3px solid #fff; border-radius: 12px;
+  padding: 16px 40px; font-size: 21px; font-weight: 900; font-style: italic; letter-spacing: .03em;
+  color: #1f2937; background: linear-gradient(180deg, #ffe9a8, #f59e0b);
+  box-shadow: 0 6px 0 #b45309, 0 0 26px rgba(255,200,80,.55);
+  cursor: pointer; font-family: inherit; transition: transform .08s, box-shadow .08s;
+}
+.mb-go:active { transform: translateY(4px); box-shadow: 0 2px 0 #b45309, 0 0 26px rgba(255,200,80,.55); }
+
+.mb-vs .mb-slot.you { animation: mbSlideL .5s cubic-bezier(.2,.9,.3,1.2) both; }
+.mb-vs .mb-slot.opp { animation: mbSlideR .5s cubic-bezier(.2,.9,.3,1.2) both; }
+.mb-vs .mb-vs-mark { animation: mbVspop .55s cubic-bezier(.2,.9,.3,1.4) .32s both; }
+.mb-vs .mb-go { animation: mbRise .4s ease .52s both; }
 @keyframes mbSlideL { from { transform: translateX(-130%) rotate(-7deg); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes mbSlideR { from { transform: translateX(130%) rotate(7deg); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes mbVspop { 0%{ transform: translate(-50%,-50%) scale(0) rotate(-35deg); opacity: 0; } 60%{ transform: translate(-50%,-50%) scale(1.35) rotate(8deg); opacity: 1; } 100%{ transform: translate(-50%,-50%) scale(1) rotate(-8deg); opacity: 1; } }
-.mb-go { border: none; border-radius: 999px; padding: 18px 44px; font-size: 20px; font-weight: 900; letter-spacing: .08em; color: #fff; background: linear-gradient(180deg, #ffb04a, #f97316); box-shadow: 0 7px 0 #b45309; cursor: pointer; font-family: inherit; transition: transform .08s, box-shadow .08s; animation: mbRise .4s ease .5s both; }
-.mb-go:active { transform: translateY(5px); box-shadow: 0 2px 0 #b45309; }
 @keyframes mbRise { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes mbSpin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 
 /* カウントダウン */
 .mb-countdown { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 5; background: rgba(35,20,8,.5); }
@@ -247,7 +318,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .mb-avatar.hurt, .mb-avatar.you.hurt, .mb-avatar.opp.hurt, .mb-win-emoji,
-  .mb-vs .mb-card.you, .mb-vs .mb-card.opp, .mb-vs .mb-clash, .mb-go,
+  .mb-vs .mb-slot.you, .mb-vs .mb-slot.opp, .mb-vs .mb-vs-mark, .mb-go,
   .mb-popup, .mb-cdnum, .mb-telop .mb-word, .mb-app.shaking { animation-duration: .01ms !important; }
+  .mb-vs-bg .lines { animation: none; }
   .mb-confetti-piece { display: none; }
 }

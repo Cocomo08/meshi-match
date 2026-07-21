@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useReducer, useRef } from "react";
+import { isSoundEnabled, setSoundEnabled, subscribeSound } from "@/components/sound";
 
 // ── バランス定数（プロトタイプで詰めた値）──
 const Z = { perfect: 0.035, hit: 0.13, graze: 0.22 }; // 中心0.5からの片側幅（正規化）
@@ -81,7 +82,6 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
       shakeKey: 0,
       hurt: { you: 0, opp: 0 },
       confetti: [],
-      soundOn: true,
     };
   }
   const g = gRef.current;
@@ -117,7 +117,7 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
   };
   const blip = (freq, dur, type, vol, when) => {
     const ctx = audioRef.current;
-    if (!g.soundOn || !ctx) return;
+    if (!isSoundEnabled() || !ctx) return;
     const t = ctx.currentTime + (when || 0);
     const o = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -256,11 +256,9 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
   };
 
   const toggleSound = () => {
-    g.soundOn = !g.soundOn;
-    if (g.soundOn) {
-      ensureAudio();
-      SFX.click();
-    }
+    ensureAudio();
+    setSoundEnabled(!isSoundEnabled());
+    if (isSoundEnabled()) SFX.click();
     force();
   };
 
@@ -273,9 +271,11 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);
+    const unsub = subscribeSound(() => force());
     return () => {
       cancelAnimationFrame(rafRef.current);
       clearTimers();
+      unsub();
       if (audioRef.current && audioRef.current.close) audioRef.current.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -283,14 +283,15 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
 
   const F = g.fighters;
   const atk = F[g.attacker];
+  const soundOn = isSoundEnabled();
   const inBattle = g.phase === "ready" || g.phase === "resolve";
   const zonePct = Z.hit * 2 * 100;
   const perfectPct = Z.perfect * 2 * 100;
 
   return (
     <div className="mb-root">
-      <button className={`mb-sound ${g.soundOn ? "" : "off"}`} onClick={toggleSound} aria-label="サウンド切り替え">
-        {g.soundOn ? "🔊" : "🔇"}
+      <button className={`mb-sound ${soundOn ? "" : "off"}`} onClick={toggleSound} aria-label="サウンド切り替え">
+        {soundOn ? "🔊" : "🔇"}
       </button>
       {onQuit && (
         <button className="mb-quit" onClick={onQuit} aria-label="バトルをやめる">
@@ -411,26 +412,48 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
         </div>
       )}
 
-      {/* ── VS対決画面 ── */}
+      {/* ── VS対決画面（スマブラ風スプラッシュ）── */}
       {g.phase === "vs" && (
         <div className="mb-vs">
-          <div className="mb-eyebrow">
-            🥢 意見、真っ二つ！<small>どっちも ゆずらない…</small>
+          <div className="mb-vs-bg" aria-hidden>
+            <div className="half you" />
+            <div className="half opp" />
+            <div className="lines" />
+            <div className="seam" />
           </div>
-          <div className="mb-cards">
-            <div className="mb-card you">
-              <span className="mb-side">きみ</span>
-              <div className="mb-big">{F.you.emoji}</div>
-              <div className="mb-nm">{F.you.label}</div>
-              <div className="mb-cardtech">{F.you.tech}</div>
+
+          <div className="mb-vs-fighters">
+            <div className="mb-slot you">
+              <div className="mb-portrait">{F.you.emoji}</div>
+              <div className="mb-nameplate">
+                <div className="inner">
+                  <div className="side">きみ</div>
+                  <div className="nm">{F.you.label}</div>
+                </div>
+              </div>
+              <div className="mb-cardtech">
+                <span>{F.you.tech}</span>
+              </div>
             </div>
-            <div className="mb-card opp">
-              <span className="mb-side">あいて</span>
-              <div className="mb-big">{F.opp.emoji}</div>
-              <div className="mb-nm">{F.opp.label}</div>
-              <div className="mb-cardtech">{F.opp.tech}</div>
+
+            <div className="mb-vs-mark">VS</div>
+
+            <div className="mb-slot opp">
+              <div className="mb-portrait">{F.opp.emoji}</div>
+              <div className="mb-nameplate">
+                <div className="inner">
+                  <div className="side">あいて</div>
+                  <div className="nm">{F.opp.label}</div>
+                </div>
+              </div>
+              <div className="mb-cardtech">
+                <span>{F.opp.tech}</span>
+              </div>
             </div>
-            <div className="mb-clash">VS</div>
+          </div>
+
+          <div className="mb-vs-caption">
+            意見、真っ二つ！<small>どっちも ゆずらない…</small>
           </div>
           <button className="mb-go" onClick={startBattle}>
             メシバトル開始！

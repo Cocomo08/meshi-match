@@ -4,7 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { GENRES, getGenre, getStoresByGenre } from "./data";
 import { SwipeDeck } from "@/components/SwipeDeck";
 import { MeshiBattle } from "@/components/MeshiBattle";
-import { playPush } from "@/components/sound";
+import {
+  playPush,
+  hydrateSound,
+  isSoundEnabled,
+  toggleSound,
+  subscribeSound,
+} from "@/components/sound";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 
@@ -18,6 +24,28 @@ const BTN_TONES = {
   neutral:
     "bg-gradient-to-b from-white to-stone-100 text-stone-700 ring-stone-300/70 shadow-[0_6px_0_0_#d6d3d1,0_10px_16px_-4px_rgba(120,113,108,0.35)] hover:to-stone-50 active:shadow-[0_1px_0_0_#d6d3d1,0_4px_8px_-3px_rgba(120,113,108,0.3)]",
 };
+
+// 本体共通の消音トグル（メシバトルとも状態を共有）
+function MuteToggle() {
+  const [on, setOn] = useState(true);
+  useEffect(() => {
+    setOn(hydrateSound());
+    return subscribeSound(setOn);
+  }, []);
+  return (
+    <button
+      type="button"
+      onClick={() => setOn(toggleSound())}
+      aria-label={on ? "音を消す" : "音を出す"}
+      aria-pressed={!on}
+      className={`fixed right-4 top-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-orange-200 bg-white/90 text-lg shadow-[0_3px_0_0_#fed7aa] backdrop-blur transition active:translate-y-[2px] active:shadow-[0_1px_0_0_#fed7aa] ${
+        on ? "" : "opacity-60"
+      }`}
+    >
+      {on ? "🔊" : "🔇"}
+    </button>
+  );
+}
 
 function Button3D({ children, onClick, tone = "primary", gradient, className = "", type = "button" }) {
   const light = tone === "neutral";
@@ -193,6 +221,8 @@ export default function MeshiMatchPage() {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-gradient-to-b from-orange-50 via-rose-50 to-amber-50 px-5 py-8">
+      {/* バトル中はメシバトル側のトグルが前面に出るので、非表示にはしない（z-40＜バトルz-50） */}
+      {step !== "battle" && <MuteToggle />}
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center">
         {/* ===== トップ：着地した瞬間にスワイプを試せる ===== */}
         {step === "intro" && (
@@ -253,24 +283,6 @@ export default function MeshiMatchPage() {
                 setBattleWinner(null);
                 setStep("battle");
               }
-            }}
-          />
-        )}
-
-        {/* ===== マッチしなかったらメシバトルで決着 ===== */}
-        {step === "battle" && battlePair && (
-          <MeshiBattle
-            you={battlePair.you}
-            opp={battlePair.opp}
-            onDecided={(genreId) => {
-              setBattleWinner(genreId);
-              setStep("gate");
-            }}
-            onQuit={() => {
-              // バトルをやめる → もう一周ジャンル選びからやり直す
-              setBattlePair(null);
-              setGenreLikes({ p1: [], p2: [] });
-              setStep("g1");
             }}
           />
         )}
@@ -527,6 +539,24 @@ export default function MeshiMatchPage() {
       <p className="relative z-10 mt-8 text-center text-[10px] font-medium tracking-wide text-stone-400">
         ※ 店舗情報はデモ用のサンプルデータです
       </p>
+
+      {/* ===== マッチしなかったらメシバトルで決着（全画面オーバーレイ・ルート直下）===== */}
+      {step === "battle" && battlePair && (
+        <MeshiBattle
+          you={battlePair.you}
+          opp={battlePair.opp}
+          onDecided={(genreId) => {
+            setBattleWinner(genreId);
+            setStep("gate");
+          }}
+          onQuit={() => {
+            // バトルをやめる → もう一周ジャンル選びからやり直す
+            setBattlePair(null);
+            setGenreLikes({ p1: [], p2: [] });
+            setStep("g1");
+          }}
+        />
+      )}
     </div>
   );
 }

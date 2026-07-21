@@ -1,11 +1,15 @@
 "use client";
 
 // アプリ共通の効果音（WebAudio・外部ファイル無し）。
-// メシバトルと同じく合成音なので、追加アセットなしで鳴る。
+// メシバトルと本体で同じON/OFF状態を共有する（グローバルな消音トグル）。
 // AudioContext はユーザー操作（最初のボタン押下）の中で生成・resumeする。
+
+const STORE_KEY = "meshi-sound";
 
 let ctx = null;
 let enabled = true;
+let hydrated = false;
+const listeners = new Set();
 
 function ac() {
   if (typeof window === "undefined") return null;
@@ -23,11 +27,43 @@ function ac() {
   return ctx;
 }
 
-export function setSoundEnabled(v) {
-  enabled = v;
+// localStorage から設定を読み込む（クライアントで一度だけ）
+export function hydrateSound() {
+  if (hydrated || typeof window === "undefined") return enabled;
+  hydrated = true;
+  try {
+    const v = window.localStorage.getItem(STORE_KEY);
+    if (v !== null) enabled = v === "1";
+  } catch {
+    /* localStorage 不可でも無視 */
+  }
+  return enabled;
 }
+
 export function isSoundEnabled() {
   return enabled;
+}
+
+export function setSoundEnabled(v) {
+  enabled = !!v;
+  try {
+    window.localStorage.setItem(STORE_KEY, enabled ? "1" : "0");
+  } catch {
+    /* 無視 */
+  }
+  listeners.forEach((fn) => fn(enabled));
+}
+
+export function toggleSound() {
+  setSoundEnabled(!enabled);
+  if (enabled) playPush(); // ONにした瞬間フィードバック
+  return enabled;
+}
+
+// 状態変化を購読（トグルUIの同期用）。解除関数を返す。
+export function subscribeSound(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
 }
 
 // 押して気持ちいい「ポッ」というプッシュ音（ピッチダウン＋上物のパリッ）
