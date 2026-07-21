@@ -133,7 +133,7 @@ export function SwipeDeck({
 
       <div className="relative z-10 flex w-full flex-col items-center">
         {controls && (
-          <p className="mb-4 text-xs font-bold tracking-[0.3em] text-stone-400">
+          <p className="mb-4 -skew-x-6 text-xs font-black italic tracking-[0.3em] text-white/60">
             あと{cards.length - index}枚
           </p>
         )}
@@ -213,12 +213,12 @@ export function SwipeDeck({
                 <span className="relative">❤️</span>
               </button>
             </div>
-            <p className="mt-4 text-xs font-medium tracking-wide text-stone-400">
+            <p className="mt-4 text-xs font-medium tracking-wide text-white/55">
               左右にスワイプして選ぶ
             </p>
           </>
         ) : (
-          <p className="mt-5 text-xs font-bold tracking-wide text-stone-400">
+          <p className="mt-5 text-xs font-bold tracking-wide text-white/70">
             👈 スワイプして試してみて 👉
           </p>
         )}

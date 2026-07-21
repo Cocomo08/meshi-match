@@ -18,7 +18,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ja" className={zenMaru.variable}>
-      <body className="flex min-h-screen flex-col bg-orange-50 font-sans text-stone-800 antialiased">
+      <body className="flex min-h-screen flex-col bg-[#0a0c16] font-sans text-white antialiased">
         <main className="flex flex-1 flex-col">{children}</main>
       </body>
     </html>
