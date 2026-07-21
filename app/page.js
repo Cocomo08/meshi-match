@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { GENRES, getGenre, getStoresByGenre } from "./data";
 import { SwipeDeck } from "@/components/SwipeDeck";
 import { MeshiBattle } from "@/components/MeshiBattle";
+import { playPush } from "@/components/sound";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 
@@ -27,7 +28,10 @@ function Button3D({ children, onClick, tone = "primary", gradient, className = "
   return (
     <button
       type={type}
-      onClick={onClick}
+      onClick={(e) => {
+        playPush();
+        onClick?.(e);
+      }}
       className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full py-4 font-black tracking-wide ring-1 transition-all duration-100 ease-out active:translate-y-[6px] ${toneCls} ${className}`}
     >
       {/* 上部のつや（光沢ハイライト） */}
@@ -306,7 +310,10 @@ export default function MeshiMatchPage() {
             </Button3D>
             <button
               type="button"
-              onClick={reset}
+              onClick={() => {
+                playPush();
+                reset();
+              }}
               className="mt-5 text-xs font-bold tracking-wide text-stone-400 underline underline-offset-4 transition hover:text-stone-600"
             >
               最初からやり直す

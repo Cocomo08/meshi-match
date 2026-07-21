@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { playLike, playNope } from "@/components/sound";
 
 const SWIPE_THRESHOLD = 90;
 
@@ -45,6 +46,9 @@ export function SwipeDeck({
     if (liked) {
       likedRef.current.push(current.id);
       setBurst((b) => b + 1);
+      playLike();
+    } else {
+      playNope();
     }
     setLeaving({ dir: liked ? 1 : -1 });
     setTimeout(() => {

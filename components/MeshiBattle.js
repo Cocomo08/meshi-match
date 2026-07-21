@@ -470,10 +470,22 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
           <div className="mb-win-sub">
             {F[g.winner].side}の{F[g.winner].label}が勝利！
           </div>
-          <button className="mb-decide" onClick={() => onDecided(F[g.winner].id)}>
+          <button
+            className="mb-decide"
+            onClick={() => {
+              SFX.click();
+              onDecided(F[g.winner].id);
+            }}
+          >
             このジャンルでお店を探す
           </button>
-          <button className="mb-ghost" onClick={backToVS}>
+          <button
+            className="mb-ghost"
+            onClick={() => {
+              SFX.click();
+              backToVS();
+            }}
+          >
             もう一回たたかう
           </button>
         </div>
