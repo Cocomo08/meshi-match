@@ -314,10 +314,13 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
                 <div className="mb-nm">{F.you.label}</div>
               </div>
             </div>
+            <div className="mb-hpnum">
+              {g.hp.you}
+              <span className="unit">HP</span>
+            </div>
             <div className="mb-hpbar">
               <div className="mb-hpfill" style={{ width: g.hp.you + "%" }} />
             </div>
-            <div className="mb-hpnum">{g.hp.you} / 100</div>
           </div>
 
           <div className="mb-vsbadge">VS</div>
@@ -330,10 +333,13 @@ export function MeshiBattle({ you, opp, onDecided, onQuit }) {
                 <div className="mb-nm">{F.opp.label}</div>
               </div>
             </div>
+            <div className="mb-hpnum">
+              {g.hp.opp}
+              <span className="unit">HP</span>
+            </div>
             <div className="mb-hpbar">
               <div className="mb-hpfill" style={{ width: g.hp.opp + "%" }} />
             </div>
-            <div className="mb-hpnum">{g.hp.opp} / 100</div>
           </div>
         </div>
 

@@ -104,8 +104,12 @@ body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  color: #3a2a1e;
-  background: radial-gradient(120% 90% at 50% 0%, #ffe9cf, #ffcf9c);
+  color: #fff;
+  /* スマブラ風のダークなアリーナ（左=赤/右=青のグロー）*/
+  background:
+    radial-gradient(70% 55% at 12% 38%, rgba(229,72,77,.38), transparent 60%),
+    radial-gradient(70% 55% at 88% 62%, rgba(47,111,237,.38), transparent 60%),
+    radial-gradient(95% 75% at 50% 26%, #1b2036, #0a0c16 72%);
   overflow: hidden;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -123,65 +127,79 @@ body {
   gap: 12px;
 }
 
-.mb-title { text-align: center; font-weight: 900; letter-spacing: .08em; font-size: 20px; color: #c2410c; text-shadow: 0 2px 0 #fff; }
-.mb-title small { font-size: 11px; color: #9a5a2c; letter-spacing: .2em; }
+.mb-title { text-align: center; font-weight: 900; font-style: italic; letter-spacing: .06em; font-size: 18px; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+.mb-title small { font-size: 10px; color: #ffd76a; letter-spacing: .28em; font-style: normal; }
 
-/* HPパネル */
+/* HPパネル（スマブラのファイターHUD風）*/
 .mb-hpwrap { display: flex; align-items: stretch; gap: 8px; }
-.mb-fighter { flex: 1; background: var(--mb-panel); border-radius: 16px; padding: 8px 10px; box-shadow: 0 3px 0 rgba(0,0,0,.12); border: 2px solid rgba(0,0,0,.06); }
-.mb-fighter .mb-row { display: flex; align-items: center; gap: 6px; }
-.mb-fighter .mb-emoji { font-size: 22px; }
-.mb-fighter .mb-nm { font-weight: 900; font-size: 14px; line-height: 1.1; }
-.mb-fighter .mb-side { font-size: 10px; font-weight: 800; letter-spacing: .1em; opacity: .7; }
-.mb-fighter.you .mb-side { color: var(--mb-you-dark); }
-.mb-fighter.opp .mb-side { color: var(--mb-opp-dark); }
+.mb-fighter {
+  flex: 1; position: relative; border-radius: 12px; padding: 8px 11px 9px;
+  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.28));
+  border: 2px solid rgba(255,255,255,.22);
+  box-shadow: 0 3px 0 rgba(0,0,0,.45), inset 0 0 14px rgba(255,255,255,.05);
+}
+.mb-fighter.you { border-color: rgba(229,72,77,.9); box-shadow: 0 3px 0 rgba(0,0,0,.45), 0 0 16px rgba(229,72,77,.35), inset 0 0 14px rgba(229,72,77,.12); }
+.mb-fighter.opp { border-color: rgba(47,111,237,.9); box-shadow: 0 3px 0 rgba(0,0,0,.45), 0 0 16px rgba(47,111,237,.35), inset 0 0 14px rgba(47,111,237,.12); }
+.mb-fighter .mb-row { display: flex; align-items: center; gap: 7px; }
+.mb-fighter .mb-emoji { font-size: 26px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.5)); }
+.mb-fighter .mb-nm { font-weight: 900; font-size: 14px; line-height: 1.05; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.mb-fighter .mb-side { font-size: 9px; font-weight: 900; letter-spacing: .16em; }
+.mb-fighter.you .mb-side { color: #ff9ea0; }
+.mb-fighter.opp .mb-side { color: #9dbcff; }
 .mb-fighter.opp { text-align: right; }
 .mb-fighter.opp .mb-row { flex-direction: row-reverse; }
-.mb-hpbar { height: 12px; border-radius: 8px; background: #e7ddcf; margin-top: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.18); }
-.mb-hpfill { height: 100%; border-radius: 8px; transition: width .35s cubic-bezier(.2,.7,.3,1); }
-.mb-fighter.you .mb-hpfill { background: linear-gradient(180deg, #ff6b6f, var(--mb-you)); }
-.mb-fighter.opp .mb-hpfill { background: linear-gradient(180deg, #5b8bff, var(--mb-opp)); }
-.mb-hpnum { font-size: 11px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; opacity: .8; }
-.mb-vsbadge { align-self: center; font-weight: 900; font-size: 18px; color: #fff; background: #f59e0b; border: 3px solid #fff; border-radius: 50%; width: 42px; height: 42px; display: grid; place-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.18); transform: rotate(-8deg); }
+/* HPを大きな斜体ダメージ数字で（スマブラの%風）*/
+.mb-hpnum { margin-top: 3px; font-weight: 900; font-style: italic; font-size: 27px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; text-shadow: 0 2px 4px rgba(0,0,0,.55); }
+.mb-fighter.you .mb-hpnum { color: #ff8f92; }
+.mb-fighter.opp .mb-hpnum { color: #8fb2ff; }
+.mb-hpnum .unit { font-size: 11px; font-style: normal; font-weight: 800; opacity: .7; margin-left: 1px; }
+.mb-hpbar { height: 7px; border-radius: 6px; background: rgba(0,0,0,.5); margin-top: 5px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.55); }
+.mb-hpfill { height: 100%; border-radius: 6px; transition: width .35s cubic-bezier(.2,.7,.3,1); }
+.mb-fighter.you .mb-hpfill { background: linear-gradient(180deg, #ff8f92, var(--mb-you)); box-shadow: 0 0 8px rgba(229,72,77,.7); }
+.mb-fighter.opp .mb-hpfill { background: linear-gradient(180deg, #8fb2ff, var(--mb-opp)); box-shadow: 0 0 8px rgba(47,111,237,.7); }
+.mb-vsbadge { align-self: center; font-weight: 900; font-style: italic; font-size: 18px; color: #1f2937; background: linear-gradient(180deg, #fffbe6, #ffd76a); border: 2px solid #fff; border-radius: 8px; width: 40px; height: 40px; display: grid; place-items: center; box-shadow: 0 3px 0 rgba(0,0,0,.4), 0 0 14px rgba(255,215,120,.6); transform: rotate(-8deg); }
 
-/* アリーナ */
-.mb-arena { position: relative; flex: 1; min-height: 120px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
-.mb-avatar { font-size: 72px; filter: drop-shadow(0 6px 6px rgba(0,0,0,.2)); }
+/* アリーナ（ダークステージ＋足元スポットライト）*/
+.mb-arena { position: relative; flex: 1; min-height: 120px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 12px 10px; }
+.mb-arena::before, .mb-arena::after { content: ""; position: absolute; bottom: 6px; width: 100px; height: 20px; border-radius: 50%; filter: blur(1px); z-index: 0; }
+.mb-arena::before { left: 12px; background: radial-gradient(closest-side, rgba(229,72,77,.55), transparent); }
+.mb-arena::after { right: 12px; background: radial-gradient(closest-side, rgba(47,111,237,.55), transparent); }
+.mb-avatar { position: relative; z-index: 1; font-size: 78px; line-height: 1; filter: drop-shadow(0 8px 8px rgba(0,0,0,.55)); }
 .mb-avatar.you { transform: scaleX(-1); }
 .mb-avatar.opp.hurt { animation: mbShakeAv .3s; }
 .mb-avatar.you.hurt { animation: mbShakeAvY .3s; }
 @keyframes mbShakeAv { 0%,100%{ transform: translate(0,0); } 25%{ transform: translate(-6px,3px) rotate(-4deg); } 75%{ transform: translate(6px,-3px) rotate(4deg); } }
 @keyframes mbShakeAvY { 0%,100%{ transform: scaleX(-1) translate(0,0); } 25%{ transform: scaleX(-1) translate(-6px,3px) rotate(-4deg); } 75%{ transform: scaleX(-1) translate(6px,-3px) rotate(4deg); } }
-.mb-popup { position: absolute; left: 50%; top: 34%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; opacity: 0; font-weight: 900; animation: mbPop .85s ease-out; }
+.mb-popup { position: absolute; left: 50%; top: 30%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; opacity: 0; font-weight: 900; z-index: 2; animation: mbPop .85s ease-out; }
 @keyframes mbPop { 0%{ opacity: 0; transform: translate(-50%,-30%) scale(.6); } 20%{ opacity: 1; transform: translate(-50%,-60%) scale(1.15); } 70%{ opacity: 1; transform: translate(-50%,-70%) scale(1); } 100%{ opacity: 0; transform: translate(-50%,-95%) scale(1); } }
-.mb-popup .mb-tech { font-size: 14px; letter-spacing: .04em; }
-.mb-popup .mb-dmg { font-size: 40px; line-height: 1; -webkit-text-stroke: 2px #fff; }
-.mb-popup .mb-kind { font-size: 12px; letter-spacing: .12em; }
+.mb-popup .mb-tech { font-size: 14px; letter-spacing: .04em; text-shadow: 0 2px 3px rgba(0,0,0,.6); }
+.mb-popup .mb-dmg { font-size: 44px; font-style: italic; line-height: 1; -webkit-text-stroke: 2px #1f2937; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.mb-popup .mb-kind { font-size: 12px; letter-spacing: .12em; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
 
 /* ターン表示 */
-.mb-turn { text-align: center; font-weight: 900; font-size: 15px; padding: 6px; border-radius: 12px; background: #fff8ef; box-shadow: 0 2px 0 rgba(0,0,0,.08); }
-.mb-turn .mb-who { padding: 1px 8px; border-radius: 8px; color: #fff; }
+.mb-turn { text-align: center; font-weight: 900; font-style: italic; font-size: 14px; padding: 6px 8px; border-radius: 8px; color: #fff; background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(0,0,0,.3)); border: 1.5px solid rgba(255,255,255,.2); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.mb-turn .mb-who { padding: 1px 9px; border-radius: 6px; color: #fff; font-style: normal; box-shadow: 0 0 10px rgba(255,255,255,.25); }
 
-/* リズムバー */
-.mb-track { position: relative; height: 46px; border-radius: 14px; background: #4a3524; box-shadow: inset 0 2px 6px rgba(0,0,0,.4); overflow: hidden; }
-.mb-zone { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); background: repeating-linear-gradient(45deg, var(--mb-zone) 0 10px, var(--mb-zone-dark) 10px 20px); opacity: .85; }
-.mb-perfect { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); background: var(--mb-perfect); box-shadow: 0 0 10px var(--mb-perfect); }
-.mb-marker { position: absolute; top: -3px; bottom: -3px; width: 8px; margin-left: -4px; left: 50%; background: #fff; border-radius: 4px; box-shadow: 0 0 8px #fff, 0 0 2px #000; }
+/* リズムバー（エナジーゲージ風）*/
+.mb-track { position: relative; height: 46px; border-radius: 10px; background: linear-gradient(180deg, #10131f, #05070d); box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 0 0 2px rgba(255,255,255,.12); overflow: hidden; }
+.mb-zone { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); background: repeating-linear-gradient(45deg, rgba(34,197,94,.95) 0 10px, rgba(21,128,61,.95) 10px 20px); box-shadow: 0 0 16px rgba(34,197,94,.65); }
+.mb-perfect { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); background: linear-gradient(180deg, #fffbe6, var(--mb-perfect)); box-shadow: 0 0 18px 3px rgba(250,204,21,.9); }
+.mb-marker { position: absolute; top: -3px; bottom: -3px; width: 6px; margin-left: -3px; left: 50%; background: linear-gradient(180deg, #fff, #dbeafe); border-radius: 3px; box-shadow: 0 0 10px 2px #fff, 0 0 3px #000; }
 
-/* TAPボタン */
-.mb-tap { position: relative; border: none; border-radius: 20px; padding: 20px; font-size: 24px; font-weight: 900; letter-spacing: .1em; color: #fff; cursor: pointer; overflow: hidden; transition: transform .08s, box-shadow .08s; font-family: inherit; }
-.mb-tap.you { background: linear-gradient(180deg, #ff6b6f, var(--mb-you)); box-shadow: 0 7px 0 var(--mb-you-dark); }
-.mb-tap.opp { background: linear-gradient(180deg, #5b8bff, var(--mb-opp)); box-shadow: 0 7px 0 var(--mb-opp-dark); }
+/* TAPボタン（スマブラ風）*/
+.mb-tap { position: relative; border: 3px solid #fff; border-radius: 12px; padding: 18px; font-size: 24px; font-weight: 900; font-style: italic; letter-spacing: .12em; color: #fff; cursor: pointer; overflow: hidden; transition: transform .08s, box-shadow .08s; font-family: inherit; text-shadow: 0 2px 3px rgba(0,0,0,.4); }
+.mb-tap.you { background: linear-gradient(180deg, #ff7a7d, #c1121f); box-shadow: 0 7px 0 #7f1d1d, 0 0 22px rgba(229,72,77,.6); }
+.mb-tap.opp { background: linear-gradient(180deg, #6f9bff, #1d4ed8); box-shadow: 0 7px 0 #1e3a8a, 0 0 22px rgba(47,111,237,.6); }
 .mb-tap:active { transform: translateY(5px); }
-.mb-tap.you:active { box-shadow: 0 2px 0 var(--mb-you-dark); }
-.mb-tap.opp:active { box-shadow: 0 2px 0 var(--mb-opp-dark); }
-.mb-tap:disabled { filter: grayscale(.4) brightness(.9); cursor: default; }
-.mb-hint { text-align: center; font-size: 11px; font-weight: 700; color: #9a5a2c; }
+.mb-tap.you:active { box-shadow: 0 2px 0 #7f1d1d, 0 0 22px rgba(229,72,77,.6); }
+.mb-tap.opp:active { box-shadow: 0 2px 0 #1e3a8a, 0 0 22px rgba(47,111,237,.6); }
+.mb-tap:disabled { filter: grayscale(.5) brightness(.7); cursor: default; }
+.mb-hint { text-align: center; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.75); text-shadow: 0 1px 2px rgba(0,0,0,.5); }
 
-/* サウンドトグル・退出 */
-.mb-sound { position: absolute; top: 10px; right: 10px; z-index: 6; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(0,0,0,.08); background: var(--mb-panel); color: #3a2a1e; font-size: 18px; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.14); display: grid; place-items: center; font-family: inherit; line-height: 1; }
-.mb-sound.off { opacity: .6; }
-.mb-quit { position: absolute; top: 10px; left: 10px; z-index: 6; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(0,0,0,.08); background: var(--mb-panel); color: #9a5a2c; font-size: 18px; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.14); display: grid; place-items: center; font-family: inherit; line-height: 1; }
+/* サウンドトグル・退出（ダークガラス）*/
+.mb-sound { position: absolute; top: 10px; right: 10px; z-index: 6; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.12); color: #fff; font-size: 18px; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.4); display: grid; place-items: center; font-family: inherit; line-height: 1; backdrop-filter: blur(3px); }
+.mb-sound.off { opacity: .55; }
+.mb-quit { position: absolute; top: 10px; left: 10px; z-index: 6; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); background: rgba(255,255,255,.12); color: #fff; font-size: 18px; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.4); display: grid; place-items: center; font-family: inherit; line-height: 1; backdrop-filter: blur(3px); }
 
 /* ── VS対決画面（スマブラ風バトルスプラッシュ）── */
 .mb-vs {
@@ -299,7 +317,7 @@ body {
 .mb-app.shaking { animation: mbAppShake .4s; }
 
 /* 勝敗オーバーレイ */
-.mb-overlay { position: absolute; inset: 0; background: rgba(35,20,8,.78); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; z-index: 7; animation: mbFade .3s; }
+.mb-overlay { position: absolute; inset: 0; background: rgba(6,8,16,.84); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; z-index: 7; animation: mbFade .3s; }
 @keyframes mbFade { from { opacity: 0; } to { opacity: 1; } }
 .mb-win-emoji { font-size: 92px; filter: drop-shadow(0 8px 10px rgba(0,0,0,.4)); animation: mbBounce .8s ease infinite alternate; }
 @keyframes mbBounce { to { transform: translateY(-12px) scale(1.05); } }
