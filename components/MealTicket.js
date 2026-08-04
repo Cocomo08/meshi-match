@@ -32,6 +32,10 @@ function fmtDate(d) {
 
 const DEFAULT_GENRES = ["寿司", "ラーメン", "うどん・そば", "定食", "丼もの", "ハンバーグ", "パスタ", "ピザ", "カレー", "餃子・中華", "焼肉", "唐揚げ"];
 
+// ミシン目：直径4pxの半円の切り欠きを8px間隔（viewBox 252x5 上に配置）
+const NOTCH_X = [];
+for (let x = 8; x <= 244; x += 8) NOTCH_X.push(x);
+
 const CSS = `
 .mt-root{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
   background:#14161c;color:#efe7d3;overflow:hidden;padding:20px;
@@ -61,35 +65,37 @@ const CSS = `
 .mt-below{position:absolute;left:0;right:0;bottom:0;height:104px;background:#565b62;z-index:3;
   border-top:2px solid #767c84;border-bottom-left-radius:8px;border-bottom-right-radius:8px}
 /* 接触部の口の影（フラットな帯・ぼかし無し）*/
-.mt-below::before{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:224px;max-width:calc(86vw - 36px);height:3px;background:#0d0f14}
+.mt-below::before{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:252px;max-width:calc(86vw - 30px);height:3px;background:#0d0f14}
 /* 取り出し口の凹み（横長・券より16px広い）*/
-.mt-slot{position:absolute;left:50%;top:-9px;transform:translateX(-50%);width:240px;max-width:calc(86vw - 20px);height:18px;
+.mt-slot{position:absolute;left:50%;top:-9px;transform:translateX(-50%);width:268px;max-width:calc(86vw - 14px);height:18px;
   background:#0e1014;border-width:2px;border-style:solid;border-color:#050609 #2b2f35 #2b2f35 #050609;border-radius:3px}
 .mt-tray{position:absolute;left:16px;right:16px;bottom:12px;height:34px;background:#3c4046;border-radius:3px;
   border-width:2px;border-style:solid;border-color:#2a2d33 #63696f #63696f #2a2d33}
 
-/* ── 食券（感熱紙・生成り色・等幅・やや横長）── */
-.mt-ticket{position:absolute;left:50%;bottom:32px;width:224px;max-width:calc(86vw - 36px);height:206px;
-  transform:translateX(-50%);transform-origin:50% 100%;z-index:2;background:#efe7d3;color:#2b2a24;
-  border:1px solid #cbbf9f;border-radius:2px;overflow:hidden}
+/* ── 食券（感熱紙・生成り色・等幅・横長 3:2）── */
+.mt-ticket{position:absolute;left:50%;bottom:45px;width:252px;max-width:calc(86vw - 30px);height:168px;
+  transform:translateX(-50%);transform-origin:50% 100%;z-index:2;background:#efe7d3;color:#2a2520;
+  border:1px solid #b8ac8c;overflow:hidden;font-weight:700}
 .mt-ticket.grab{cursor:grab}.mt-ticket.grabbing{cursor:grabbing}
 /* 券の上端に落ちる口の影（フラットな帯）*/
-.mt-ticket::after{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:rgba(0,0,0,.18)}
-.mt-stub{display:flex;align-items:center;justify-content:space-between;background:#ddceac;color:#514c3c;
-  padding:6px 12px;font-size:11px;letter-spacing:.16em;font-weight:700}
-.mt-stub .brand{color:#6a6349;letter-spacing:.1em}
-.mt-perf{border-top:2px dashed #b8ac8c}
-.mt-body{padding:9px 14px 0;text-align:center}
-.mt-no{font-size:11px;letter-spacing:.1em;color:#6b6552;text-align:right}
-.mt-cap{font-size:9px;letter-spacing:.35em;color:#8a836c;margin-top:3px}
-.mt-genre{font-size:26px;line-height:1.1;font-weight:800;letter-spacing:.03em;margin:3px 0 8px;color:#26251f}
-.mt-names{font-size:12px;color:#4a463a;letter-spacing:.06em}
-.mt-date{font-size:10px;color:#7a7460;margin-top:8px;border-top:1px dashed #cbbf9f;padding-top:6px}
-.mt-tail{position:absolute;left:0;right:0;bottom:0;height:60px;border-top:2px dashed #cbbf9f;
-  display:flex;align-items:center;justify-content:center;color:#b3a888;font-size:10px;letter-spacing:.3em}
+.mt-ticket::after{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:rgba(0,0,0,.16);z-index:3}
+/* 地紋（薄いストライプ・3度傾け・8%） */
+.mt-jimon{position:absolute;left:-10%;top:-10%;width:120%;height:120%;opacity:.08;z-index:0;pointer-events:none}
+/* 太めの二重罫線の囲み */
+.mt-frame{position:absolute;inset:5px;border:5px double #2a2520;z-index:1;display:flex;flex-direction:column;padding:7px 9px 0}
+.mt-top{display:flex;align-items:baseline;justify-content:space-between;font-size:9px;letter-spacing:.16em;color:#4a443a}
+.mt-no{font-size:11px;letter-spacing:.06em;color:#2a2520}
+.mt-genre{text-align:center;font-size:27px;line-height:1.05;font-weight:800;letter-spacing:.03em;margin:3px 0 4px}
+.mt-amount{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:5px}
+.mt-amount .lb{font-size:9px;letter-spacing:.14em;border:1px solid #2a2520;padding:1px 5px}
+.mt-amount .yen{font-size:19px;font-weight:800;letter-spacing:.04em}
+.mt-perf2{position:relative;z-index:1;width:100%;height:5px;margin-top:auto;display:block}
+.mt-stub2{position:relative;z-index:1;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.mt-names{font-size:12px;letter-spacing:.06em}
+.mt-date{font-size:9px;color:#4a443a;letter-spacing:.05em}
 
 /* 「引き抜く」表示（券の上・縁より手前）*/
-.mt-pull{position:absolute;left:0;right:0;bottom:244px;text-align:center;font-size:12px;letter-spacing:.18em;color:#d7c7a3;z-index:4;pointer-events:none}
+.mt-pull{position:absolute;left:0;right:0;bottom:216px;text-align:center;font-size:12px;letter-spacing:.18em;color:#d7c7a3;z-index:4;pointer-events:none}
 .mt-pull .ar{display:block;font-size:16px;animation:mtBob 1s ease-in-out infinite}
 @keyframes mtBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
@@ -108,7 +114,7 @@ const CSS = `
   to{background:#ece0bf;color:#26251f;border-color:#b7ab84 #fff6db #fff6db #b7ab84}}
 @keyframes mtPress{0%{transform:translateY(0)}55%{transform:translateY(4px)}100%{transform:translateY(2px)}}
 @keyframes mtEmerge{
-  0%{transform:translate(-50%,150px);animation-timing-function:cubic-bezier(.15,.75,.3,1)}
+  0%{transform:translate(-50%,120px);animation-timing-function:cubic-bezier(.15,.75,.3,1)}
   44%{transform:translate(-50%,-6px);animation-timing-function:ease-in-out}
   60%{transform:translate(-50%,4px) rotate(1.1deg)}
   74%{transform:translate(-50%,-2px) rotate(-.8deg)}
@@ -214,19 +220,40 @@ export default function MealTicket({ genre, ticketNo, issuedAt, nicknames = [], 
           onPointerUp={onUp}
           onPointerCancel={onUp}
         >
-          <div className="mt-stub">
-            <span>半券</span>
-            <span className="brand">MESHI-MACHI</span>
-          </div>
-          <div className="mt-perf" />
-          <div className="mt-body">
-            <div className="mt-no">{no}</div>
-            <div className="mt-cap">本日のマッチ</div>
+          {/* 地紋（薄いストライプ・3度傾け・SVGでフラット描画） */}
+          <svg className="mt-jimon" preserveAspectRatio="none" aria-hidden>
+            <defs>
+              <pattern id="mtjimon" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(3)">
+                <rect width="3" height="8" fill="#2a2520" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#mtjimon)" />
+          </svg>
+
+          {/* 太めの二重罫線の囲み */}
+          <div className="mt-frame">
+            <div className="mt-top">
+              <span>MESHI-MACHI 半券</span>
+              <span className="mt-no">{no}</span>
+            </div>
             <div className="mt-genre">{genre}</div>
-            {names && <div className="mt-names">{names}</div>}
-            {date && <div className="mt-date">発行 {date}</div>}
+            <div className="mt-amount">
+              <span className="lb">本日無料</span>
+              <span className="yen">¥0</span>
+            </div>
+
+            {/* ミシン目：半円の切り欠き */}
+            <svg className="mt-perf2" viewBox="0 0 252 5" preserveAspectRatio="none" aria-hidden>
+              {NOTCH_X.map((x, i) => (
+                <path key={i} d={`M${x - 2} 0 A2 2 0 0 0 ${x + 2} 0 Z`} fill="#2a2520" />
+              ))}
+            </svg>
+
+            <div className="mt-stub2">
+              {names && <div className="mt-names">{names}</div>}
+              {date && <div className="mt-date">発行 {date}</div>}
+            </div>
           </div>
-          <div className="mt-tail">ー き り と り ー</div>
         </div>
 
         {mode === "done" && (
