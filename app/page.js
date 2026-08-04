@@ -14,6 +14,7 @@ import { useRoom } from "@/lib/useRoom";
 import { newSeed } from "@/lib/rng";
 import { MeshiSlotNet } from "@/components/MeshiSlotNet";
 import { MeshiAmidaNet } from "@/components/MeshiAmidaNet";
+import { MeshiBattleNet } from "@/components/MeshiBattleNet";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -22,7 +23,7 @@ const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const MINI_GAMES = [
   { id: "slot", emoji: "🎰", name: "メシスロット", desc: "そろえて一発勝負", gradient: "from-amber-400 via-orange-500 to-yellow-600", ready: true },
   { id: "amida", emoji: "🪜", name: "運命のあみだ", desc: "たどって運だめし", gradient: "from-sky-500 via-blue-600 to-indigo-600", ready: true },
-  { id: "battle", emoji: "🥊", name: "メシバトル", desc: "リズムタップ対決（近日対応）", gradient: "from-rose-500 via-red-600 to-orange-600", ready: false },
+  { id: "battle", emoji: "🥊", name: "メシバトル", desc: "リズムタップ対決", gradient: "from-rose-500 via-red-600 to-orange-600", ready: true },
 ];
 
 // 部屋コード（紛らわしい文字を除いた4桁）
@@ -502,6 +503,19 @@ export default function MeshiMatchPage() {
           };
           if (game.id === "slot") return <MeshiSlotNet {...props} />;
           if (game.id === "amida") return <MeshiAmidaNet {...props} />;
+          if (game.id === "battle")
+            return (
+              <MeshiBattleNet
+                hostGenre={getGenre(game.hostChamp)}
+                guestGenre={getGenre(game.guestChamp)}
+                myRole={myRole}
+                battle={game.battle}
+                writeBattle={(b) => setGame({ battle: b })}
+                onRematch={() => setGame({ battle: { phase: "vs" } })}
+                onChangeGame={() => setGame({ id: null, phase: "pick", started: false, battle: null })}
+                onLeave={leaveRoom}
+              />
+            );
           return null;
         })()}
     </div>
