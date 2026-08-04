@@ -26,7 +26,7 @@ function buildSlot(seed) {
 }
 
 // メシスロット（2台同期・seed駆動）。symbols は host/guest の絶対表現で両端末とも同一。
-export function MeshiSlotNet({ hostGenre, guestGenre, myRole, seed, started, onStart, onRematch, onChangeGame, onLeave }) {
+export function MeshiSlotNet({ hostGenre, guestGenre, myRole, seed, started, onStart, onRematch, onChangeGame, onLeave, onDecided }) {
   const [, force] = useReducer((n) => n + 1, 0);
   const reelRefs = [useRef(null), useRef(null), useRef(null)];
   const rafRef = useRef(0);
@@ -174,6 +174,7 @@ export function MeshiSlotNet({ hostGenre, guestGenre, myRole, seed, started, onS
           <div className="mb-win-label">今日のごはんは…</div>
           <div className="mb-win-name">{winGenre.label}！</div>
           <div className="mb-win-sub">{sideLabel(S.winner)}の{winGenre.label}が勝利！</div>
+          <button className="mb-decide" onClick={() => { playPush(); onDecided(winGenre.id); }}>このジャンルで店を決める</button>
           <div className="mb-overbtns">
             <button className="mb-ghost" onClick={() => { playPush(); onRematch(); }}>もう一回</button>
             <button className="mb-ghost" onClick={() => { playPush(); onChangeGame(); }}>ゲームを変える</button>

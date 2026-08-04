@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { GENRES, getGenre } from "./data";
+import { GENRES, getGenre, getStoresByGenre } from "./data";
 import { SwipeDeck } from "@/components/SwipeDeck";
 import {
   playPush,
@@ -130,6 +130,31 @@ function GenreCard({ card }) {
   );
 }
 
+function StoreCard({ card }) {
+  const genre = getGenre(card.genre);
+  return (
+    <div className="mm-panel flex h-full w-full flex-col rounded-3xl border-[3px] border-white/85 p-6">
+      <div className={`flex h-36 w-full items-center justify-center rounded-2xl border-2 border-white/40 bg-gradient-to-br ${genre?.gradient || "from-orange-400 to-red-500"}`}>
+        <span className="text-7xl drop-shadow-lg">{genre?.emoji}</span>
+      </div>
+      <p className="mt-4 text-xl font-black italic text-white">{card.name}</p>
+      <p className="mt-2 text-sm font-medium leading-relaxed text-white/65">{card.copy}</p>
+      <div className="mt-auto space-y-2 pt-4">
+        <p className="text-sm font-bold text-amber-300">
+          {card.price} ・ 四ツ谷駅 徒歩{card.walk}分
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {card.tags.map((t) => (
+            <span key={t} className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white/80">
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 待機中に自分/相手の状態を示すバッジ
 function StatusChip({ label, ready, color }) {
   return (
@@ -145,7 +170,7 @@ function StatusChip({ label, ready, color }) {
 }
 
 export default function MeshiMatchPage() {
-  const { room, code, error, myId, connect, update, bumpRound, setGame, leave, isOnline } = useRoom();
+  const { room, code, error, myId, connect, update, bumpRound, setGame, setShared, leave, isOnline } = useRoom();
   const [view, setView] = useState("home"); // home | join | room
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -170,13 +195,24 @@ export default function MeshiMatchPage() {
   const myRole = me?.role || "host";
   const game = room?.game || null;
 
+  // 店マッチ（決まったジャンル → 四谷の店を2台でスワイプ）
+  const decidedGenre = room?.decidedGenre || null;
+  const storeDeck = decidedGenre ? getStoresByGenre(decidedGenre) : [];
+  const myStoreDone = me?.storePhase === "done";
+  const oppStoreDone = opp?.storePhase === "done";
+  const bothStoreDone = opponentPresent && myStoreDone && oppStoreDone;
+  const storeMatches = bothStoreDone
+    ? storeDeck.filter((s) => (me.storeLikes || []).includes(s.id) && (opp.storeLikes || []).includes(s.id))
+    : [];
+  const decideGenre = (id) => setShared({ decidedGenre: id });
+
   // ラウンド変更（もう一回）を検知して自分のスワイプをリセット
   useEffect(() => {
     if (view !== "room" || !room) return;
     const r = room.round || 0;
     if (r !== seenRound.current) {
       seenRound.current = r;
-      if (r !== 0) update({ phase: "swiping", likes: [] });
+      if (r !== 0) update({ phase: "swiping", likes: [], storePhase: "swiping", storeLikes: [] });
     }
   }, [room, view, update]);
 
@@ -234,8 +270,25 @@ export default function MeshiMatchPage() {
     seenRound.current = 0;
   };
 
+  // 最初から遊び直す（ジャンルスワイプへ）。共有状態を初期化して両者リセット。
+  const playAgain = () => setShared({ round: Date.now(), decidedGenre: null, game: null });
+
   // 部屋内のステージを room 状態から導出
-  const stage = !opponentPresent ? "waiting" : bothDone ? "result" : meDone ? "swipeWait" : "swipe";
+  const stage = !opponentPresent
+    ? "waiting"
+    : decidedGenre
+      ? storeDeck.length === 0
+        ? "storeEmpty"
+        : !myStoreDone
+          ? "storeSwipe"
+          : !bothStoreDone
+            ? "storeWait"
+            : "storeResult"
+      : bothDone
+        ? "result"
+        : meDone
+          ? "swipeWait"
+          : "swipe";
 
   return (
     <div className="mm-arena relative flex flex-1 flex-col overflow-hidden px-5 py-8">
@@ -379,26 +432,29 @@ export default function MeshiMatchPage() {
                 <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
                   マッチ<span className="mm-gold">成立</span>！
                 </h2>
-                <p className="mt-2 text-sm font-medium text-white/70">二人とも「アリ」だったジャンル</p>
+                <p className="mt-2 text-sm font-medium text-white/70">
+                  タップして、このジャンルのお店を決めよう
+                </p>
                 <div className="mt-6 flex w-full flex-col gap-3">
                   {matches.map((id) => {
                     const g = getGenre(id);
                     return (
-                      <div
+                      <button
                         key={id}
-                        className={`flex items-center justify-between rounded-2xl border-2 border-white/70 bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-[0_6px_18px_rgba(0,0,0,0.45)]`}
+                        type="button"
+                        onClick={() => { playPush(); decideGenre(id); }}
+                        className={`group relative flex items-center justify-between overflow-hidden rounded-2xl border-[3px] border-white bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_20px_rgba(255,255,255,0.12)] transition-all active:translate-y-[4px] active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]`}
                       >
-                        <span className="text-lg font-black italic">
-                          {g.emoji} {g.label}
-                        </span>
-                        <span className="-skew-x-6 text-xs font-black tracking-widest text-white/95">MATCH</span>
-                      </div>
+                        <span className="btn-shine pointer-events-none absolute inset-0" />
+                        <span className="relative text-lg font-black italic">{g.emoji} {g.label}</span>
+                        <span className="relative -skew-x-6 text-xs font-black tracking-widest text-white/95">この店へ ▶</span>
+                      </button>
                     );
                   })}
                 </div>
                 <div className="mt-8 flex w-full flex-col gap-3">
-                  <Button3D onClick={() => bumpRound()} className="w-full px-8 text-base">
-                    もう一回（同じ部屋で）
+                  <Button3D tone="neutral" onClick={playAgain} className="w-full px-8 text-sm">
+                    もう一回（ジャンルから）
                   </Button3D>
                   <Button3D tone="neutral" onClick={leaveRoom} className="w-full px-8 text-sm">
                     部屋を出る
@@ -475,6 +531,112 @@ export default function MeshiMatchPage() {
                 </Button3D>
               </div>
             )}
+
+            {/* 店マッチ：このジャンルの四谷の店を2台でスワイプ */}
+            {stage === "storeSwipe" && (
+              <div className="flex w-full flex-col items-center">
+                <p className="mb-3 -skew-x-6 rounded-md border-2 border-amber-300/70 bg-amber-400/15 px-4 py-1 text-xs font-black italic tracking-widest text-amber-200">
+                  🍽️ {getGenre(decidedGenre)?.label}の店をスワイプ！
+                </p>
+                <SwipeDeck
+                  key={`store-${decidedGenre}-${room?.round || 0}`}
+                  cards={storeDeck}
+                  renderCard={(card) => <StoreCard card={card} />}
+                  likeLabel="行きたい"
+                  nopeLabel="パス"
+                  onFinish={(liked) => update({ storeLikes: liked, storePhase: "done" })}
+                />
+              </div>
+            )}
+
+            {stage === "storeWait" && (
+              <div className="flex w-full flex-col items-center text-center">
+                <span className="text-6xl drop-shadow-lg">✅</span>
+                <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                  お店えらび完了！
+                </h2>
+                <div className="mt-6 flex items-center gap-3 text-white/80">
+                  <span className="h-3 w-3 animate-ping rounded-full bg-sky-300" />
+                  <span className="text-sm font-black italic">相手がえらび中…</span>
+                </div>
+                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
+                  部屋を出る
+                </Button3D>
+              </div>
+            )}
+
+            {stage === "storeResult" && (
+              <div className="flex w-full flex-col items-center text-center">
+                {storeMatches.length > 0 ? (
+                  <>
+                    <span className="text-6xl drop-shadow-lg">🥳</span>
+                    <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                      お店<span className="mm-gold">決定</span>！
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70">二人とも「行きたい」お店</p>
+                    <div className="mt-6 flex w-full flex-col gap-3">
+                      {storeMatches.map((s) => (
+                        <div key={s.id} className="mm-panel rounded-2xl border-2 border-amber-300/70 p-5 text-left">
+                          <p className="text-lg font-black italic text-white">{s.name}</p>
+                          <p className="mt-1 text-sm font-medium text-white/65">{s.copy}</p>
+                          <p className="mt-3 text-sm font-bold text-amber-300">{s.price} ・ 四ツ谷駅 徒歩{s.walk}分</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-6xl drop-shadow-lg">🤝</span>
+                    <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                      完全一致はなし…
+                    </h2>
+                    <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
+                      どちらかが「行きたい」お店から選ぼう
+                    </p>
+                    <div className="mt-6 flex w-full flex-col gap-3">
+                      {storeDeck
+                        .filter((s) => (me.storeLikes || []).includes(s.id) || (opp.storeLikes || []).includes(s.id))
+                        .map((s) => (
+                          <div key={s.id} className="mm-panel rounded-2xl border border-white/20 p-4 text-left">
+                            <p className="font-black italic text-white">{s.name}</p>
+                            <p className="mt-1 text-xs font-medium text-white/55">{s.price} ・ 徒歩{s.walk}分</p>
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                )}
+                <div className="mt-8 flex w-full flex-col gap-3">
+                  <Button3D onClick={playAgain} className="w-full px-8 text-base">
+                    もう一回あそぶ
+                  </Button3D>
+                  <Button3D tone="neutral" onClick={leaveRoom} className="w-full px-8 text-sm">
+                    部屋を出る
+                  </Button3D>
+                </div>
+              </div>
+            )}
+
+            {stage === "storeEmpty" && (
+              <div className="flex w-full flex-col items-center text-center">
+                <span className="text-6xl drop-shadow-lg">🙇</span>
+                <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                  {getGenre(decidedGenre)?.label}の四谷の店は準備中
+                </h2>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
+                  このジャンルの四谷のお店は、まだ登録されていません。
+                  <br />
+                  店マッチは今のところ<span className="font-bold text-amber-300">四谷限定</span>です。
+                </p>
+                <div className="mt-8 flex w-full flex-col gap-3">
+                  <Button3D onClick={playAgain} className="w-full px-8 text-base">
+                    もう一回あそぶ
+                  </Button3D>
+                  <Button3D tone="neutral" onClick={leaveRoom} className="w-full px-8 text-sm">
+                    部屋を出る
+                  </Button3D>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -500,6 +662,7 @@ export default function MeshiMatchPage() {
             onRematch: () => setGame({ seed: newSeed(), started: false }),
             onChangeGame: () => setGame({ id: null, phase: "pick", started: false, seed: newSeed() }),
             onLeave: leaveRoom,
+            onDecided: (genreId) => decideGenre(genreId),
           };
           if (game.id === "slot") return <MeshiSlotNet {...props} />;
           if (game.id === "amida") return <MeshiAmidaNet {...props} />;
@@ -514,6 +677,7 @@ export default function MeshiMatchPage() {
                 onRematch={() => setGame({ battle: { phase: "vs" } })}
                 onChangeGame={() => setGame({ id: null, phase: "pick", started: false, battle: null })}
                 onLeave={leaveRoom}
+                onDecided={(genreId) => decideGenre(genreId)}
               />
             );
           return null;

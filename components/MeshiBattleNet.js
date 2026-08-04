@@ -35,7 +35,7 @@ function makeConfetti() {
 
 // メシバトル（2台同期）。攻撃側だけ自端末でタップ→結果(lastMove)を相手へ送信。
 // battle 状態は room.game.battle（host/guest の絶対表現）。
-export function MeshiBattleNet({ hostGenre, guestGenre, myRole, battle, writeBattle, onRematch, onChangeGame, onLeave }) {
+export function MeshiBattleNet({ hostGenre, guestGenre, myRole, battle, writeBattle, onRematch, onChangeGame, onLeave, onDecided }) {
   const [, force] = useReducer((n) => n + 1, 0);
   const appRef = useRef(null);
   const markerRef = useRef(null);
@@ -288,6 +288,7 @@ export function MeshiBattleNet({ hostGenre, guestGenre, myRole, battle, writeBat
           <div className="mb-win-label">今日のごはんは…</div>
           <div className="mb-win-name">{genreOf(winSide).label}！</div>
           <div className="mb-win-sub">{label(winSide)}の{genreOf(winSide).label}が勝利！</div>
+          <button className="mb-decide" onClick={() => { playPush(); onDecided(genreOf(winSide).id); }}>このジャンルで店を決める</button>
           <div className="mb-overbtns">
             <button className="mb-ghost" onClick={() => { playPush(); onRematch(); }}>もう一回</button>
             <button className="mb-ghost" onClick={() => { playPush(); onChangeGame(); }}>ゲームを変える</button>
