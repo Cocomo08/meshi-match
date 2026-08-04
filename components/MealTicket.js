@@ -43,31 +43,37 @@ const CSS = `
   -webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
 .mt-root *{box-sizing:border-box}
 
-/* ── 本体：現代的なタッチ式券売機（フラットで清潔）── */
+/* ── 本体：白樹脂パネルの券売機（角は控えめ・箱っぽく）── */
 .mt-kb{position:relative;display:flex;flex-direction:column;width:300px;max-width:86vw;height:min(68vh,510px);
-  background:#191c22;border:1px solid #0d0e12;border-radius:20px;padding:12px}
-/* 画面：暗いタッチパネル（発光ボタンを映えさせる）*/
-.mt-screen{position:relative;flex:0 0 auto;background:#0f1116;border:1px solid #262c36;border-radius:13px;padding:11px 10px}
-.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
-/* メニュータイル：ボタン全体がバックライトで発光（温かいオレンジ）*/
-.mt-tile{height:52px;border-radius:10px;background:#3a2a1b;color:#ffd9b0;border:1px solid #7a5230;
-  box-shadow:0 0 12px 2px rgba(255,150,66,.55), inset 0 0 12px rgba(255,175,95,.28);
-  text-shadow:0 0 7px rgba(255,175,95,.6);
-  display:flex;align-items:center;justify-content:center;padding:0 5px;text-align:center;font-size:12px;font-weight:800;line-height:1.15}
-.mt-tile span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
-/* 非選択も光るが控えめ */
-.mt-tile.dim{background:#2a2015;color:#eec095;border-color:#5f4227;
-  box-shadow:0 0 9px 1px rgba(255,150,66,.4), inset 0 0 9px rgba(255,165,85,.18)}
-/* 選択：強いオレンジで発光 */
-.mt-tile.lit{background:#ff8a3d;color:#fff;border-color:#ffcaa0;
-  box-shadow:0 0 26px 5px rgba(255,140,50,.95), inset 0 0 0 1px rgba(255,255,255,.55);
-  text-shadow:0 1px 2px rgba(120,50,0,.5)}
+  background:#20242c;border:1px solid #0d0e12;border-radius:10px;padding:11px}
+/* ボタンパネル：明るい樹脂トレー（実機の白いボタン面）*/
+.mt-screen{position:relative;flex:0 0 auto;background:#cdcabf;border-radius:5px;padding:10px 9px;
+  border-top:1px solid #e9e6dc;border-left:1px solid #dedbd0;border-right:1px solid #97948b;border-bottom:1px solid #8a877e;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.28)}
+.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+/* メニューボタン：印字ラベル＋下部の暗いインジケータ窓。立体感はベベルで */
+.mt-tile{position:relative;height:54px;border-radius:3px;background:#f3f0e7;color:#2a2520;
+  border:1px solid;border-color:#ffffff #b6b0a0 #a39d8d #ffffff;
+  box-shadow:inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.4);
+  display:flex;align-items:flex-start;justify-content:center;padding:8px 4px 0;
+  text-align:center;font-size:12px;font-weight:800;line-height:1.1}
+.mt-tile span{max-width:100%;overflow:hidden;text-overflow:ellipsis;display:block}
+/* 下部インジケータ窓（消灯＝暗い）*/
+.mt-tile::after{content:"";position:absolute;left:4px;right:4px;bottom:4px;height:12px;border-radius:2px;
+  background:#15171d;box-shadow:inset 0 1px 2px rgba(0,0,0,.85)}
+/* 非選択（消灯・物理ボタンのまま）*/
+.mt-tile.dim{background:#eceadf;color:#6a6458}
+/* 選択：青のバックライト点灯（縁とインジケータが光る）*/
+.mt-tile.lit{background:#eef7ff;color:#123;border-color:#e3f2ff #4aa0e0 #2f7fc0 #e3f2ff;
+  box-shadow:0 0 15px 3px rgba(70,160,255,.8), inset 0 0 10px rgba(120,190,255,.45), 0 1px 2px rgba(0,0,0,.3)}
+.mt-tile.lit::after{background:#39a2ff;
+  box-shadow:0 0 10px 2px rgba(70,160,255,.95), inset 0 0 4px rgba(255,255,255,.7)}
 
 /* 取り出し口エリア */
 .mt-outlet-space{height:118px;flex:0 0 auto}
 /* 券の下側を隠す前面（本体色）*/
-.mt-below{position:absolute;left:0;right:0;bottom:0;height:104px;background:#191c22;z-index:3;
-  border-top:1px solid #2b2f37;border-bottom-left-radius:19px;border-bottom-right-radius:19px}
+.mt-below{position:absolute;left:0;right:0;bottom:0;height:104px;background:#20242c;z-index:3;
+  border-top:1px solid #2b2f37;border-bottom-left-radius:9px;border-bottom-right-radius:9px}
 .mt-below::before{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:252px;max-width:calc(86vw - 30px);height:3px;background:#08090c}
 /* モダンな排出スロット（黒い横長スリット）*/
 .mt-slot{position:absolute;left:50%;top:-8px;transform:translateX(-50%);width:268px;max-width:calc(86vw - 14px);height:16px;
@@ -108,18 +114,16 @@ const CSS = `
 .mt-skip{font-size:11px;letter-spacing:.2em;color:#565c66}
 
 /* ── アニメーション（.anim のときだけ。base=最終状態）── */
-.mt-root.anim .mt-screen{animation:mtScreenOn .4s steps(1,end) both}
-.mt-root.anim .mt-tile.lit{animation:mtLitOn .35s ease .1s both, mtTap .22s ease .38s both}
+.mt-root.anim .mt-tile.lit{animation:mtLitOn .3s steps(1,end) .1s both, mtTap .22s ease .4s both}
 .mt-root.anim .mt-ticket{animation:mtEmerge .9s .5s both}
 .mt-root.anim .mt-body,.mt-root.anim .mt-pull{animation:mtFade .35s ease 1.4s both}
 
-/* 画面バックライトの点灯（軽く2回またたいて安定）*/
-@keyframes mtScreenOn{0%{opacity:.18}20%{opacity:.95}30%{opacity:.5}45%{opacity:1}100%{opacity:1}}
-/* 選択タイルが暗→強いオレンジ発光へ立ち上がる */
+/* 選択ボタンが消灯→青バックライト点灯（軽く2回またたく）*/
 @keyframes mtLitOn{
-  0%{background:#2a2015;color:#eec095;border-color:#5f4227;box-shadow:0 0 6px 1px rgba(255,150,66,.3), inset 0 0 6px rgba(255,165,85,.15)}
-  60%{box-shadow:0 0 34px 8px rgba(255,140,50,1), inset 0 0 0 1px rgba(255,255,255,.6)}
-  100%{background:#ff8a3d;color:#fff;border-color:#ffcaa0;box-shadow:0 0 26px 5px rgba(255,140,50,.95), inset 0 0 0 1px rgba(255,255,255,.55)}}
+  0%{background:#eceadf;color:#6a6458;border-color:#ffffff #b6b0a0 #a39d8d #ffffff;box-shadow:inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.4)}
+  30%{background:#eef7ff;border-color:#e3f2ff #4aa0e0 #2f7fc0 #e3f2ff;box-shadow:0 0 15px 3px rgba(70,160,255,.8), inset 0 0 10px rgba(120,190,255,.45)}
+  45%{background:#eceadf;box-shadow:inset 0 1px 0 #fff, 0 1px 2px rgba(0,0,0,.4)}
+  100%{background:#eef7ff;color:#123;border-color:#e3f2ff #4aa0e0 #2f7fc0 #e3f2ff;box-shadow:0 0 15px 3px rgba(70,160,255,.8), inset 0 0 10px rgba(120,190,255,.45), 0 1px 2px rgba(0,0,0,.3)}}
 @keyframes mtTap{0%{transform:scale(1)}50%{transform:scale(.94)}100%{transform:scale(1)}}
 @keyframes mtEmerge{
   0%{transform:translate(-50%,120px);animation-timing-function:cubic-bezier(.15,.75,.3,1)}
