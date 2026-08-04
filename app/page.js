@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { GENRES, getGenre, getStoresByGenre } from "./data";
+import { GENRES, getGenre } from "./data";
 import { SwipeDeck } from "@/components/SwipeDeck";
-import { MeshiBattle } from "@/components/MeshiBattle";
-import { MeshiSlot } from "@/components/MeshiSlot";
-import { MeshiAmida } from "@/components/MeshiAmida";
 import {
   playPush,
   hydrateSound,
@@ -13,30 +10,51 @@ import {
   toggleSound,
   subscribeSound,
 } from "@/components/sound";
+import { useRoom } from "@/lib/useRoom";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
-
-// 選べる3種のミニゲーム
-const MINI_GAMES = [
-  { id: "battle", emoji: "🥊", name: "メシバトル", desc: "リズムタップで殴り合い", gradient: "from-rose-500 via-red-600 to-orange-600" },
-  { id: "slot", emoji: "🎰", name: "メシスロット", desc: "そろえて一発勝負", gradient: "from-amber-400 via-orange-500 to-yellow-600" },
-  { id: "amida", emoji: "🪜", name: "運命のあみだ", desc: "たどって運だめし", gradient: "from-sky-500 via-blue-600 to-indigo-600" },
-];
-
-// 画像は public/images/<id>.jpg を参照（basePath込み）。無ければ絵文字にフォールバック
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+// 部屋コード（紛らわしい文字を除いた4桁）
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const genCode = () =>
+  Array.from({ length: 4 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join("");
 
 // スマブラ風の立体ボタン（斜体・白フチ・グロー＋押し込み）
 const BTN_TONES = {
-  // ゴールドメタリック（メイン）
   primary:
     "text-stone-900 bg-gradient-to-b from-amber-200 to-amber-500 border-white shadow-[0_7px_0_0_#b45309,0_0_26px_rgba(255,200,80,0.5)] active:shadow-[0_2px_0_0_#b45309,0_0_26px_rgba(255,200,80,0.5)]",
-  // ダークガラス（サブ）
   neutral:
     "text-white bg-white/10 border-white/60 shadow-[0_6px_0_0_rgba(0,0,0,0.5)] active:shadow-[0_1px_0_0_rgba(0,0,0,0.5)]",
 };
 
-// 本体共通の消音トグル（メシバトルとも状態を共有）
+function Button3D({ children, onClick, tone = "primary", gradient, className = "", type = "button", disabled }) {
+  const gold = tone === "primary";
+  const toneCls =
+    tone === "genre"
+      ? `text-white border-white bg-gradient-to-b ${gradient} shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.18)] active:shadow-[0_1px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.18)]`
+      : BTN_TONES[tone];
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      onClick={(e) => {
+        playPush();
+        onClick?.(e);
+      }}
+      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-xl border-[3px] py-4 font-black italic tracking-wide transition-all duration-100 ease-out active:translate-y-[5px] disabled:cursor-default disabled:opacity-50 disabled:active:translate-y-0 ${toneCls} ${className}`}
+    >
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-1.5 top-1 h-[42%] rounded-lg bg-gradient-to-b ${gold ? "from-white/70" : "from-white/35"} to-transparent`}
+      />
+      <span aria-hidden className="btn-shine pointer-events-none absolute inset-0" />
+      <span className={`relative ${gold ? "" : "drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"}`}>{children}</span>
+    </button>
+  );
+}
+
+// 本体共通の消音トグル
 function MuteToggle() {
   const [on, setOn] = useState(true);
   useEffect(() => {
@@ -58,40 +76,9 @@ function MuteToggle() {
   );
 }
 
-function Button3D({ children, onClick, tone = "primary", gradient, className = "", type = "button" }) {
-  const gold = tone === "primary";
-  const toneCls =
-    tone === "genre"
-      ? `text-white border-white bg-gradient-to-b ${gradient} shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.18)] active:shadow-[0_1px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.18)]`
-      : BTN_TONES[tone];
-  return (
-    <button
-      type={type}
-      onClick={(e) => {
-        playPush();
-        onClick?.(e);
-      }}
-      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-xl border-[3px] py-4 font-black italic tracking-wide transition-all duration-100 ease-out active:translate-y-[5px] ${toneCls} ${className}`}
-    >
-      {/* 上部のつや（光沢ハイライト） */}
-      <span
-        aria-hidden
-        className={`pointer-events-none absolute inset-x-1.5 top-1 h-[42%] rounded-lg bg-gradient-to-b ${gold ? "from-white/70" : "from-white/35"} to-transparent`}
-      />
-      {/* 走るツヤ */}
-      <span aria-hidden className="btn-shine pointer-events-none absolute inset-0" />
-      <span className={`relative ${gold ? "" : "drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"}`}>
-        {children}
-      </span>
-    </button>
-  );
-}
-
 function GenreCard({ card }) {
-  // 画像が読み込めたら全面写真、失敗したら絵文字表示にフォールバック
   const [hasPhoto, setHasPhoto] = useState(false);
   const imgRef = useRef(null);
-  // SSRで既に読み込み完了している画像は onLoad が発火しないため、マウント時に判定
   useEffect(() => {
     const el = imgRef.current;
     if (el && el.complete && el.naturalWidth > 0) setHasPhoto(true);
@@ -100,23 +87,16 @@ function GenreCard({ card }) {
     <div
       className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-3xl border-[3px] border-white/85 bg-gradient-to-br ${card.gradient} text-center text-white shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_28px_rgba(255,255,255,0.12)]`}
     >
-      {/* カテゴリバッジ（斜め） */}
       <span className="absolute left-3 top-3 z-20 -skew-x-6 rounded-md border-2 border-white/80 bg-black/45 px-3 py-1 text-[11px] font-black tracking-wide text-white backdrop-blur">
         {card.category}
       </span>
-
-      {/* 絵文字ベース（写真が無い/読込前はこれが見える） */}
       {!hasPhoto && (
         <>
           <span className="text-8xl drop-shadow-lg">{card.emoji}</span>
-          <p className="mt-6 text-3xl font-black italic tracking-wide drop-shadow">
-            {card.label}
-          </p>
+          <p className="mt-6 text-3xl font-black italic tracking-wide drop-shadow">{card.label}</p>
           <p className="mt-2 text-sm font-bold text-white/85">今日の気分はコレ？</p>
         </>
       )}
-
-      {/* 全面写真（object-cover）＋下部グラデ＋白のジャンル名 */}
       <img
         ref={imgRef}
         src={`${ASSET_BASE}/images/${card.id}.jpg`}
@@ -139,115 +119,107 @@ function GenreCard({ card }) {
   );
 }
 
-function StoreCard({ card }) {
-  const genre = getGenre(card.genre);
+// 待機中に自分/相手の状態を示すバッジ
+function StatusChip({ label, ready, color }) {
   return (
-    <div className="mm-panel flex h-full w-full flex-col rounded-3xl border-[3px] border-white/85 p-6">
-      <div
-        className={`flex h-40 w-full items-center justify-center rounded-2xl border-2 border-white/40 bg-gradient-to-br ${genre.gradient}`}
-      >
-        <span className="text-7xl drop-shadow-lg">{genre.emoji}</span>
-      </div>
-      <p className="mt-5 text-xl font-black italic text-white">{card.name}</p>
-      <p className="mt-2 text-sm font-medium leading-relaxed text-white/65">
-        {card.copy}
-      </p>
-      <div className="mt-auto space-y-2 pt-4">
-        <p className="text-sm font-bold text-amber-300">
-          {card.price} ・ 四ツ谷駅 徒歩{card.walk}分
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {card.tags.map((t) => (
-            <span
-              key={t}
-              className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white/80"
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Handoff({ player, phase, onReady }) {
-  const isP1 = player.startsWith("1");
-  const accent = isP1 ? "text-rose-400" : "text-sky-400";
-  const ring = isP1 ? "border-rose-400/70 shadow-[0_0_26px_rgba(229,72,77,0.4)]" : "border-sky-400/70 shadow-[0_0_26px_rgba(47,111,237,0.4)]";
-  return (
-    <div className="flex w-full flex-col items-center text-center">
-      <div className={`mm-panel flex w-full flex-col items-center rounded-2xl border-2 ${ring} px-6 py-8`}>
-        <span className="text-6xl drop-shadow-lg">📱</span>
-        <h2 className="mt-5 text-2xl font-black italic text-white">
-          <span className={accent}>{player}</span>の番！
-        </h2>
-        <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
-          スマホを{player}に渡してね。
-          <br />
-          {phase === "genre" ? "食べたいジャンル" : "気になるお店"}を直感でスワイプ！
-        </p>
-        <Button3D onClick={onReady} className="mt-7 px-10 text-base">
-          準備OK、スタート
-        </Button3D>
-      </div>
+    <div
+      className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-black ${
+        ready ? color : "border-white/25 bg-white/5 text-white/60"
+      }`}
+    >
+      <span>{label}</span>
+      <span className="text-xs font-bold">{ready ? "✓ 完了" : "…スワイプ中"}</span>
     </div>
   );
 }
 
 export default function MeshiMatchPage() {
-  // step: intro → g1 → g1swipe → g2 → g2swipe → genreResult → gate → s1 → s1swipe → s2 → s2swipe → storeResult → notYotsuya
-  const [step, setStep] = useState("intro");
-  const [genreLikes, setGenreLikes] = useState({ p1: [], p2: [] });
-  const [storeLikes, setStoreLikes] = useState({ p1: [], p2: [] });
-  const [chosenGenre, setChosenGenre] = useState(null);
-  const [battlePair, setBattlePair] = useState(null); // ミニゲームの対戦カード
-  const [battleWinner, setBattleWinner] = useState(null); // 勝負で決まったジャンルID
-  const [selectedGame, setSelectedGame] = useState("battle"); // 選んだミニゲーム
+  const { room, code, error, myId, connect, update, bumpRound, leave, isOnline } = useRoom();
+  const [view, setView] = useState("home"); // home | join | room
+  const [joinCode, setJoinCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const seenRound = useRef(0);
 
-  const genreMatches = genreLikes.p1.filter((id) => genreLikes.p2.includes(id));
-  // マッチ成立ならその一覧、なければバトルの勝者を「決まったジャンル」として扱う
-  const decidedGenres =
-    genreMatches.length > 0 ? genreMatches : battleWinner ? [battleWinner] : [];
-  const storeDeck = chosenGenre ? getStoresByGenre(chosenGenre) : [];
-  const storeMatches = storeDeck.filter(
-    (s) => storeLikes.p1.includes(s.id) && storeLikes.p2.includes(s.id)
-  );
+  const players = room?.players || {};
+  const ids = Object.keys(players);
+  const me = players[myId];
+  const oppId = ids.find((id) => id !== myId);
+  const opp = oppId ? players[oppId] : null;
+  const opponentPresent = !!opp;
+  const meDone = me?.phase === "done";
+  const oppDone = opp?.phase === "done";
+  const bothDone = opponentPresent && meDone && oppDone;
+  const matches = bothDone ? (me.likes || []).filter((id) => (opp.likes || []).includes(id)) : [];
 
-  // 好みが重ならなかった二人の「代表選手」を1品ずつ選ぶ（p1/p2は重複なし）
-  const pickChampions = (p1, p2) => {
-    const pool = GENRES.map((g) => g.id);
-    const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    const youId = p1[0] || rand(pool);
-    const oppId = p2.find((id) => id !== youId) || rand(pool.filter((id) => id !== youId));
-    return { you: getGenre(youId), opp: getGenre(oppId) };
+  // ラウンド変更（もう一回）を検知して自分のスワイプをリセット
+  useEffect(() => {
+    if (view !== "room" || !room) return;
+    const r = room.round || 0;
+    if (r !== seenRound.current) {
+      seenRound.current = r;
+      if (r !== 0) update({ phase: "swiping", likes: [] });
+    }
+  }, [room, view, update]);
+
+  const createRoom = async () => {
+    setBusy(true);
+    const c = genCode();
+    const ok = await connect(c, true);
+    setBusy(false);
+    if (ok) {
+      seenRound.current = 0;
+      setView("room");
+    }
   };
 
-  const reset = () => {
-    setStep("intro");
-    setGenreLikes({ p1: [], p2: [] });
-    setStoreLikes({ p1: [], p2: [] });
-    setChosenGenre(null);
-    setBattlePair(null);
-    setBattleWinner(null);
-    setSelectedGame("battle");
+  const joinRoom = async () => {
+    const c = joinCode.trim().toUpperCase();
+    if (c.length < 4) return;
+    setBusy(true);
+    const ok = await connect(c, false);
+    setBusy(false);
+    if (ok) {
+      seenRound.current = 0;
+      setView("room");
+    }
   };
 
-  const startStoreMatch = (genreId) => {
-    setChosenGenre(genreId);
-    setStoreLikes({ p1: [], p2: [] });
-    // このジャンルの四谷サンプル店が無ければ「準備中」画面へ
-    setStep(getStoresByGenre(genreId).length > 0 ? "s1" : "storeEmpty");
+  const copyCode = async () => {
+    playPush();
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* クリップボード不可でも無視 */
+    }
   };
+
+  const leaveRoom = () => {
+    leave();
+    setView("home");
+    setJoinCode("");
+    seenRound.current = 0;
+  };
+
+  // 部屋内のステージを room 状態から導出
+  const stage = !opponentPresent ? "waiting" : bothDone ? "result" : meDone ? "swipeWait" : "swipe";
 
   return (
     <div className="mm-arena relative flex flex-1 flex-col overflow-hidden px-5 py-8">
       <div className="mm-lines" aria-hidden />
-      {/* バトル中はメシバトル側のトグルが前面に出るので、非表示にはしない（z-40＜バトルz-50） */}
-      {step !== "battle" && <MuteToggle />}
+      <MuteToggle />
+
+      {!isOnline && (
+        <div className="relative z-20 mx-auto mb-3 max-w-md rounded-lg border border-amber-300/40 bg-amber-400/10 px-3 py-2 text-center text-[11px] font-bold text-amber-200/90">
+          ⚙️ オフライン検証モード（Firebase未設定）— 同じ端末のタブ間でのみ動作します
+        </div>
+      )}
+
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center">
-        {/* ===== トップ：着地した瞬間にスワイプを試せる ===== */}
-        {step === "intro" && (
+        {/* ===== ホーム：部屋を作る / 入る ===== */}
+        {view === "home" && (
           <div className="flex w-full flex-col items-center">
             <span className="mb-3 -skew-x-6 rounded-md border-2 border-white/70 bg-white/10 px-4 py-1 text-sm font-black italic tracking-widest text-white backdrop-blur">
               🍜 メシマチ
@@ -257,395 +229,176 @@ export default function MeshiMatchPage() {
               <br />
               <span className="mm-gold">卒業</span>しよう
             </h1>
-            <p className="mb-5 mt-3 text-center text-xs font-bold tracking-wide text-white/70">
-              二人でスワイプ → 割れたら
-              <span className="text-amber-300">3つのミニゲーム</span>で決着！
+            <p className="mb-8 mt-3 text-center text-xs font-bold tracking-wide text-white/70">
+              二人がそれぞれの端末でスワイプ → マッチで今日のごはんを決める
             </p>
 
-            <SwipeDeck
-              key="demo"
-              cards={genreCards}
-              loop
-              controls={false}
-              heightClass="h-[40vh] max-h-[380px] min-h-[270px]"
-              renderCard={(card) => <GenreCard key={card.id} card={card} />}
-              onFinish={() => {}}
+            <div className="flex w-full flex-col gap-3">
+              <Button3D onClick={createRoom} disabled={busy} className="w-full px-8 text-lg">
+                部屋をつくる
+              </Button3D>
+              <Button3D tone="neutral" onClick={() => { setView("join"); }} className="w-full px-8 text-base">
+                部屋に入る
+              </Button3D>
+            </div>
+            <p className="mt-8 text-center text-[11px] font-medium leading-relaxed text-white/45">
+              登録不要。部屋コードを共有して、
+              <br />
+              二人でリアルタイムに対戦できます。
+            </p>
+          </div>
+        )}
+
+        {/* ===== 部屋コードを入力して参加 ===== */}
+        {view === "join" && (
+          <div className="flex w-full flex-col items-center text-center">
+            <h2 className="text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+              部屋コードを入力
+            </h2>
+            <p className="mt-2 text-xs font-bold text-white/60">相手から聞いた4文字を入れてね</p>
+            <input
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 4))}
+              onKeyDown={(e) => e.key === "Enter" && joinRoom()}
+              inputMode="text"
+              autoCapitalize="characters"
+              placeholder="ABCD"
+              className="mt-6 w-full max-w-[240px] rounded-xl border-[3px] border-white/60 bg-white/10 py-4 text-center text-3xl font-black italic tracking-[0.4em] text-white placeholder-white/25 outline-none focus:border-amber-300"
             />
-
-            <Button3D onClick={() => setStep("g1")} className="mt-7 px-14 text-lg">
-              二人ではじめる
-            </Button3D>
+            {error && <p className="mt-3 text-xs font-bold text-rose-300">{error}</p>}
+            <div className="mt-6 flex w-full flex-col gap-3">
+              <Button3D onClick={joinRoom} disabled={busy || joinCode.length < 4} className="w-full px-8 text-lg">
+                {busy ? "接続中…" : "入る"}
+              </Button3D>
+              <Button3D tone="neutral" onClick={() => { setView("home"); setJoinCode(""); }} className="w-full px-8 text-sm">
+                もどる
+              </Button3D>
+            </div>
           </div>
         )}
 
-        {/* ===== 1階：ジャンルマッチ ===== */}
-        {step === "g1" && (
-          <Handoff player="1人目" phase="genre" onReady={() => setStep("g1swipe")} />
-        )}
-        {step === "g1swipe" && (
-          <SwipeDeck
-            key="g1"
-            cards={genreCards}
-            renderCard={(card) => <GenreCard key={card.id} card={card} />}
-            onFinish={(liked) => {
-              setGenreLikes((prev) => ({ ...prev, p1: liked }));
-              setStep("g2");
-            }}
-          />
-        )}
-        {step === "g2" && (
-          <Handoff player="2人目" phase="genre" onReady={() => setStep("g2swipe")} />
-        )}
-        {step === "g2swipe" && (
-          <SwipeDeck
-            key="g2"
-            cards={genreCards}
-            renderCard={(card) => <GenreCard key={card.id} card={card} />}
-            onFinish={(liked) => {
-              setGenreLikes((prev) => ({ ...prev, p2: liked }));
-              const matches = genreLikes.p1.filter((id) => liked.includes(id));
-              if (matches.length > 0) {
-                setStep("genreResult");
-              } else {
-                // マッチなし → ミニゲームで決着をつける（ゲーム選択へ）
-                setBattlePair(pickChampions(genreLikes.p1, liked));
-                setBattleWinner(null);
-                setStep("gamePick");
-              }
-            }}
-          />
-        )}
-
-        {/* ===== 意見が割れた！ミニゲームを選ぶ ===== */}
-        {step === "gamePick" && battlePair && (
-          <div className="flex w-full flex-col items-center text-center">
-            <span className="-skew-x-6 rounded-md border-2 border-rose-400/70 bg-rose-500/15 px-4 py-1 text-xs font-black italic tracking-widest text-rose-200">
-              意見、真っ二つ！
-            </span>
-            <h2 className="mt-3 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-              勝負の<span className="mm-gold">しかた</span>を選ぼう
-            </h2>
-
-            {/* 対戦カード */}
-            <div className="mt-4 flex w-full items-center justify-center gap-2 text-white">
-              <span className="flex-1 rounded-xl border-2 border-rose-400/70 bg-rose-500/10 px-2 py-2 text-sm font-black">
-                {battlePair.you.emoji} {battlePair.you.label}
-              </span>
-              <span className="text-lg font-black italic text-amber-300">VS</span>
-              <span className="flex-1 rounded-xl border-2 border-sky-400/70 bg-sky-500/10 px-2 py-2 text-sm font-black">
-                {battlePair.opp.emoji} {battlePair.opp.label}
-              </span>
-            </div>
-
-            <div className="mt-6 flex w-full flex-col gap-3">
-              {MINI_GAMES.map((game) => (
+        {/* ===== 部屋の中（待機→スワイプ→結果）===== */}
+        {view === "room" && (
+          <>
+            {/* 待機：相手を待つ */}
+            {stage === "waiting" && (
+              <div className="flex w-full flex-col items-center text-center">
+                <p className="text-xs font-black tracking-widest text-white/60">部屋コード</p>
                 <button
-                  key={game.id}
-                  type="button"
-                  onClick={() => {
-                    playPush();
-                    setSelectedGame(game.id);
-                    setStep("battle");
-                  }}
-                  className={`group relative flex items-center gap-4 overflow-hidden rounded-2xl border-[3px] border-white bg-gradient-to-r ${game.gradient} px-5 py-4 text-left text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.12)] transition-all duration-100 ease-out active:translate-y-[4px] active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]`}
+                  onClick={copyCode}
+                  className="mt-2 flex items-center gap-3 rounded-2xl border-[3px] border-amber-300 bg-amber-400/10 px-8 py-4 text-5xl font-black italic tracking-[0.2em] text-amber-200 shadow-[0_0_26px_rgba(255,200,80,0.3)]"
                 >
-                  <span className="btn-shine pointer-events-none absolute inset-0" />
-                  <span className="relative text-4xl drop-shadow">{game.emoji}</span>
-                  <span className="relative">
-                    <span className="block text-lg font-black italic drop-shadow">{game.name}</span>
-                    <span className="block text-xs font-bold text-white/85">{game.desc}</span>
-                  </span>
-                  <span className="relative ml-auto text-xl font-black italic text-white/80">▶</span>
+                  {code}
+                  <span className="text-base not-italic">{copied ? "✓" : "📋"}</span>
                 </button>
-              ))}
-            </div>
+                <p className="mt-2 text-[11px] font-bold text-white/45">タップでコピー</p>
 
-            <button
-              type="button"
-              onClick={() => {
-                playPush();
-                setBattlePair(null);
-                setGenreLikes({ p1: [], p2: [] });
-                setStep("g1");
-              }}
-              className="mt-5 text-xs font-bold tracking-wide text-white/50 underline underline-offset-4 transition hover:text-white/80"
-            >
-              スワイプからやり直す
-            </button>
-          </div>
-        )}
+                <div className="mt-8 flex items-center gap-3 text-white/80">
+                  <span className="h-3 w-3 animate-ping rounded-full bg-amber-300" />
+                  <span className="text-sm font-black italic">相手を待っています…</span>
+                </div>
+                <p className="mt-3 text-xs font-medium leading-relaxed text-white/55">
+                  このコードを相手に伝えて、
+                  <br />
+                  「部屋に入る」から入ってもらってね。
+                </p>
 
-        {step === "genreResult" && (
-          <div className="flex w-full flex-col items-center text-center">
-            <span className="text-6xl drop-shadow-lg">🎉</span>
-            <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-              マッチ<span className="mm-gold">成立</span>！
-            </h2>
-            <p className="mt-2 text-sm font-medium text-white/70">
-              二人とも「アリ」だったジャンル
-            </p>
-            <div className="mt-6 flex w-full flex-col gap-3">
-              {genreMatches.map((id) => {
-                const g = getGenre(id);
-                return (
-                  <div
-                    key={id}
-                    className={`flex items-center justify-between rounded-2xl border-2 border-white/70 bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-[0_6px_18px_rgba(0,0,0,0.45)]`}
-                  >
-                    <span className="text-lg font-black italic">
-                      {g.emoji} {g.label}
-                    </span>
-                    <span className="-skew-x-6 text-xs font-black tracking-widest text-white/95">
-                      MATCH
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <Button3D
-              onClick={() => setStep("gate")}
-              className="mt-8 w-full px-8 text-base"
-            >
-              次へ：お店を決める
-            </Button3D>
-            <button
-              type="button"
-              onClick={() => {
-                playPush();
-                reset();
-              }}
-              className="mt-5 text-xs font-bold tracking-wide text-white/50 underline underline-offset-4 transition hover:text-white/80"
-            >
-              最初からやり直す
-            </button>
-          </div>
-        )}
-
-        {/* ===== 2階への分岐ゲート ===== */}
-        {step === "gate" && (
-          <div className="flex w-full flex-col items-center text-center">
-            {battleWinner && genreMatches.length === 0 && (
-              <div className="mb-5 -skew-x-6 rounded-lg border-2 border-amber-300/80 bg-amber-400/15 px-5 py-2 text-sm font-black italic text-amber-200 shadow-[0_0_20px_rgba(255,200,80,0.35)]">
-                🔥 メシバトルの結果、{getGenre(battleWinner)?.emoji}
-                {getGenre(battleWinner)?.label}に決定！
+                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
+                  部屋を出る
+                </Button3D>
               </div>
             )}
-            <span className="text-6xl drop-shadow-lg">📍</span>
-            <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-              いま、四ツ谷にいる？
-            </h2>
-            <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
-              四ツ谷にいるなら、厳選30店の店マッチへ！
-            </p>
-            <div className="mt-8 flex w-full flex-col gap-3">
-              {decidedGenres.map((id) => {
-                const g = getGenre(id);
-                return (
-                  <Button3D
-                    key={id}
-                    tone="genre"
-                    gradient={g.gradient}
-                    onClick={() => startStoreMatch(id)}
-                    className="w-full px-6 text-base"
-                  >
-                    {g.emoji} {g.label}のお店を選ぶ
-                  </Button3D>
-                );
-              })}
-            </div>
-            <Button3D
-              tone="neutral"
-              onClick={() => setStep("notYotsuya")}
-              className="mt-6 w-full px-8 text-sm"
-            >
-              四ツ谷にはいない
-            </Button3D>
-          </div>
-        )}
 
-        {/* ===== 四谷圏外エンド ===== */}
-        {step === "notYotsuya" && (
-          <div className="flex flex-col items-center text-center">
-            <span className="text-6xl drop-shadow-lg">🗾</span>
-            <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-              ジャンルは決まった！
-            </h2>
-            <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
-              マッチしたジャンルのお店を地図アプリで探そう。
-              <br />
-              <span className="font-bold text-amber-300">
-                店マッチは今のところ四谷限定。
-              </span>
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {decidedGenres.map((id) => {
-                const g = getGenre(id);
-                return (
-                  <span
-                    key={id}
-                    className={`rounded-full bg-gradient-to-r ${g.gradient} px-4 py-2 text-sm font-black text-white shadow`}
-                  >
-                    {g.emoji} {g.label}
-                  </span>
-                );
-              })}
-            </div>
-            <Button3D onClick={reset} className="mt-8 px-10 text-base">
-              もう一回あそぶ
-            </Button3D>
-          </div>
-        )}
-
-        {/* ===== このジャンルの店が未登録 ===== */}
-        {step === "storeEmpty" && (
-          <div className="flex w-full flex-col items-center text-center">
-            <span className="text-6xl drop-shadow-lg">🙇</span>
-            <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-              {getGenre(chosenGenre)?.label}のお店は準備中
-            </h2>
-            <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
-              このジャンルの四谷のお店は、まだ登録されていません。
-              <br />
-              別のジャンルを選んでみてね。
-            </p>
-            <div className="mt-8 flex w-full flex-col gap-3">
-              <Button3D
-                onClick={() => setStep("gate")}
-                className="w-full px-8 text-base"
-              >
-                別のジャンルを選ぶ
-              </Button3D>
-              <Button3D
-                tone="neutral"
-                onClick={reset}
-                className="w-full px-8 text-sm"
-              >
-                最初からやり直す
-              </Button3D>
-            </div>
-          </div>
-        )}
-
-        {/* ===== 2階:店マッチ（四谷限定） ===== */}
-        {step === "s1" && (
-          <Handoff player="1人目" phase="store" onReady={() => setStep("s1swipe")} />
-        )}
-        {step === "s1swipe" && (
-          <SwipeDeck
-            key="s1"
-            cards={storeDeck}
-            renderCard={(card) => <StoreCard card={card} />}
-            likeLabel="行きたい"
-            nopeLabel="パス"
-            onFinish={(liked) => {
-              setStoreLikes((prev) => ({ ...prev, p1: liked }));
-              setStep("s2");
-            }}
-          />
-        )}
-        {step === "s2" && (
-          <Handoff player="2人目" phase="store" onReady={() => setStep("s2swipe")} />
-        )}
-        {step === "s2swipe" && (
-          <SwipeDeck
-            key="s2"
-            cards={storeDeck}
-            renderCard={(card) => <StoreCard card={card} />}
-            likeLabel="行きたい"
-            nopeLabel="パス"
-            onFinish={(liked) => {
-              setStoreLikes((prev) => ({ ...prev, p2: liked }));
-              setStep("storeResult");
-            }}
-          />
-        )}
-
-        {step === "storeResult" && (
-          <div className="flex w-full flex-col items-center text-center">
-            {storeMatches.length > 0 ? (
-              <>
-                <span className="text-6xl drop-shadow-lg">🥳</span>
-                <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                  お店が<span className="mm-gold">決定</span>！
-                </h2>
-                <p className="mt-2 text-sm font-medium text-white/70">
-                  二人とも「行きたい」お店
+            {/* スワイプ：自分の端末で選ぶ */}
+            {stage === "swipe" && (
+              <div className="flex w-full flex-col items-center">
+                <p className="mb-3 -skew-x-6 rounded-md border-2 border-emerald-400/60 bg-emerald-500/15 px-4 py-1 text-xs font-black italic tracking-widest text-emerald-200">
+                  🟢 相手も入室中！スワイプで選ぼう
                 </p>
-                <div className="mt-6 flex w-full flex-col gap-4">
-                  {storeMatches.map((s) => (
-                    <div
-                      key={s.id}
-                      className="mm-panel rounded-2xl border-2 border-amber-300/70 p-5 text-left"
-                    >
-                      <p className="text-lg font-black italic text-white">{s.name}</p>
-                      <p className="mt-1 text-sm font-medium text-white/65">
-                        {s.copy}
-                      </p>
-                      <p className="mt-3 text-sm font-bold text-amber-300">
-                        {s.price} ・ 四ツ谷駅 徒歩{s.walk}分
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <span className="text-6xl drop-shadow-lg">🤔</span>
-                <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                  完全一致はなし…
-                </h2>
-                <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
-                  どちらかが「行きたい」お店から選んでみよう
-                </p>
-                <div className="mt-6 flex w-full flex-col gap-3">
-                  {storeDeck
-                    .filter(
-                      (s) =>
-                        storeLikes.p1.includes(s.id) || storeLikes.p2.includes(s.id)
-                    )
-                    .map((s) => (
-                      <div
-                        key={s.id}
-                        className="mm-panel rounded-2xl border border-white/20 p-4 text-left"
-                      >
-                        <p className="font-black italic text-white">{s.name}</p>
-                        <p className="mt-1 text-xs font-medium text-white/55">
-                          {s.price} ・ 徒歩{s.walk}分
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </>
+                <SwipeDeck
+                  key={`swipe-${room?.round || 0}`}
+                  cards={genreCards}
+                  renderCard={(card) => <GenreCard key={card.id} card={card} />}
+                  onFinish={(liked) => update({ likes: liked, phase: "done" })}
+                />
+              </div>
             )}
-            <Button3D onClick={reset} className="mt-8 px-10 text-base">
-              もう一回あそぶ
-            </Button3D>
-          </div>
+
+            {/* 自分は完了、相手待ち */}
+            {stage === "swipeWait" && (
+              <div className="flex w-full flex-col items-center text-center">
+                <span className="text-6xl drop-shadow-lg">✅</span>
+                <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                  スワイプ完了！
+                </h2>
+                <div className="mt-6 flex items-center gap-3 text-white/80">
+                  <span className="h-3 w-3 animate-ping rounded-full bg-sky-300" />
+                  <span className="text-sm font-black italic">相手がスワイプ中…</span>
+                </div>
+                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
+                  部屋を出る
+                </Button3D>
+              </div>
+            )}
+
+            {/* 結果：両者のマッチ */}
+            {stage === "result" && (
+              <div className="flex w-full flex-col items-center text-center">
+                {matches.length > 0 ? (
+                  <>
+                    <span className="text-6xl drop-shadow-lg">🎉</span>
+                    <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                      マッチ<span className="mm-gold">成立</span>！
+                    </h2>
+                    <p className="mt-2 text-sm font-medium text-white/70">二人とも「アリ」だったジャンル</p>
+                    <div className="mt-6 flex w-full flex-col gap-3">
+                      {matches.map((id) => {
+                        const g = getGenre(id);
+                        return (
+                          <div
+                            key={id}
+                            className={`flex items-center justify-between rounded-2xl border-2 border-white/70 bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-[0_6px_18px_rgba(0,0,0,0.45)]`}
+                          >
+                            <span className="text-lg font-black italic">
+                              {g.emoji} {g.label}
+                            </span>
+                            <span className="-skew-x-6 text-xs font-black tracking-widest text-white/95">MATCH</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-6xl drop-shadow-lg">⚔️</span>
+                    <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                      意見、真っ二つ！
+                    </h2>
+                    <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
+                      共通の「アリ」はありませんでした。
+                      <br />
+                      <span className="font-bold text-amber-300">2台対応のミニゲーム決着は近日アップデート予定！</span>
+                    </p>
+                  </>
+                )}
+
+                <div className="mt-8 flex w-full flex-col gap-3">
+                  <Button3D onClick={() => { bumpRound(); }} className="w-full px-8 text-base">
+                    もう一回（同じ部屋で）
+                  </Button3D>
+                  <Button3D tone="neutral" onClick={leaveRoom} className="w-full px-8 text-sm">
+                    部屋を出る
+                  </Button3D>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       <p className="relative z-10 mt-8 text-center text-[10px] font-medium tracking-wide text-white/40">
         ※ 店舗情報はデモ用のサンプルデータです
       </p>
-
-      {/* ===== マッチしなかったら、選んだミニゲームで決着（全画面・ルート直下）===== */}
-      {step === "battle" &&
-        battlePair &&
-        (() => {
-          const gameProps = {
-            you: battlePair.you,
-            opp: battlePair.opp,
-            onDecided: (genreId) => {
-              setBattleWinner(genreId);
-              setStep("gate");
-            },
-            onQuit: () => setStep("gamePick"), // ✕：ゲーム選択にもどる
-            onPickAgain: () => setStep("gamePick"), // 別のゲームを選ぶ
-          };
-          if (selectedGame === "slot") return <MeshiSlot {...gameProps} />;
-          if (selectedGame === "amida") return <MeshiAmida {...gameProps} />;
-          return <MeshiBattle {...gameProps} />;
-        })()}
     </div>
   );
 }
