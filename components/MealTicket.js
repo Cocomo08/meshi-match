@@ -48,7 +48,10 @@ const CSS = `
   background:#5e636b;border-width:1px;border-style:solid;border-color:#878d96 #4a4e55 #3f434a #6e747c;border-radius:10px;padding:11px;
   transform:rotateX(4deg);transform-origin:center 62%}
 /* 内側の面：暗く落とし込む（上暗・下明の1pxベベル）*/
-.mt-face{background:#34383e;border-width:1px;border-style:solid;border-color:#262a2f #565b62 #626770 #262a2f;border-radius:5px;padding:8px}
+.mt-face{position:relative;background:#34383e;border-width:1px;border-style:solid;border-color:#262a2f #565b62 #626770 #262a2f;border-radius:5px;padding:8px}
+/* 白蛍光灯（この光だけグロー可）。点灯時に少しチラつく */
+.mt-tube{height:7px;border-radius:4px;background:#f6f4ea;margin:0 0 9px;
+  box-shadow:0 0 3px 1px rgba(255,255,255,.9), 0 0 11px 2px rgba(255,252,236,.7), 0 4px 14px 2px rgba(255,248,224,.28)}
 /* 上部の小さな凹み（コイン投入・文字なし）*/
 .mt-coin{height:10px;width:54px;background:#17191d;border-width:1px;border-style:solid;border-color:#0a0b0e #3a3e44 #3a3e44 #0a0b0e;border-radius:2px;margin:2px auto 9px}
 .mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
@@ -110,6 +113,7 @@ const CSS = `
 .mt-skip{font-size:11px;letter-spacing:.2em;color:#565c66}
 
 /* ── アニメーション（.anim のときだけ。base=最終状態）── */
+.mt-root.anim .mt-tube{animation:mtFlicker .55s steps(1,end) both}
 .mt-root.anim .mt-btn.lit{animation:mtLight .3s ease-out both, mtPress .2s ease .3s both}
 .mt-root.anim .mt-ticket{animation:mtEmerge .9s .5s both}
 .mt-root.anim .mt-body,.mt-root.anim .mt-pull{animation:mtFade .35s ease 1.4s both}
@@ -126,9 +130,11 @@ const CSS = `
   100%{transform:translate(-50%,0) rotate(0)}
 }
 @keyframes mtFade{from{opacity:0}to{opacity:1}}
+/* 蛍光灯の点灯チラつき（起動時の実物感）*/
+@keyframes mtFlicker{0%{opacity:.15}8%{opacity:.85}12%{opacity:.25}18%{opacity:1}24%{opacity:.4}30%{opacity:1}40%{opacity:.7}48%{opacity:1}100%{opacity:1}}
 
 @media (prefers-reduced-motion: reduce){
-  .mt-root.anim .mt-btn.lit,.mt-root.anim .mt-ticket,.mt-root.anim .mt-body,.mt-root.anim .mt-pull{animation:none}
+  .mt-root.anim .mt-btn.lit,.mt-root.anim .mt-ticket,.mt-root.anim .mt-body,.mt-root.anim .mt-pull,.mt-root.anim .mt-tube{animation:none}
   .mt-pull .ar{animation:none}
 }
 `;
@@ -203,6 +209,7 @@ export default function MealTicket({ genre, ticketNo, issuedAt, nicknames = [], 
       <div className="mt-kb">
         <div className="mt-coin" aria-hidden />
         <div className="mt-face">
+          <div className="mt-tube" aria-hidden />
           <div className="mt-grid" aria-hidden>
             {list.map((label, i) => {
               const active = label === genre;
