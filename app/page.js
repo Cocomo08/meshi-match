@@ -17,6 +17,7 @@ import { MeshiAmidaNet } from "@/components/MeshiAmidaNet";
 import { MeshiBattleNet } from "@/components/MeshiBattleNet";
 import MealTicket from "@/components/MealTicket";
 import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
+import VsIntro from "@/components/VsIntro";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -258,6 +259,8 @@ export default function MeshiMatchPage() {
   const [nick, setNick] = useState("");
   const [nickWarn, setNickWarn] = useState(false);
   const [ticketAcked, setTicketAcked] = useState(false);
+  const [showVs, setShowVs] = useState(false);
+  const vsSeenRef = useRef(false);
   const seenRound = useRef(0);
 
   // クライアントでのみバナー判定（SSRとの不一致を防ぐ）＆ニックネーム復元
@@ -296,6 +299,9 @@ export default function MeshiMatchPage() {
     : [];
   const myName = me?.name || "きみ";
   const oppName = opp?.name || "あいて";
+  // VS画面用：ホストを左・ゲストを右に固定（両端末で同じ並び）
+  const hostName = players[ids.find((id) => players[id]?.role === "host")]?.name || "ホスト";
+  const guestName = players[ids.find((id) => players[id]?.role === "guest")]?.name || "ゲスト";
   // ジャンル確定：食券用の通し番号・発行時刻も一緒に共有（両端末で同じ券に）
   const decideGenre = (id) =>
     setShared({
@@ -318,6 +324,24 @@ export default function MeshiMatchPage() {
       if (r !== 0) update({ phase: "swiping", likes: [], storePhase: "swiping", storeLikes: [] });
     }
   }, [room, view, update]);
+
+  // 二人が揃った瞬間にVS画面を出す（スワイプ前・1回だけ）
+  useEffect(() => {
+    if (view !== "room") {
+      vsSeenRef.current = false;
+      setShowVs(false);
+      return;
+    }
+    if (!opponentPresent) {
+      vsSeenRef.current = false;
+      return;
+    }
+    // 揃った直後（まだジャンル未確定・結果前・ゲーム前・自分未完了）だけ
+    if (!vsSeenRef.current && !decidedGenre && !bothDone && !game && !meDone) {
+      vsSeenRef.current = true;
+      setShowVs(true);
+    }
+  }, [view, opponentPresent, decidedGenre, bothDone, game, meDone]);
 
   // マッチ不成立になったら、ホストが対戦カード＋seedを初期化（ゲーム選択へ）
   useEffect(() => {
@@ -853,6 +877,11 @@ export default function MeshiMatchPage() {
           ctaLabel="お店をさがす"
           onNext={() => setTicketAcked(true)}
         />
+      )}
+
+      {/* VS画面（二人が揃った瞬間・スワイプ直前）*/}
+      {view === "room" && showVs && (
+        <VsIntro leftName={hostName} rightName={guestName} onDone={() => setShowVs(false)} />
       )}
 
       {/* のれんワイプ遷移（全画面・最前面）*/}
