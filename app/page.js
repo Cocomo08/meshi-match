@@ -772,6 +772,7 @@ export default function MeshiMatchPage() {
       {view === "room" && decidedGenre && !ticketAcked && (
         <MealTicket
           genre={getGenre(decidedGenre)?.label}
+          genres={GENRES.map((g) => g.label)}
           ticketNo={room?.ticketNo || 0}
           issuedAt={room?.issuedAt ? new Date(room.issuedAt) : undefined}
           nicknames={[myName, oppName]}
