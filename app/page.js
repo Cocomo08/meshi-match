@@ -92,15 +92,18 @@ function MuteToggle() {
 function NightStall() {
   return (
     <div className="ymt-bg" aria-hidden>
-      <span className="ymt-lantern" style={{ top: "4%", left: "12%", transform: "scale(1.08)" }}>
+      {/* 手前（大・明るい） */}
+      <span className="ymt-lantern" style={{ top: "5%", left: "8%", transform: "scale(1.4)", filter: "brightness(1.06)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
-      <span className="ymt-lantern" style={{ top: "2%", right: "40%", transform: "scale(.56)" }}>
+      {/* 中景 */}
+      <span className="ymt-lantern" style={{ top: "8%", right: "9%", transform: "scale(1.0)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
-      <span className="ymt-lantern" style={{ top: "6%", right: "12%", transform: "scale(.9)" }}>
+      {/* 奥（小・暗い・わずかにぼかす／のれんから離して上に） */}
+      <span className="ymt-lantern" style={{ top: "1%", left: "39%", transform: "scale(.6)", filter: "brightness(.62) blur(0.7px)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
@@ -400,7 +403,10 @@ export default function MeshiMatchPage() {
           : "swipe";
 
   return (
-    <div className="mm-arena relative flex flex-1 flex-col overflow-hidden px-5 py-8">
+    <div
+      className="mm-arena relative flex flex-1 flex-col overflow-hidden px-5 py-8"
+      style={view === "home" ? { paddingBottom: "calc(15vh + 26px)" } : undefined}
+    >
       {view === "home" ? <NightStall /> : <div className="mm-lines" aria-hidden />}
       <MuteToggle />
 
@@ -440,9 +446,9 @@ export default function MeshiMatchPage() {
               二人がそれぞれの端末でスワイプ → マッチで今日のごはんを決める
             </p>
 
-            {/* ニックネーム入力（投入口のような凹み） */}
-            <label className="mb-6 w-full">
-              <span className="mb-2 block text-xs font-black tracking-widest text-[#f0e6d2]/60">ニックネーム</span>
+            {/* ニックネーム入力（左端にラベル＋左揃え・凹んだ枠） */}
+            <label className="ymt-field mb-6">
+              <span className="ymt-field-tag">ニックネーム</span>
               <input
                 value={nick}
                 onChange={(e) => { setNick(e.target.value.slice(0, 12)); setNickWarn(false); }}
