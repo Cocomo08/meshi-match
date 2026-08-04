@@ -132,23 +132,51 @@ function GenreCard({ card }) {
 
 function StoreCard({ card }) {
   const genre = getGenre(card.genre);
+  const [hasPhoto, setHasPhoto] = useState(false);
+  const imgRef = useRef(null);
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) setHasPhoto(true);
+  }, []);
+  // 店別写真(card.img)があれば優先、無ければジャンル写真を流用
+  const src = `${ASSET_BASE}/images/${card.img || genre?.id}.jpg`;
   return (
-    <div className="mm-panel flex h-full w-full flex-col rounded-3xl border-[3px] border-white/85 p-6">
-      <div className={`flex h-36 w-full items-center justify-center rounded-2xl border-2 border-white/40 bg-gradient-to-br ${genre?.gradient || "from-orange-400 to-red-500"}`}>
-        <span className="text-7xl drop-shadow-lg">{genre?.emoji}</span>
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-3xl border-[3px] border-white/85 bg-[#12141f] shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_24px_rgba(255,255,255,0.08)]">
+      {/* 上：全面写真（無ければジャンル色＋絵文字）*/}
+      <div className={`relative h-[46%] w-full overflow-hidden bg-gradient-to-br ${genre?.gradient || "from-orange-400 to-red-500"}`}>
+        {!hasPhoto && (
+          <div className="flex h-full w-full items-center justify-center">
+            <span className="text-7xl drop-shadow-lg">{genre?.emoji}</span>
+          </div>
+        )}
+        <img
+          ref={imgRef}
+          src={src}
+          alt=""
+          onLoad={() => setHasPhoto(true)}
+          onError={() => setHasPhoto(false)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${hasPhoto ? "opacity-100" : "opacity-0"}`}
+        />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#12141f] via-[#12141f]/60 to-transparent" />
+        <span className="absolute left-3 top-3 -skew-x-6 rounded-md border-2 border-white/80 bg-black/45 px-3 py-1 text-[11px] font-black tracking-wide text-white backdrop-blur">
+          {genre?.emoji} {genre?.label}
+        </span>
       </div>
-      <p className="mt-4 text-xl font-black italic text-white">{card.name}</p>
-      <p className="mt-2 text-sm font-medium leading-relaxed text-white/65">{card.copy}</p>
-      <div className="mt-auto space-y-2 pt-4">
-        <p className="text-sm font-bold text-amber-300">
-          {card.price} ・ 四ツ谷駅 徒歩{card.walk}分
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {card.tags.map((t) => (
-            <span key={t} className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white/80">
-              {t}
-            </span>
-          ))}
+      {/* 下：店情報 */}
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-3">
+        <p className="text-xl font-black italic leading-tight text-white">{card.name}</p>
+        <p className="mt-2 text-sm font-medium leading-relaxed text-white/65">{card.copy}</p>
+        <div className="mt-auto space-y-2 pt-3">
+          <p className="text-sm font-bold text-amber-300">
+            {card.price} ・ 四ツ谷駅 徒歩{card.walk}分
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {card.tags.map((t) => (
+              <span key={t} className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white/80">
+                {t}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>
