@@ -92,15 +92,15 @@ function MuteToggle() {
 function NightStall() {
   return (
     <div className="ymt-bg" aria-hidden>
-      <span className="ymt-lantern" style={{ top: "5%", left: "15%" }}>
+      <span className="ymt-lantern" style={{ top: "4%", left: "12%", transform: "scale(1.08)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
-      <span className="ymt-lantern" style={{ top: "9%", left: "50%", transform: "translateX(-50%) scale(1.15)" }}>
+      <span className="ymt-lantern" style={{ top: "2%", right: "40%", transform: "scale(.56)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
-      <span className="ymt-lantern" style={{ top: "6%", right: "15%" }}>
+      <span className="ymt-lantern" style={{ top: "6%", right: "12%", transform: "scale(.9)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
@@ -251,6 +251,7 @@ export default function MeshiMatchPage() {
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [nick, setNick] = useState("");
+  const [nickWarn, setNickWarn] = useState(false);
   const [ticketAcked, setTicketAcked] = useState(false);
   const seenRound = useRef(0);
 
@@ -444,7 +445,7 @@ export default function MeshiMatchPage() {
               <span className="mb-2 block text-xs font-black tracking-widest text-[#f0e6d2]/60">ニックネーム</span>
               <input
                 value={nick}
-                onChange={(e) => setNick(e.target.value.slice(0, 12))}
+                onChange={(e) => { setNick(e.target.value.slice(0, 12)); setNickWarn(false); }}
                 placeholder="例）たろ"
                 maxLength={12}
                 className="ymt-input"
@@ -455,8 +456,8 @@ export default function MeshiMatchPage() {
               {/* 点灯している選択済みボタン（クリーム面／墨色） */}
               <button
                 type="button"
-                onClick={() => { playPush(); createRoom(); }}
-                disabled={busy || !nick.trim()}
+                onClick={() => { playPush(); if (!nick.trim()) { setNickWarn(true); return; } createRoom(); }}
+                disabled={busy}
                 className="ymt-btn lit"
               >
                 部屋をつくる
@@ -464,14 +465,13 @@ export default function MeshiMatchPage() {
               {/* 消灯しているボタン */}
               <button
                 type="button"
-                onClick={() => { playPush(); if (nick.trim()) setView("join"); }}
-                disabled={!nick.trim()}
+                onClick={() => { playPush(); if (!nick.trim()) { setNickWarn(true); return; } setView("join"); }}
                 className="ymt-btn dim"
               >
                 部屋に入る
               </button>
             </div>
-            {!nick.trim() && (
+            {nickWarn && !nick.trim() && (
               <p className="mt-3 text-center text-[11px] font-bold text-[#e0483b]">
                 まずニックネームを入れてね
               </p>
