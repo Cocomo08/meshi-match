@@ -16,6 +16,7 @@ import { MeshiSlotNet } from "@/components/MeshiSlotNet";
 import { MeshiAmidaNet } from "@/components/MeshiAmidaNet";
 import { MeshiBattleNet } from "@/components/MeshiBattleNet";
 import MealTicket from "@/components/MealTicket";
+import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -248,6 +249,7 @@ function StatusChip({ label, ready, color }) {
 
 export default function MeshiMatchPage() {
   const { room, code, error, myId, connect, update, bumpRound, setGame, setShared, leave, isOnline } = useRoom();
+  const { phase: wipePhase, wipe } = useNorenWipe();
   const [view, setView] = useState("home"); // home | join | room
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -471,7 +473,7 @@ export default function MeshiMatchPage() {
               {/* 消灯しているボタン */}
               <button
                 type="button"
-                onClick={() => { playPush(); if (!nick.trim()) { setNickWarn(true); return; } setView("join"); }}
+                onClick={() => { playPush(); if (!nick.trim()) { setNickWarn(true); return; } wipe(() => setView("join")); }}
                 className="ymt-btn dim"
               >
                 部屋に入る
@@ -852,6 +854,9 @@ export default function MeshiMatchPage() {
           onNext={() => setTicketAcked(true)}
         />
       )}
+
+      {/* のれんワイプ遷移（全画面・最前面）*/}
+      <NorenWipe phase={wipePhase} />
     </div>
   );
 }

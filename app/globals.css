@@ -544,3 +544,45 @@ body {
   .ymt-steam { animation: none; opacity: 0; }
   .ymt-ticket { animation: none; transform: rotate(-3deg); }
 }
+
+/* ============================================================
+   のれんワイプ遷移（共通・全画面オーバーレイ）
+   閉じる(0.5s)→画面切替→開く(0.5s)。減速イージング。遷移中は操作を遮断。
+   ============================================================ */
+.nw-root { position: fixed; inset: 0; z-index: 90; overflow: hidden; pointer-events: auto; }
+.nw-panel { position: absolute; top: 0; bottom: 0; width: 52%; will-change: transform; }
+.nw-left { left: 0; }
+.nw-right { right: 0; }
+/* 上部の掛け竿 */
+.nw-rod { position: absolute; top: 0; left: 0; right: 0; height: 8px; background: #241f1c; z-index: 2; }
+/* 生成り色の布（トップのれんと同じ質感）*/
+.nw-body { position: absolute; top: 6px; left: 0; right: 0; bottom: 24px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.035) 0 1px, transparent 1px 22px),
+    #f0e6d2; }
+/* 下端：3本の切れ目（4タブ）*/
+.nw-hem { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; display: flex; gap: 6px; }
+.nw-hem i { flex: 1; background: #f0e6d2; transform-origin: top center; }
+
+/* 左右のスライド（閉じる＝覆う／開く＝はける）*/
+.nw-root[data-phase="closing"] .nw-left { animation: nwCloseL .5s cubic-bezier(.22,.61,.36,1) both; }
+.nw-root[data-phase="closing"] .nw-right { animation: nwCloseR .5s cubic-bezier(.22,.61,.36,1) both; }
+.nw-root[data-phase="opening"] .nw-left { animation: nwOpenL .5s cubic-bezier(.22,.61,.36,1) both; }
+.nw-root[data-phase="opening"] .nw-right { animation: nwOpenR .5s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes nwCloseL { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes nwCloseR { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes nwOpenL { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+@keyframes nwOpenR { from { transform: translateX(0); } to { transform: translateX(100%); } }
+
+/* 下端の布がわずかに遅れて揺れる（タブごとにディレイ）*/
+.nw-root[data-phase="closing"] .nw-hem i,
+.nw-root[data-phase="opening"] .nw-hem i { animation: nwSway .56s ease-out both; }
+.nw-hem i:nth-child(1) { animation-delay: .03s; }
+.nw-hem i:nth-child(2) { animation-delay: .07s; }
+.nw-hem i:nth-child(3) { animation-delay: .11s; }
+.nw-hem i:nth-child(4) { animation-delay: .15s; }
+@keyframes nwSway { 0% { transform: rotate(0); } 35% { transform: rotate(3.5deg); } 100% { transform: rotate(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .nw-panel, .nw-hem i { animation: none !important; }
+}
