@@ -38,39 +38,43 @@ for (let x = 8; x <= 244; x += 8) NOTCH_X.push(x);
 
 const CSS = `
 .mt-root{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
-  background:#14161c;color:#efe7d3;overflow:hidden;padding:20px;
+  background:#211d1a;color:#efe7d3;overflow:hidden;padding:20px;perspective:1000px;
   font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Courier New",monospace;
   -webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
 .mt-root *{box-sizing:border-box}
 
-/* ── 券売機本体（マット金属・ベベルのみで立体）── */
+/* ── 券売機本体：外枠は明るいグレー・1pxベベル・4度傾ける ── */
 .mt-kb{position:relative;display:flex;flex-direction:column;width:300px;max-width:86vw;height:min(68vh,510px);
-  background:#565b62;border-width:3px;border-style:solid;border-color:#767c84 #3a3d43 #3a3d43 #767c84;border-radius:10px;padding:12px}
+  background:#5e636b;border-width:1px;border-style:solid;border-color:#878d96 #4a4e55 #3f434a #6e747c;border-radius:10px;padding:11px;
+  transform:rotateX(4deg);transform-origin:center 62%}
+/* 内側の面：暗く落とし込む（上暗・下明の1pxベベル）*/
+.mt-face{background:#34383e;border-width:1px;border-style:solid;border-color:#262a2f #565b62 #626770 #262a2f;border-radius:5px;padding:8px}
 /* 上部の小さな凹み（コイン投入・文字なし）*/
-.mt-coin{height:12px;width:56px;background:#1a1c21;border-width:2px;border-style:solid;border-color:#0a0b0e #2c2f35 #2c2f35 #0a0b0e;border-radius:2px;margin:0 auto 10px}
+.mt-coin{height:10px;width:54px;background:#17191d;border-width:1px;border-style:solid;border-color:#0a0b0e #3a3e44 #3a3e44 #0a0b0e;border-radius:2px;margin:2px auto 9px}
 .mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.mt-btn{height:52px;border-radius:3px;background:#2b3037;color:#767e88;
-  border-width:2px;border-style:solid;border-color:#3d434c #171a1e #171a1e #3d434c;
+/* ボタン：上端に明るい1px・下端に暗い1px */
+.mt-btn{height:50px;border-radius:3px;background:#454a52;color:#9aa0a8;
+  border-width:1px;border-style:solid;border-color:#5f656e #3a3f46 #23262b #3a3f46;
   display:flex;align-items:center;justify-content:center;padding:0 5px;text-align:center;font-size:12px;font-weight:700;line-height:1.15}
 .mt-btn span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
 /* 非選択は暗く沈める（明度を下げる・非表示にしない）*/
-.mt-btn.dim{background:#20242a;color:#4c525b;border-color:#2e343c #131519 #131519 #2e343c}
-/* 点灯＋押し込み（base=最終=点灯。演出は .anim のときだけ）*/
+.mt-btn.dim{background:#3a3f47;color:#7b828b}
+/* 点灯＝押下：上下の線を反転（上暗・下明）＋沈む */
 .mt-btn.lit{background:#ece0bf;color:#26251f;
-  border-color:#b7ab84 #fff6db #fff6db #b7ab84;transform:translateY(2px)}
+  border-color:#b7ab84 #fff6db #fff6db #b7ab84;transform:translateY(1px)}
 
 /* 取り出し口エリア */
 .mt-outlet-space{height:118px;flex:0 0 auto}
 /* 券の下側を隠す前面パネル＝口の縁（券より手前）*/
-.mt-below{position:absolute;left:0;right:0;bottom:0;height:104px;background:#565b62;z-index:3;
-  border-top:2px solid #767c84;border-bottom-left-radius:8px;border-bottom-right-radius:8px}
+.mt-below{position:absolute;left:0;right:0;bottom:0;height:104px;background:#5e636b;z-index:3;
+  border-top:1px solid #878d96;border-bottom-left-radius:9px;border-bottom-right-radius:9px}
 /* 接触部の口の影（フラットな帯・ぼかし無し）*/
 .mt-below::before{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:252px;max-width:calc(86vw - 30px);height:3px;background:#0d0f14}
-/* 取り出し口の凹み（横長・券より16px広い）*/
+/* 取り出し口の凹み：内側は暗く、下端に明るい1px（凹んで見せる）*/
 .mt-slot{position:absolute;left:50%;top:-9px;transform:translateX(-50%);width:268px;max-width:calc(86vw - 14px);height:18px;
-  background:#0e1014;border-width:2px;border-style:solid;border-color:#050609 #2b2f35 #2b2f35 #050609;border-radius:3px}
-.mt-tray{position:absolute;left:16px;right:16px;bottom:12px;height:34px;background:#3c4046;border-radius:3px;
-  border-width:2px;border-style:solid;border-color:#2a2d33 #63696f #63696f #2a2d33}
+  background:#0e1014;border-width:1px;border-style:solid;border-color:#05070a #1c1f24 #7a8088 #1c1f24;border-radius:3px}
+.mt-tray{position:absolute;left:16px;right:16px;bottom:12px;height:34px;background:#34383e;border-radius:3px;
+  border-width:1px;border-style:solid;border-color:#262a2f #5b6067 #5b6067 #262a2f}
 
 /* ── 食券（感熱紙・生成り色・等幅・横長 3:2）── */
 .mt-ticket{position:absolute;left:50%;bottom:45px;width:252px;max-width:calc(86vw - 30px);height:168px;
@@ -110,9 +114,9 @@ const CSS = `
 .mt-root.anim .mt-ticket{animation:mtEmerge .9s .5s both}
 .mt-root.anim .mt-body,.mt-root.anim .mt-pull{animation:mtFade .35s ease 1.4s both}
 
-@keyframes mtLight{from{background:#20242a;color:#4c525b;border-color:#2e343c #131519 #131519 #2e343c}
+@keyframes mtLight{from{background:#3a3f47;color:#7b828b;border-color:#5f656e #3a3f46 #23262b #3a3f46}
   to{background:#ece0bf;color:#26251f;border-color:#b7ab84 #fff6db #fff6db #b7ab84}}
-@keyframes mtPress{0%{transform:translateY(0)}55%{transform:translateY(4px)}100%{transform:translateY(2px)}}
+@keyframes mtPress{0%{transform:translateY(0)}55%{transform:translateY(3px)}100%{transform:translateY(1px)}}
 @keyframes mtEmerge{
   0%{transform:translate(-50%,120px);animation-timing-function:cubic-bezier(.15,.75,.3,1)}
   44%{transform:translate(-50%,-6px);animation-timing-function:ease-in-out}
@@ -198,15 +202,17 @@ export default function MealTicket({ genre, ticketNo, issuedAt, nicknames = [], 
 
       <div className="mt-kb">
         <div className="mt-coin" aria-hidden />
-        <div className="mt-grid" aria-hidden>
-          {list.map((label, i) => {
-            const active = label === genre;
-            return (
-              <div key={i} className={`mt-btn ${active ? "lit" : "dim"}`}>
-                <span>{label}</span>
-              </div>
-            );
-          })}
+        <div className="mt-face">
+          <div className="mt-grid" aria-hidden>
+            {list.map((label, i) => {
+              const active = label === genre;
+              return (
+                <div key={i} className={`mt-btn ${active ? "lit" : "dim"}`}>
+                  <span>{label}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="mt-outlet-space" />
