@@ -11,9 +11,19 @@ import {
   subscribeSound,
 } from "@/components/sound";
 import { useRoom } from "@/lib/useRoom";
+import { newSeed } from "@/lib/rng";
+import { MeshiSlotNet } from "@/components/MeshiSlotNet";
+import { MeshiAmidaNet } from "@/components/MeshiAmidaNet";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+// 選べるミニゲーム（battle は次のアップデートで2台対応予定）
+const MINI_GAMES = [
+  { id: "slot", emoji: "🎰", name: "メシスロット", desc: "そろえて一発勝負", gradient: "from-amber-400 via-orange-500 to-yellow-600", ready: true },
+  { id: "amida", emoji: "🪜", name: "運命のあみだ", desc: "たどって運だめし", gradient: "from-sky-500 via-blue-600 to-indigo-600", ready: true },
+  { id: "battle", emoji: "🥊", name: "メシバトル", desc: "リズムタップ対決（近日対応）", gradient: "from-rose-500 via-red-600 to-orange-600", ready: false },
+];
 
 // 部屋コード（紛らわしい文字を除いた4桁）
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -134,12 +144,16 @@ function StatusChip({ label, ready, color }) {
 }
 
 export default function MeshiMatchPage() {
-  const { room, code, error, myId, connect, update, bumpRound, leave, isOnline } = useRoom();
+  const { room, code, error, myId, connect, update, bumpRound, setGame, leave, isOnline } = useRoom();
   const [view, setView] = useState("home"); // home | join | room
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const seenRound = useRef(0);
+
+  // クライアントでのみバナー判定（SSRとの不一致を防ぐ）
+  useEffect(() => setMounted(true), []);
 
   const players = room?.players || {};
   const ids = Object.keys(players);
@@ -151,6 +165,9 @@ export default function MeshiMatchPage() {
   const oppDone = opp?.phase === "done";
   const bothDone = opponentPresent && meDone && oppDone;
   const matches = bothDone ? (me.likes || []).filter((id) => (opp.likes || []).includes(id)) : [];
+  const noMatch = bothDone && matches.length === 0;
+  const myRole = me?.role || "host";
+  const game = room?.game || null;
 
   // ラウンド変更（もう一回）を検知して自分のスワイプをリセット
   useEffect(() => {
@@ -161,6 +178,19 @@ export default function MeshiMatchPage() {
       if (r !== 0) update({ phase: "swiping", likes: [] });
     }
   }, [room, view, update]);
+
+  // マッチ不成立になったら、ホストが対戦カード＋seedを初期化（ゲーム選択へ）
+  useEffect(() => {
+    if (view !== "room" || !noMatch || myRole !== "host" || game) return;
+    const hostId = ids.find((id) => players[id].role === "host");
+    const guestId = ids.find((id) => players[id].role === "guest");
+    const rnd = () => GENRES[Math.floor(Math.random() * GENRES.length)].id;
+    const hostChamp = players[hostId]?.likes?.[0] || rnd();
+    let guestChamp = (players[guestId]?.likes || []).find((x) => x !== hostChamp) || rnd();
+    if (guestChamp === hostChamp) guestChamp = GENRES.find((g) => g.id !== hostChamp).id;
+    setGame({ hostChamp, guestChamp, seed: newSeed(), id: null, phase: "pick", started: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, noMatch, myRole, game]);
 
   const createRoom = async () => {
     setBusy(true);
@@ -211,7 +241,7 @@ export default function MeshiMatchPage() {
       <div className="mm-lines" aria-hidden />
       <MuteToggle />
 
-      {!isOnline && (
+      {mounted && !isOnline && (
         <div className="relative z-20 mx-auto mb-3 max-w-md rounded-lg border border-amber-300/40 bg-amber-400/10 px-3 py-2 text-center text-[11px] font-bold text-amber-200/90">
           ⚙️ オフライン検証モード（Firebase未設定）— 同じ端末のタブ間でのみ動作します
         </div>
@@ -341,55 +371,107 @@ export default function MeshiMatchPage() {
               </div>
             )}
 
-            {/* 結果：両者のマッチ */}
-            {stage === "result" && (
+            {/* 結果：マッチ成立 */}
+            {stage === "result" && matches.length > 0 && (
               <div className="flex w-full flex-col items-center text-center">
-                {matches.length > 0 ? (
-                  <>
-                    <span className="text-6xl drop-shadow-lg">🎉</span>
-                    <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                      マッチ<span className="mm-gold">成立</span>！
-                    </h2>
-                    <p className="mt-2 text-sm font-medium text-white/70">二人とも「アリ」だったジャンル</p>
-                    <div className="mt-6 flex w-full flex-col gap-3">
-                      {matches.map((id) => {
-                        const g = getGenre(id);
-                        return (
-                          <div
-                            key={id}
-                            className={`flex items-center justify-between rounded-2xl border-2 border-white/70 bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-[0_6px_18px_rgba(0,0,0,0.45)]`}
-                          >
-                            <span className="text-lg font-black italic">
-                              {g.emoji} {g.label}
-                            </span>
-                            <span className="-skew-x-6 text-xs font-black tracking-widest text-white/95">MATCH</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-6xl drop-shadow-lg">⚔️</span>
-                    <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                      意見、真っ二つ！
-                    </h2>
-                    <p className="mt-3 text-sm font-medium leading-relaxed text-white/70">
-                      共通の「アリ」はありませんでした。
-                      <br />
-                      <span className="font-bold text-amber-300">2台対応のミニゲーム決着は近日アップデート予定！</span>
-                    </p>
-                  </>
-                )}
-
+                <span className="text-6xl drop-shadow-lg">🎉</span>
+                <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                  マッチ<span className="mm-gold">成立</span>！
+                </h2>
+                <p className="mt-2 text-sm font-medium text-white/70">二人とも「アリ」だったジャンル</p>
+                <div className="mt-6 flex w-full flex-col gap-3">
+                  {matches.map((id) => {
+                    const g = getGenre(id);
+                    return (
+                      <div
+                        key={id}
+                        className={`flex items-center justify-between rounded-2xl border-2 border-white/70 bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-[0_6px_18px_rgba(0,0,0,0.45)]`}
+                      >
+                        <span className="text-lg font-black italic">
+                          {g.emoji} {g.label}
+                        </span>
+                        <span className="-skew-x-6 text-xs font-black tracking-widest text-white/95">MATCH</span>
+                      </div>
+                    );
+                  })}
+                </div>
                 <div className="mt-8 flex w-full flex-col gap-3">
-                  <Button3D onClick={() => { bumpRound(); }} className="w-full px-8 text-base">
+                  <Button3D onClick={() => bumpRound()} className="w-full px-8 text-base">
                     もう一回（同じ部屋で）
                   </Button3D>
                   <Button3D tone="neutral" onClick={leaveRoom} className="w-full px-8 text-sm">
                     部屋を出る
                   </Button3D>
                 </div>
+              </div>
+            )}
+
+            {/* 結果：不成立 → ミニゲームで決着（選択画面）*/}
+            {stage === "result" && matches.length === 0 && (
+              <div className="flex w-full flex-col items-center text-center">
+                {!game && (
+                  <div className="flex items-center gap-3 text-white/80">
+                    <span className="h-3 w-3 animate-ping rounded-full bg-amber-300" />
+                    <span className="text-sm font-black italic">対戦を準備中…</span>
+                  </div>
+                )}
+                {game && game.phase === "pick" && (
+                  <>
+                    <span className="-skew-x-6 rounded-md border-2 border-rose-400/70 bg-rose-500/15 px-4 py-1 text-xs font-black italic tracking-widest text-rose-200">
+                      意見、真っ二つ！
+                    </span>
+                    <h2 className="mt-3 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                      勝負の<span className="mm-gold">しかた</span>を選ぼう
+                    </h2>
+                    <div className="mt-4 flex w-full items-center justify-center gap-2 text-white">
+                      <span className="flex-1 rounded-xl border-2 border-rose-400/70 bg-rose-500/10 px-2 py-2 text-sm font-black">
+                        {(myRole === "host" ? getGenre(game.hostChamp) : getGenre(game.guestChamp))?.emoji}{" "}
+                        {(myRole === "host" ? getGenre(game.hostChamp) : getGenre(game.guestChamp))?.label}
+                      </span>
+                      <span className="text-lg font-black italic text-amber-300">VS</span>
+                      <span className="flex-1 rounded-xl border-2 border-sky-400/70 bg-sky-500/10 px-2 py-2 text-sm font-black">
+                        {(myRole === "host" ? getGenre(game.guestChamp) : getGenre(game.hostChamp))?.emoji}{" "}
+                        {(myRole === "host" ? getGenre(game.guestChamp) : getGenre(game.hostChamp))?.label}
+                      </span>
+                    </div>
+                    <div className="mt-6 flex w-full flex-col gap-3">
+                      {MINI_GAMES.map((mg) => (
+                        <button
+                          key={mg.id}
+                          type="button"
+                          disabled={!mg.ready}
+                          onClick={() => {
+                            if (!mg.ready) return;
+                            playPush();
+                            setGame({ id: mg.id, phase: "play", started: false });
+                          }}
+                          className={`group relative flex items-center gap-4 overflow-hidden rounded-2xl border-[3px] px-5 py-4 text-left text-white transition-all duration-100 ease-out ${
+                            mg.ready
+                              ? `border-white bg-gradient-to-r ${mg.gradient} shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.12)] active:translate-y-[4px] active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]`
+                              : "border-white/20 bg-white/5 opacity-55"
+                          }`}
+                        >
+                          {mg.ready && <span className="btn-shine pointer-events-none absolute inset-0" />}
+                          <span className="relative text-4xl drop-shadow">{mg.emoji}</span>
+                          <span className="relative">
+                            <span className="block text-lg font-black italic drop-shadow">{mg.name}</span>
+                            <span className="block text-xs font-bold text-white/85">{mg.desc}</span>
+                          </span>
+                          <span className="relative ml-auto text-xl font-black italic text-white/80">{mg.ready ? "▶" : "🔒"}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {game && game.phase === "play" && (
+                  <div className="flex items-center gap-3 text-white/70">
+                    <span className="h-3 w-3 animate-ping rounded-full bg-amber-300" />
+                    <span className="text-sm font-black italic">対戦中…</span>
+                  </div>
+                )}
+                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
+                  部屋を出る
+                </Button3D>
               </div>
             )}
           </>
@@ -399,6 +481,29 @@ export default function MeshiMatchPage() {
       <p className="relative z-10 mt-8 text-center text-[10px] font-medium tracking-wide text-white/40">
         ※ 店舗情報はデモ用のサンプルデータです
       </p>
+
+      {/* ミニゲーム本体（全画面オーバーレイ・ルート直下）*/}
+      {view === "room" &&
+        stage === "result" &&
+        matches.length === 0 &&
+        game &&
+        game.phase === "play" &&
+        (() => {
+          const props = {
+            hostGenre: getGenre(game.hostChamp),
+            guestGenre: getGenre(game.guestChamp),
+            myRole,
+            seed: game.seed,
+            started: !!game.started,
+            onStart: () => setGame({ started: true }),
+            onRematch: () => setGame({ seed: newSeed(), started: false }),
+            onChangeGame: () => setGame({ id: null, phase: "pick", started: false, seed: newSeed() }),
+            onLeave: leaveRoom,
+          };
+          if (game.id === "slot") return <MeshiSlotNet {...props} />;
+          if (game.id === "amida") return <MeshiAmidaNet {...props} />;
+          return null;
+        })()}
     </div>
   );
 }
