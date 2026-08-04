@@ -46,21 +46,22 @@ const CSS = `
 /* ── 本体：現代的なタッチ式券売機（フラットで清潔）── */
 .mt-kb{position:relative;display:flex;flex-direction:column;width:300px;max-width:86vw;height:min(68vh,510px);
   background:#191c22;border:1px solid #0d0e12;border-radius:20px;padding:12px}
-/* 上部の細いLEDアクセント（うっすら光る）*/
-.mt-brand{height:4px;width:66%;margin:3px auto 11px;border-radius:3px;background:#ff7a2e;
-  box-shadow:0 0 8px 1px rgba(255,122,46,.85), 0 0 2px #ffb079}
-/* バックライトの効いた明るい画面 */
-.mt-screen{position:relative;flex:0 0 auto;background:#eef3f9;border-radius:13px;padding:9px;
-  box-shadow:0 0 24px 5px rgba(150,190,255,.4), inset 0 0 0 1px #ffffff, inset 0 0 22px rgba(120,160,220,.18)}
-.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-/* メニュータイル（液晶の中の項目）*/
-.mt-tile{height:50px;border-radius:9px;background:#e6ebf2;color:#5b626c;border:1px solid #d3dae3;
-  display:flex;align-items:center;justify-content:center;padding:0 5px;text-align:center;font-size:12px;font-weight:700;line-height:1.15}
+/* 画面：暗いタッチパネル（発光ボタンを映えさせる）*/
+.mt-screen{position:relative;flex:0 0 auto;background:#0f1116;border:1px solid #262c36;border-radius:13px;padding:11px 10px}
+.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+/* メニュータイル：ボタン全体がバックライトで発光（温かいオレンジ）*/
+.mt-tile{height:52px;border-radius:10px;background:#3a2a1b;color:#ffd9b0;border:1px solid #7a5230;
+  box-shadow:0 0 12px 2px rgba(255,150,66,.55), inset 0 0 12px rgba(255,175,95,.28);
+  text-shadow:0 0 7px rgba(255,175,95,.6);
+  display:flex;align-items:center;justify-content:center;padding:0 5px;text-align:center;font-size:12px;font-weight:800;line-height:1.15}
 .mt-tile span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.mt-tile.dim{background:#e6ebf2;color:#8b929c}
-/* 選択：オレンジで発光 */
-.mt-tile.lit{background:#ff8a3d;color:#fff;border-color:#ff7a2e;
-  box-shadow:0 0 16px 2px rgba(255,138,61,.8), inset 0 0 0 1px rgba(255,255,255,.55)}
+/* 非選択も光るが控えめ */
+.mt-tile.dim{background:#2a2015;color:#eec095;border-color:#5f4227;
+  box-shadow:0 0 9px 1px rgba(255,150,66,.4), inset 0 0 9px rgba(255,165,85,.18)}
+/* 選択：強いオレンジで発光 */
+.mt-tile.lit{background:#ff8a3d;color:#fff;border-color:#ffcaa0;
+  box-shadow:0 0 26px 5px rgba(255,140,50,.95), inset 0 0 0 1px rgba(255,255,255,.55);
+  text-shadow:0 1px 2px rgba(120,50,0,.5)}
 
 /* 取り出し口エリア */
 .mt-outlet-space{height:118px;flex:0 0 auto}
@@ -108,15 +109,17 @@ const CSS = `
 
 /* ── アニメーション（.anim のときだけ。base=最終状態）── */
 .mt-root.anim .mt-screen{animation:mtScreenOn .4s steps(1,end) both}
-.mt-root.anim .mt-tile.lit{animation:mtTileOn .3s ease .1s both, mtTap .22s ease .34s both}
+.mt-root.anim .mt-tile.lit{animation:mtLitOn .35s ease .1s both, mtTap .22s ease .38s both}
 .mt-root.anim .mt-ticket{animation:mtEmerge .9s .5s both}
 .mt-root.anim .mt-body,.mt-root.anim .mt-pull{animation:mtFade .35s ease 1.4s both}
 
 /* 画面バックライトの点灯（軽く2回またたいて安定）*/
 @keyframes mtScreenOn{0%{opacity:.18}20%{opacity:.95}30%{opacity:.5}45%{opacity:1}100%{opacity:1}}
-/* 選択タイルがオレンジに発光 */
-@keyframes mtTileOn{from{background:#e6ebf2;color:#5b626c;box-shadow:none}
-  to{background:#ff8a3d;color:#fff;box-shadow:0 0 16px 2px rgba(255,138,61,.8), inset 0 0 0 1px rgba(255,255,255,.55)}}
+/* 選択タイルが暗→強いオレンジ発光へ立ち上がる */
+@keyframes mtLitOn{
+  0%{background:#2a2015;color:#eec095;border-color:#5f4227;box-shadow:0 0 6px 1px rgba(255,150,66,.3), inset 0 0 6px rgba(255,165,85,.15)}
+  60%{box-shadow:0 0 34px 8px rgba(255,140,50,1), inset 0 0 0 1px rgba(255,255,255,.6)}
+  100%{background:#ff8a3d;color:#fff;border-color:#ffcaa0;box-shadow:0 0 26px 5px rgba(255,140,50,.95), inset 0 0 0 1px rgba(255,255,255,.55)}}
 @keyframes mtTap{0%{transform:scale(1)}50%{transform:scale(.94)}100%{transform:scale(1)}}
 @keyframes mtEmerge{
   0%{transform:translate(-50%,120px);animation-timing-function:cubic-bezier(.15,.75,.3,1)}
@@ -129,7 +132,7 @@ const CSS = `
 @keyframes mtFade{from{opacity:0}to{opacity:1}}
 
 @media (prefers-reduced-motion: reduce){
-  .mt-root.anim .mt-btn.lit,.mt-root.anim .mt-ticket,.mt-root.anim .mt-body,.mt-root.anim .mt-pull,.mt-root.anim .mt-tube{animation:none}
+  .mt-root.anim .mt-screen,.mt-root.anim .mt-tile.lit,.mt-root.anim .mt-ticket,.mt-root.anim .mt-body,.mt-root.anim .mt-pull{animation:none}
   .mt-pull .ar{animation:none}
 }
 `;
@@ -202,7 +205,6 @@ export default function MealTicket({ genre, ticketNo, issuedAt, nicknames = [], 
       <style>{CSS}</style>
 
       <div className="mt-kb">
-        <div className="mt-brand" aria-hidden />
         <div className="mt-screen">
           <div className="mt-grid" aria-hidden>
             {list.map((label, i) => {
