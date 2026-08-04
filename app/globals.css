@@ -417,3 +417,111 @@ body {
   .mb-vs-bg .lines { animation: none; }
   .mb-confetti-piece { display: none; }
 }
+
+/* ============================================================
+   夜の屋台テーマ（トップページ限定・すべてCSS描画／画像なし）
+   立体感はベベル、ぼかしは光源（提灯・湯気）のみ
+   ============================================================ */
+.ymt-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden;
+  background: linear-gradient(180deg, #16273f 0%, #0b1120 46%, #05070c 100%); }
+
+/* 木目のカウンター（画面下端・高さ15%）*/
+.ymt-counter { position: absolute; left: 0; right: 0; bottom: 0; height: 15%;
+  border-top: 1px solid #5a3a22;
+  background:
+    linear-gradient(180deg, rgba(255,190,110,.12), transparent 34%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(180deg, rgba(0,0,0,.20) 0 1px, transparent 1px 27px),
+    linear-gradient(180deg, #3b2616 0%, #2a1a0e 60%, #1b1007 100%); }
+
+/* 提灯（赤い紙提灯＋周囲ににじむ暖色の光）*/
+.ymt-lantern { position: absolute; z-index: 0; pointer-events: none; }
+.ymt-lantern::before { content: ""; position: absolute; left: 50%; top: 52%;
+  width: 160px; height: 160px; transform: translate(-50%,-50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,196,120,.50), rgba(255,150,80,.20) 44%, transparent 72%);
+  filter: blur(8px); }
+.ymt-lantern .paper { position: relative; width: 44px; height: 56px; border-radius: 50% / 40%;
+  border-top: 4px solid #241f1c; border-bottom: 4px solid #241f1c;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 1px, transparent 1px 7px),
+    linear-gradient(180deg, #d23b2f, #a81f18 78%, #8c1712);
+  box-shadow: inset 0 0 12px rgba(255,225,160,.45), inset 0 -6px 10px rgba(0,0,0,.30); }
+.ymt-lantern .cord { position: absolute; left: 50%; top: -16px; width: 1px; height: 16px;
+  background: #241f1c; transform: translateX(-50%); }
+
+/* 湯気（8秒周期・透明度15%以下）*/
+.ymt-steam { position: absolute; bottom: 15%; width: 16px; height: 130px; border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,0));
+  filter: blur(7px); opacity: 0; transform-origin: bottom;
+  animation: ymtSteam 8s ease-in-out infinite; }
+@keyframes ymtSteam {
+  0%   { opacity: 0;   transform: translateY(12px) translateX(0) scaleY(.6); }
+  22%  { opacity: .14; }
+  60%  { opacity: .10; transform: translateY(-62px) translateX(7px) scaleY(1); }
+  100% { opacity: 0;   transform: translateY(-134px) translateX(-5px) scaleY(1.1); } }
+
+/* 白いのれん（生成り色）＋手書き風ロゴ＋下端3本の切れ目 */
+.ymt-noren { display: inline-flex; flex-direction: column; align-items: stretch; position: relative; }
+.ymt-noren::before { content: ""; position: absolute; left: -8px; right: -8px; top: -6px; height: 4px;
+  border-radius: 2px; background: #241f1c; }
+.ymt-noren .cloth { background: #f0e6d2; color: #2a2520; padding: 9px 26px 7px; text-align: center;
+  font-family: var(--font-klee), var(--font-zen-maru), sans-serif; font-weight: 600;
+  font-size: 22px; letter-spacing: .16em; line-height: 1;
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,.035) 0 1px, transparent 1px 14px); }
+.ymt-noren .hem { display: flex; gap: 4px; }
+.ymt-noren .hem i { flex: 1; height: 13px; background: #f0e6d2; }
+
+/* 見出しの差し色（提灯の赤）*/
+.ymt-hi { color: #e0483b; font-style: normal; }
+
+/* ヒーローの食券（マッチ結果と同じ券面・傾けて上下に揺れる）*/
+.ymt-ticket-wrap { position: relative; display: flex; justify-content: center; }
+.ymt-ticket-wrap::before { content: ""; position: absolute; left: 50%; top: 50%;
+  width: 92%; height: 150%; transform: translate(-50%,-50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,196,120,.42), rgba(255,150,80,.14) 46%, transparent 74%);
+  filter: blur(10px); z-index: 0; pointer-events: none; }
+.ymt-ticket { position: relative; z-index: 1; width: 264px; max-width: 78vw;
+  background: #efe7d3; color: #2a2520; border: 1px solid #cbbf9f; border-radius: 3px; overflow: hidden;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace; font-weight: 700;
+  animation: ymtBob 4s ease-in-out infinite; }
+@keyframes ymtBob {
+  0%, 100% { transform: rotate(-3deg) translateY(-4px); }
+  50%      { transform: rotate(-3deg) translateY(4px); } }
+.ymt-ticket .stub { display: flex; align-items: center; justify-content: space-between;
+  background: #ddceac; color: #514c3c; padding: 5px 12px; font-size: 10px; letter-spacing: .14em; font-weight: 800; }
+.ymt-ticket .stub .brand { opacity: .85; letter-spacing: .1em; }
+.ymt-ticket .perf { border-top: 2px dashed #b8ac8c; }
+.ymt-ticket .body { padding: 7px 14px 11px; text-align: center; }
+.ymt-ticket .tno { text-align: right; font-size: 11px; letter-spacing: .08em; color: #6b6552; }
+.ymt-ticket .cap { font-size: 9px; letter-spacing: .34em; color: #8a836c; margin-top: 2px; }
+.ymt-ticket .genre { font-size: 30px; line-height: 1.05; font-weight: 900; letter-spacing: .03em; margin: 2px 0 5px; color: #26251f; }
+.ymt-ticket .names { font-size: 13px; letter-spacing: .06em; color: #4a463a; }
+.ymt-ticket .date { font-size: 9px; letter-spacing: .05em; color: #7a7460; margin-top: 5px; }
+
+/* 券売機ボタン（ベベルで立体感・押下でベベル反転＋2px沈む）*/
+.ymt-btn { position: relative; width: 100%; border: 1px solid; border-radius: 4px;
+  padding: 15px 20px; font-family: inherit; font-weight: 800; letter-spacing: .09em; font-size: 17px;
+  cursor: pointer; transition: transform .05s ease; }
+.ymt-btn:disabled { cursor: default; opacity: .5; }
+/* 点灯（選択済み）＝クリーム面に墨色文字 */
+.ymt-btn.lit { background: #ece0bf; color: #2a2520; border-color: #b7ab84;
+  box-shadow: inset 0 1px 0 #fff6db, inset 0 -1px 0 #9a8f6b; }
+/* 消灯 */
+.ymt-btn.dim { background: #2b3037; color: #d9cfb9; border-color: #14171c;
+  box-shadow: inset 0 1px 0 #454c56, inset 0 -1px 0 #14171c; }
+.ymt-btn:not(:disabled):active { transform: translateY(2px); }
+.ymt-btn.lit:not(:disabled):active { box-shadow: inset 0 1px 0 #9a8f6b, inset 0 -1px 0 #fff6db; }
+.ymt-btn.dim:not(:disabled):active { box-shadow: inset 0 1px 0 #14171c, inset 0 -1px 0 #454c56; }
+
+/* 投入口のような凹んだ入力欄 */
+.ymt-input { width: 100%; border: 1px solid #0a0e14; border-radius: 3px; padding: 12px;
+  text-align: center; font-family: inherit; font-weight: 800; font-size: 20px; letter-spacing: .06em;
+  background: #141a24; color: #f0e6d2; outline: none;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.72), inset 0 -1px 0 rgba(255,210,150,.16); }
+.ymt-input::placeholder { color: rgba(240,230,210,.3); font-weight: 700; }
+.ymt-input:focus { box-shadow: inset 0 2px 6px rgba(0,0,0,.82), inset 0 -1px 0 rgba(255,196,120,.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ymt-steam { animation: none; opacity: 0; }
+  .ymt-ticket { animation: none; transform: rotate(-3deg); }
+}

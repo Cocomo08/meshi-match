@@ -88,6 +88,51 @@ function MuteToggle() {
   );
 }
 
+// 夜の屋台の背景（トップ限定・すべてCSS描画／画像なし）
+function NightStall() {
+  return (
+    <div className="ymt-bg" aria-hidden>
+      <span className="ymt-lantern" style={{ top: "5%", left: "15%" }}>
+        <span className="cord" />
+        <span className="paper" />
+      </span>
+      <span className="ymt-lantern" style={{ top: "9%", left: "50%", transform: "translateX(-50%) scale(1.15)" }}>
+        <span className="cord" />
+        <span className="paper" />
+      </span>
+      <span className="ymt-lantern" style={{ top: "6%", right: "15%" }}>
+        <span className="cord" />
+        <span className="paper" />
+      </span>
+      <span className="ymt-steam" style={{ left: "30%" }} />
+      <span className="ymt-steam" style={{ left: "66%", animationDelay: "3.5s" }} />
+      <div className="ymt-counter" />
+    </div>
+  );
+}
+
+// ヒーローの食券（マッチ結果と同じ券面デザイン・サンプル内容）
+function HeroTicket() {
+  return (
+    <div className="ymt-ticket-wrap" aria-hidden>
+      <div className="ymt-ticket">
+        <div className="stub">
+          <span>半券</span>
+          <span className="brand">MESHI-MACHI</span>
+        </div>
+        <div className="perf" />
+        <div className="body">
+          <div className="tno">No.0001234</div>
+          <div className="cap">本日のマッチ</div>
+          <div className="genre">ラーメン</div>
+          <div className="names">たろ　×　はな</div>
+          <div className="date">発行 2026.08.04</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GenreCard({ card }) {
   const [hasPhoto, setHasPhoto] = useState(false);
   const imgRef = useRef(null);
@@ -355,7 +400,7 @@ export default function MeshiMatchPage() {
 
   return (
     <div className="mm-arena relative flex flex-1 flex-col overflow-hidden px-5 py-8">
-      <div className="mm-lines" aria-hidden />
+      {view === "home" ? <NightStall /> : <div className="mm-lines" aria-hidden />}
       <MuteToggle />
 
       {mounted && !isOnline && (
@@ -368,49 +413,70 @@ export default function MeshiMatchPage() {
         {/* ===== ホーム：部屋を作る / 入る ===== */}
         {view === "home" && (
           <div className="flex w-full flex-col items-center">
-            <span className="mb-3 -skew-x-6 rounded-md border-2 border-white/70 bg-white/10 px-4 py-1 text-sm font-black italic tracking-widest text-white backdrop-blur">
-              🍜 メシマチ
-            </span>
-            <h1 className="text-center text-[2.1rem] font-black italic leading-tight tracking-tight text-white [text-shadow:0_3px_12px_rgba(0,0,0,0.6)]">
+            {/* ロゴ：白いのれん（手書き風・下端に3本の切れ目） */}
+            <div className="ymt-noren mb-4">
+              <div className="cloth">メシマチ</div>
+              <div className="hem">
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+            </div>
+
+            <h1 className="text-center text-[2.1rem] font-black leading-tight text-[#f0e6d2] [text-shadow:0_2px_10px_rgba(0,0,0,0.6)]">
               「どこでもいい」を
               <br />
-              <span className="mm-gold">卒業</span>しよう
+              <span className="ymt-hi">卒業</span>しよう
             </h1>
-            <p className="mb-6 mt-3 text-center text-xs font-bold tracking-wide text-white/70">
+
+            {/* ヒーロー：実際の食券を1枚（このアプリで何が起きるかを一目で） */}
+            <div className="my-5 w-full">
+              <HeroTicket />
+            </div>
+
+            <p className="mb-6 text-center text-xs font-bold tracking-wide text-[#f0e6d2]/70">
               二人がそれぞれの端末でスワイプ → マッチで今日のごはんを決める
             </p>
 
-            {/* ニックネーム入力 */}
+            {/* ニックネーム入力（投入口のような凹み） */}
             <label className="mb-6 w-full">
-              <span className="mb-2 block text-xs font-black tracking-widest text-white/60">ニックネーム</span>
+              <span className="mb-2 block text-xs font-black tracking-widest text-[#f0e6d2]/60">ニックネーム</span>
               <input
                 value={nick}
                 onChange={(e) => setNick(e.target.value.slice(0, 12))}
                 placeholder="例）たろ"
                 maxLength={12}
-                className="w-full rounded-xl border-[3px] border-white/60 bg-white/10 py-3 text-center text-xl font-black italic text-white placeholder-white/25 outline-none focus:border-amber-300"
+                className="ymt-input"
               />
             </label>
 
             <div className="flex w-full flex-col gap-3">
-              <Button3D onClick={createRoom} disabled={busy || !nick.trim()} className="w-full px-8 text-lg">
+              {/* 点灯している選択済みボタン（クリーム面／墨色） */}
+              <button
+                type="button"
+                onClick={() => { playPush(); createRoom(); }}
+                disabled={busy || !nick.trim()}
+                className="ymt-btn lit"
+              >
                 部屋をつくる
-              </Button3D>
-              <Button3D
-                tone="neutral"
-                onClick={() => { if (nick.trim()) setView("join"); }}
+              </button>
+              {/* 消灯しているボタン */}
+              <button
+                type="button"
+                onClick={() => { playPush(); if (nick.trim()) setView("join"); }}
                 disabled={!nick.trim()}
-                className="w-full px-8 text-base"
+                className="ymt-btn dim"
               >
                 部屋に入る
-              </Button3D>
+              </button>
             </div>
             {!nick.trim() && (
-              <p className="mt-3 text-center text-[11px] font-bold text-amber-300/80">
+              <p className="mt-3 text-center text-[11px] font-bold text-[#e0483b]">
                 まずニックネームを入れてね
               </p>
             )}
-            <p className="mt-8 text-center text-[11px] font-medium leading-relaxed text-white/45">
+            <p className="mt-8 text-center text-[11px] font-medium leading-relaxed text-[#f0e6d2]/45">
               登録不要。部屋コードを共有して、
               <br />
               二人でリアルタイムに対戦できます。
