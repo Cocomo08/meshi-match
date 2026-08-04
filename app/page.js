@@ -15,6 +15,7 @@ import { newSeed } from "@/lib/rng";
 import { MeshiSlotNet } from "@/components/MeshiSlotNet";
 import { MeshiAmidaNet } from "@/components/MeshiAmidaNet";
 import { MeshiBattleNet } from "@/components/MeshiBattleNet";
+import MealTicket from "@/components/MealTicket";
 
 const genreCards = GENRES.map((g) => ({ ...g }));
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -204,10 +205,20 @@ export default function MeshiMatchPage() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [nick, setNick] = useState("");
+  const [ticketAcked, setTicketAcked] = useState(false);
   const seenRound = useRef(0);
 
-  // クライアントでのみバナー判定（SSRとの不一致を防ぐ）
-  useEffect(() => setMounted(true), []);
+  // クライアントでのみバナー判定（SSRとの不一致を防ぐ）＆ニックネーム復元
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const saved = localStorage.getItem("meshi-nick");
+      if (saved) setNick(saved);
+    } catch {
+      /* 無視 */
+    }
+  }, []);
 
   const players = room?.players || {};
   const ids = Object.keys(players);
@@ -232,7 +243,20 @@ export default function MeshiMatchPage() {
   const storeMatches = bothStoreDone
     ? storeDeck.filter((s) => (me.storeLikes || []).includes(s.id) && (opp.storeLikes || []).includes(s.id))
     : [];
-  const decideGenre = (id) => setShared({ decidedGenre: id });
+  const myName = me?.name || "きみ";
+  const oppName = opp?.name || "あいて";
+  // ジャンル確定：食券用の通し番号・発行時刻も一緒に共有（両端末で同じ券に）
+  const decideGenre = (id) =>
+    setShared({
+      decidedGenre: id,
+      ticketNo: Math.floor(1000000 + Math.random() * 9000000),
+      issuedAt: Date.now(),
+    });
+
+  // 決定ジャンルが変わったら食券の確認状態をリセット
+  useEffect(() => {
+    setTicketAcked(false);
+  }, [decidedGenre]);
 
   // ラウンド変更（もう一回）を検知して自分のスワイプをリセット
   useEffect(() => {
@@ -257,10 +281,20 @@ export default function MeshiMatchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, noMatch, myRole, game]);
 
+  const saveNick = () => {
+    try {
+      localStorage.setItem("meshi-nick", nick.trim());
+    } catch {
+      /* 無視 */
+    }
+  };
+
   const createRoom = async () => {
+    if (!nick.trim()) return;
+    saveNick();
     setBusy(true);
     const c = genCode();
-    const ok = await connect(c, true);
+    const ok = await connect(c, true, nick.trim());
     setBusy(false);
     if (ok) {
       seenRound.current = 0;
@@ -270,9 +304,10 @@ export default function MeshiMatchPage() {
 
   const joinRoom = async () => {
     const c = joinCode.trim().toUpperCase();
-    if (c.length < 4) return;
+    if (c.length < 4 || !nick.trim()) return;
+    saveNick();
     setBusy(true);
-    const ok = await connect(c, false);
+    const ok = await connect(c, false, nick.trim());
     setBusy(false);
     if (ok) {
       seenRound.current = 0;
@@ -341,18 +376,40 @@ export default function MeshiMatchPage() {
               <br />
               <span className="mm-gold">卒業</span>しよう
             </h1>
-            <p className="mb-8 mt-3 text-center text-xs font-bold tracking-wide text-white/70">
+            <p className="mb-6 mt-3 text-center text-xs font-bold tracking-wide text-white/70">
               二人がそれぞれの端末でスワイプ → マッチで今日のごはんを決める
             </p>
 
+            {/* ニックネーム入力 */}
+            <label className="mb-6 w-full">
+              <span className="mb-2 block text-xs font-black tracking-widest text-white/60">ニックネーム</span>
+              <input
+                value={nick}
+                onChange={(e) => setNick(e.target.value.slice(0, 12))}
+                placeholder="例）たろ"
+                maxLength={12}
+                className="w-full rounded-xl border-[3px] border-white/60 bg-white/10 py-3 text-center text-xl font-black italic text-white placeholder-white/25 outline-none focus:border-amber-300"
+              />
+            </label>
+
             <div className="flex w-full flex-col gap-3">
-              <Button3D onClick={createRoom} disabled={busy} className="w-full px-8 text-lg">
+              <Button3D onClick={createRoom} disabled={busy || !nick.trim()} className="w-full px-8 text-lg">
                 部屋をつくる
               </Button3D>
-              <Button3D tone="neutral" onClick={() => { setView("join"); }} className="w-full px-8 text-base">
+              <Button3D
+                tone="neutral"
+                onClick={() => { if (nick.trim()) setView("join"); }}
+                disabled={!nick.trim()}
+                className="w-full px-8 text-base"
+              >
                 部屋に入る
               </Button3D>
             </div>
+            {!nick.trim() && (
+              <p className="mt-3 text-center text-[11px] font-bold text-amber-300/80">
+                まずニックネームを入れてね
+              </p>
+            )}
             <p className="mt-8 text-center text-[11px] font-medium leading-relaxed text-white/45">
               登録不要。部屋コードを共有して、
               <br />
@@ -425,7 +482,7 @@ export default function MeshiMatchPage() {
             {stage === "swipe" && (
               <div className="flex w-full flex-col items-center">
                 <p className="mb-3 -skew-x-6 rounded-md border-2 border-emerald-400/60 bg-emerald-500/15 px-4 py-1 text-xs font-black italic tracking-widest text-emerald-200">
-                  🟢 相手も入室中！スワイプで選ぼう
+                  🟢 {oppName} が入室中！スワイプで選ぼう
                 </p>
                 <SwipeDeck
                   key={`swipe-${room?.round || 0}`}
@@ -710,6 +767,18 @@ export default function MeshiMatchPage() {
             );
           return null;
         })()}
+
+      {/* 食券発行（ジャンル確定の瞬間・全画面オーバーレイ）*/}
+      {view === "room" && decidedGenre && !ticketAcked && (
+        <MealTicket
+          genre={getGenre(decidedGenre)?.label}
+          ticketNo={room?.ticketNo || 0}
+          issuedAt={room?.issuedAt ? new Date(room.issuedAt) : undefined}
+          nicknames={[myName, oppName]}
+          ctaLabel="お店をさがす"
+          onNext={() => setTicketAcked(true)}
+        />
+      )}
     </div>
   );
 }
