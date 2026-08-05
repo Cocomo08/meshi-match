@@ -1,26 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { mulberry32, seedFrom } from "@/lib/rng";
 
-// 大将のお題（読み合いクイズ・2端末同期）
-//  ・大将がお題を出す → 二人が同時に「どっち(人)」かを選ぶ
-//  ・回答が一致したら、その人に木札1枚。割れたら誰にも入らない
-//  ・全5問。木札の多い方が勝ち（＝その人の推しジャンルに決定）
-//  同期：進行(quiz)はホストが所有。各自の回答は ansHost/ansGuest に別キーで書く。
+// 大将のお題（読み合い・2端末同期）
+//  ・二人が同時に「たろ」か「はな」かを選ぶ（自分でも相手でも可）
+//  ・両者そろってから同時開示。回答が一致した"人"だけ主導権を1つ得る（割れたら誰も得ない）
+//  ・自分を選び続けても相手が同意しなければ何も得られない＝読み合いが成立
+//  ・全5問。主導権が多い方のジャンルに決定。同数は大将が独断（seedで一意）
+//  同期：進行(quiz)はホスト所有。回答は ansHost/ansGuest に別キーで書く。
 
-const QUESTIONS = [
-  "辛いもんが好きなのはどっちだ",
-  "先に腹が減るのはどっちだ",
-  "好き嫌いが多いのはどっちだ",
-  "大盛りを頼むのはどっちだ",
-  "デザートまで食うのはどっちだ",
-  "新しい店に飛び込むのはどっちだ",
-  "同じ店に通い続けるのはどっちだ",
+// お題は「対になる2問」をペアで用意。1ゲームで5ペア選び、各ペアから1問だけ出す。
+const PAIRS = [
+  ["大盛りを頼むのはどっちだ", "小食なのはどっちだ"],
+  ["辛いもんが好きなのはどっちだ", "甘いもんに目がないのはどっちだ"],
+  ["新しい店に飛び込むのはどっちだ", "同じ店に通い続けるのはどっちだ"],
+  ["先に腹が減るのはどっちだ", "食うのが遅いのはどっちだ"],
+  ["好き嫌いが多いのはどっちだ", "何でも食えるのはどっちだ"],
+  ["デザートまで食うのはどっちだ", "〆にラーメン行くのはどっちだ"],
+  ["値段を気にするのはどっちだ", "うまけりゃいいと言うのはどっちだ"],
 ];
-const REACT_MATCH = ["そりゃそうだ", "息が合ってるな"];
-const REACT_SPLIT = "意見が割れたな";
-const QN = 5; // 出題数
+const REACT_MATCH = ["そりゃそうだ", "息が合ってるな", "よく分かってるじゃないか"];
+const REACT_SPLIT = ["割れたか", "そりゃ意外だな", "分かってないねぇ"];
+const REACT_TO = "迷ってる場合か";
+const QN = 5;
 
 const kanji = (n) => {
   const d = "〇一二三四五六七八九";
@@ -50,20 +53,10 @@ const CSS = `
 .qz-speech::before { content:""; position:absolute; left:-10px; top:16px; border:6px solid transparent; border-right-color:#f0e6d2; }
 .qz-cur { opacity:.35; }
 
-/* 得点＝木札の積み上がり */
-.qz-scores { display:flex; justify-content:space-between; gap:10px; }
-.qz-score { flex:1; text-align:center; }
-.qz-score .nm { font-size:11px; font-weight:900; color:#e8dcc4; letter-spacing:.04em; }
-.qz-pile { display:flex; flex-direction:column-reverse; align-items:center; gap:2px; min-height:70px; justify-content:flex-start; margin-top:4px; }
-.qz-chip { width:52px; height:11px; border-radius:2px; background:#7a5230; border:1px solid #3f2a15;
-  box-shadow: inset 0 1px 0 rgba(255,224,170,.3), inset 0 -1px 0 rgba(0,0,0,.4); }
-.qz-chip.g { animation: qzPop .3s ease both; }
-@keyframes qzPop { from{ transform:translateY(-10px) scale(.8); opacity:0 } to{ transform:none; opacity:1 } }
-
 /* 名札（回答の選択肢） */
 .qz-plates { flex:1; display:flex; align-items:center; justify-content:center; gap:14px; }
 .qz-plate { position:relative; flex:1; max-width:150px; padding:26px 8px 22px; border-radius:6px; text-align:center;
-  border:2px solid #3f2a15; cursor:pointer; transition: transform .06s ease;
+  border:2px solid #3f2a15; cursor:pointer; transition: transform .12s ease, filter .12s ease;
   box-shadow: inset 0 2px 0 rgba(255,224,170,.3), inset 0 -3px 0 rgba(0,0,0,.42); }
 .qz-plate.left { background:#6f4b2a; } .qz-plate.right { background:#855e35; }
 .qz-plate::before { content:""; position:absolute; left:50%; top:-16px; width:2px; height:16px; background:#241f1c; transform:translateX(-50%); }
@@ -71,24 +64,40 @@ const CSS = `
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; text-shadow:0 1px 0 rgba(255,224,170,.18); }
 .qz-plate.mine { box-shadow: inset 0 2px 0 rgba(255,224,170,.3), inset 0 -3px 0 rgba(0,0,0,.42), 0 0 0 3px rgba(255,224,170,.45); }
 .qz-plate:not(.locked):active { transform: translateY(2px); }
-.qz-plate.win { box-shadow: 0 0 22px 5px rgba(255,196,120,.85), inset 0 0 0 2px rgba(255,236,190,.7); background:#c9962f; }
-.qz-plate.win .nm { color:#241c14; }
+/* 一致：提灯の赤に光り、拡大してから戻る */
+.qz-plate.win { background:#c23c30; border-color:#7a1109; animation: qzWin .5s ease both; }
+.qz-plate.win .nm { color:#fff2ec; text-shadow:0 1px 2px rgba(120,20,10,.6); }
+@keyframes qzWin {
+  0%{ transform:scale(1); box-shadow: 0 0 0 rgba(224,72,59,0), inset 0 0 0 2px rgba(255,120,110,.7); }
+  45%{ transform:scale(1.12); box-shadow: 0 0 26px 7px rgba(224,72,59,.95), inset 0 0 0 2px rgba(255,150,140,.9); }
+  100%{ transform:scale(1); box-shadow: 0 0 20px 5px rgba(224,72,59,.85), inset 0 0 0 2px rgba(255,120,110,.7); }
+}
+/* 不一致：わずかに沈む */
+.qz-plate.sink { transform: translateY(4px); filter: brightness(.78); }
 /* 開示：投票チップ */
-.qz-votes { position:absolute; left:0; right:0; bottom:-26px; display:flex; justify-content:center; gap:5px; }
+.qz-votes { position:absolute; left:0; right:0; bottom:-24px; display:flex; justify-content:center; gap:5px; }
 .qz-vote { font-size:10px; font-weight:900; color:#241c14; background:#efe3c6; border:1px solid #b0a37d; border-radius:999px; padding:1px 7px; }
-.qz-vote.g { animation: qzPop .3s ease both; }
 
 /* タイマー */
 .qz-timer { height:5px; border-radius:3px; background:rgba(0,0,0,.4); overflow:hidden; }
 .qz-timer i { display:block; height:100%; background:linear-gradient(90deg,#ffcf6a,#e0483b); animation: qzTime 8s linear both; }
 @keyframes qzTime { from{ width:100% } to{ width:0% } }
+.qz-wait { text-align:center; font-size:13px; font-weight:800; color:#e8dcc4; }
 
-/* のれん帯（残り問題数） */
+/* 主導権＝木札の積み上がり（きみ=手前・あいて=奥）*/
+.qz-tokens { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.qz-trow { display:flex; align-items:center; gap:5px; min-height:14px; }
+.qz-trow .lbl { width:34px; text-align:right; font-size:10px; font-weight:900; color:#e8dcc4; letter-spacing:.04em; }
+.qz-trow.back { opacity:.55; transform:scale(.84); transform-origin:left center; }
+.qz-tok { width:26px; height:12px; border-radius:2px; background:#7a5230; border:1px solid #3f2a15;
+  box-shadow: inset 0 1px 0 rgba(255,224,170,.3), inset 0 -1px 0 rgba(0,0,0,.4); }
+.qz-tok.g { animation: qzPop .3s ease both; }
+@keyframes qzPop { from{ transform:translateY(-8px) scale(.8); opacity:0 } to{ transform:none; opacity:1 } }
+
+/* のれん帯：残り問題数 */
 .qz-band { align-self:center; position:relative; background:#f0e6d2; color:#2a2520; border-radius:3px; padding:6px 20px;
   font-size:12px; font-weight:800; letter-spacing:.06em; box-shadow: inset 0 1px 0 #fffdf5, inset 0 -1px 0 #b0a37d; }
 .qz-band::before { content:""; position:absolute; left:8px; right:8px; top:-3px; height:3px; background:#241f1c; border-radius:2px; }
-
-.qz-wait { text-align:center; font-size:13px; font-weight:800; color:#e8dcc4; }
 
 /* 決着 */
 .qz-over { position:absolute; inset:0; z-index:3; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -102,14 +111,14 @@ const CSS = `
 .qz-btn.prim:active { transform:translateY(2px); box-shadow: inset 0 1px 0 #b0a37d, inset 0 -1px 0 #fff6db; }
 .qz-btn.wood { background:#3a2a1b; color:#e8dcc4; border-color:#241811; box-shadow: inset 0 1px 0 rgba(255,224,170,.25), inset 0 -1px 0 rgba(0,0,0,.5); }
 .qz-over-row { display:flex; gap:10px; }
-
-/* 退出/変更 */
 .qz-quit { position:absolute; top:10px; left:12px; z-index:4; background:#3a2a1b; color:#e8dcc4; border:1px solid #241811;
   border-radius:5px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; }
 
 @media (prefers-reduced-motion: reduce) {
-  .qz-chip.g, .qz-vote.g, .qz-over { animation:none; }
+  .qz-plate.win { animation:none; transform:none; box-shadow: inset 0 0 0 3px #e0483b, inset 0 2px 0 rgba(255,224,170,.3); }
+  .qz-plate.sink { transform:none; filter:none; }
+  .qz-tok.g, .qz-over { animation:none; }
   .qz-timer i { animation:none; width:100%; }
 }
 `;
@@ -118,13 +127,10 @@ function MasterFace({ talking }) {
   return (
     <svg viewBox="0 0 64 64" fill="none" stroke="#f0e6d2" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="32" cy="36" r="20" />
-      {/* 鉢巻 */}
       <path d="M12 24 Q32 16 52 24" stroke="#e0483b" strokeWidth="4" />
       <path d="M52 24 l7 -4 M52 24 l6 6" stroke="#e0483b" strokeWidth="4" />
-      {/* 目 */}
       <path d="M25 37 h.01" strokeWidth="4.5" />
       <path d="M39 37 h.01" strokeWidth="4.5" />
-      {/* 口 */}
       {talking ? <path d="M27 45 q5 5 10 0" /> : <path d="M27 46 h10" />}
     </svg>
   );
@@ -150,18 +156,17 @@ export default function MeshiQuizNet({
   const isHost = myRole === "host";
   const [isRed] = useState(() => reduced());
 
-  // お題5問（seedで両端末一致）
+  // 5ペアを選び、各ペアから1問だけ（seedで両端末一致）
   const picks = useMemo(() => {
-    const rng = mulberry32(seedFrom(String(seed) + "quiz"));
-    const idx = QUESTIONS.map((_, k) => k);
-    for (let k = idx.length - 1; k > 0; k--) {
+    const rng = mulberry32(seedFrom(String(seed) + "quizpair"));
+    const pi = PAIRS.map((_, k) => k);
+    for (let k = pi.length - 1; k > 0; k--) {
       const j = Math.floor(rng() * (k + 1));
-      [idx[k], idx[j]] = [idx[j], idx[k]];
+      [pi[k], pi[j]] = [pi[j], pi[k]];
     }
-    return idx.slice(0, QN);
+    return pi.slice(0, QN).map((p) => PAIRS[p][rng() < 0.5 ? 0 : 1]);
   }, [seed]);
 
-  // ホストが進行を初期化
   useEffect(() => {
     if (isHost && !quiz) writeQuiz({ i: 0, scores: { host: 0, guest: 0 }, startedAt: Date.now(), done: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -174,8 +179,8 @@ export default function MeshiQuizNet({
   const oppAnswered = oppAns?.q === i;
   const reveal = myAnswered && oppAnswered && !quiz?.done;
 
-  // お題の一文字ずつ表示
-  const qText = QUESTIONS[picks[i]] ?? "";
+  // お題を一文字ずつ
+  const qText = picks[i] ?? "";
   const [typed, setTyped] = useState(0);
   useEffect(() => {
     if (!quiz || quiz.done) return;
@@ -186,12 +191,12 @@ export default function MeshiQuizNet({
     return () => clearInterval(id);
   }, [i, qText, quiz?.done, isRed]);
 
-  // 8秒でランダム自動回答
+  // 8秒でランダム自動回答（時間切れフラグ付き）
   useEffect(() => {
     if (!quiz || quiz.done || myAnswered) return;
     const remain = 8000 - (Date.now() - (quiz.startedAt || Date.now()));
     const id = setTimeout(() => {
-      writeAns(myRole, { q: i, pick: Math.random() < 0.5 ? "host" : "guest" });
+      writeAns(myRole, { q: i, pick: Math.random() < 0.5 ? "host" : "guest", to: true });
     }, Math.max(0, remain));
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,7 +207,7 @@ export default function MeshiQuizNet({
     if (!isHost || !quiz || quiz.done) return;
     if (!(ansHost?.q === i && ansGuest?.q === i)) return;
     const id = setTimeout(() => {
-      const winner = ansHost.pick === ansGuest.pick ? ansHost.pick : null;
+      const winner = ansHost.pick === ansGuest.pick ? ansHost.pick : null; // 一致した"人"だけ主導権
       const scores = winner ? { ...quiz.scores, [winner]: quiz.scores[winner] + 1 } : quiz.scores;
       if (i + 1 >= QN) writeQuiz({ ...quiz, scores, done: true });
       else writeQuiz({ ...quiz, scores, i: i + 1, startedAt: Date.now() });
@@ -227,22 +232,20 @@ export default function MeshiQuizNet({
   }
 
   const scores = quiz.scores || { host: 0, guest: 0 };
-  const remainingQ = QN - i;
-
-  // 開示情報
   const myPick = myAns?.pick;
   const oppPick = oppAns?.pick;
   const matched = reveal && myPick === oppPick;
   const winPerson = matched ? myPick : null;
-  const reactionSeed = seedFrom(String(seed) + "r" + i) % REACT_MATCH.length;
+  const anyTimeout = reveal && (myAns?.to || oppAns?.to);
+  const mReact = REACT_MATCH[seedFrom(String(seed) + "m" + i) % REACT_MATCH.length];
+  const sReact = REACT_SPLIT[seedFrom(String(seed) + "s" + i) % REACT_SPLIT.length];
   const speech = quiz.done
     ? "勝負あり！"
     : reveal
-      ? matched ? REACT_MATCH[reactionSeed] : REACT_SPLIT
+      ? (anyTimeout ? REACT_TO : matched ? mReact : sReact)
       : qText.slice(0, typed);
   const talking = !reveal && !quiz.done && typed < qText.length;
 
-  // 各名札への投票（開示時のみ）
   const votesFor = (person) => {
     if (!reveal) return [];
     const v = [];
@@ -251,33 +254,48 @@ export default function MeshiQuizNet({
     return v;
   };
 
-  // 決着
-  const overallWinner = scores.host > scores.guest ? "host" : scores.guest > scores.host ? "guest" : (mulberry32(seedFrom(String(seed) + "tie"))() < 0.5 ? "host" : "guest");
+  // 主導権（きみ=手前 / あいて=奥）
+  const oppRole = isHost ? "guest" : "host";
+  const myTokens = scores[myRole];
+  const oppTokens = scores[oppRole];
+
+  // 決着（同数は大将の独断＝seedで一意）
+  const tie = scores.host === scores.guest;
+  const overallWinner = scores.host > scores.guest ? "host"
+    : scores.guest > scores.host ? "guest"
+    : (mulberry32(seedFrom(String(seed) + "tie"))() < 0.5 ? "host" : "guest");
   const winName = overallWinner === "host" ? hostName : guestName;
   const winGenre = overallWinner === "host" ? hostGenre : guestGenre;
 
   const Plate = ({ side, person, name }) => {
     const votes = votesFor(person);
     const cls = [
-      "qz-plate",
-      side,
+      "qz-plate", side,
       myAnswered && myPick === person && !reveal ? "mine" : "",
       reveal ? "locked" : "",
       winPerson === person ? "win" : "",
+      reveal && !matched ? "sink" : "",
     ].join(" ");
     return (
       <button type="button" className={cls} onClick={() => answer(person)} disabled={myAnswered || reveal || quiz.done}>
         <span className="nm">{name}</span>
         {reveal && votes.length > 0 && (
           <span className="qz-votes">
-            {votes.map((v) => (
-              <span key={v} className={`qz-vote ${isRed ? "" : "g"}`}>{v}</span>
-            ))}
+            {votes.map((v) => (<span key={v} className="qz-vote">{v}</span>))}
           </span>
         )}
       </button>
     );
   };
+
+  const TokenRow = ({ role, label, back }) => (
+    <div className={`qz-trow ${back ? "back" : ""}`}>
+      <span className="lbl">{label}</span>
+      {Array.from({ length: scores[role] }).map((_, k) => (
+        <span key={k} className={`qz-tok ${!isRed && k === scores[role] - 1 ? "g" : ""}`} />
+      ))}
+    </div>
+  );
 
   return (
     <div className="qz">
@@ -294,20 +312,6 @@ export default function MeshiQuizNet({
           </div>
         </div>
 
-        {/* 得点＝木札の積み上がり */}
-        <div className="qz-scores">
-          {[["host", hostName], ["guest", guestName]].map(([p, nm]) => (
-            <div className="qz-score" key={p}>
-              <div className="nm">{nm}</div>
-              <div className="qz-pile">
-                {Array.from({ length: scores[p] }).map((_, k) => (
-                  <span key={k} className={`qz-chip ${!isRed && k === scores[p] - 1 ? "g" : ""}`} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
         {/* 名札（回答） */}
         <div className="qz-plates">
           <Plate side="left" person="host" name={hostName} />
@@ -315,20 +319,26 @@ export default function MeshiQuizNet({
         </div>
 
         {/* タイマー or 待機 */}
-        {!reveal && !quiz.done && !myAnswered && (
-          <div className="qz-timer" key={i}><i /></div>
-        )}
+        {!reveal && !quiz.done && !myAnswered && <div className="qz-timer" key={i}><i /></div>}
         {!reveal && !quiz.done && myAnswered && <div className="qz-wait">相手が考え中…</div>}
 
+        {/* 主導権（あいて=奥 / きみ=手前）*/}
+        <div className="qz-tokens">
+          <TokenRow role={oppRole} label="あいて" back />
+          <TokenRow role={myRole} label="きみ" />
+        </div>
+
         {/* のれん帯：残り問題数 */}
-        <div className="qz-band">のこり{kanji(remainingQ)}問</div>
+        <div className="qz-band">のこり{kanji(QN - i)}問</div>
       </div>
 
       {/* 決着 */}
       {quiz.done && (
         <div className="qz-over">
           <div className="qz-win-nm">{winName} の勝ち</div>
-          <div className="qz-win-sub">今日は「{winGenre?.label}」で決まりだ</div>
+          <div className="qz-win-sub">
+            {tie ? "痛み分け…大将の独断で" : ""}今日は「{winGenre?.label}」で決まりだ
+          </div>
           <button className="qz-btn prim" onClick={() => onDecided?.(winGenre?.id)}>この味に決める</button>
           <div className="qz-over-row">
             <button className="qz-btn wood" onClick={onRematch}>もう一番</button>
