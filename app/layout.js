@@ -26,8 +26,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ja" className={`${zenMaru.variable} ${kleeOne.variable}`}>
-      <body className="flex min-h-screen flex-col bg-[#0a0c16] font-sans text-white antialiased">
-        <main className="flex flex-1 flex-col">{children}</main>
+      <body className="app-body flex min-h-screen flex-col font-sans text-white antialiased">
+        <main className="app-main flex flex-1 flex-col">
+          <div className="app-frame flex flex-1 flex-col">{children}</div>
+        </main>
       </body>
     </html>
   );

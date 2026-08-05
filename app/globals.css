@@ -743,3 +743,48 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .nw-panel, .nw-hem i { animation: none !important; }
 }
+
+/* ============================================================
+   レスポンシブ：スマホ幅を最優先。PC幅では「中央にスマホ画面が
+   置かれている」形にし、その外側は屋台の壁の背景で埋める。
+   （ブレークポイント 600px：スマホ幅の枠に収まらなくなる幅から）
+   ============================================================ */
+
+/* 外側（PCの左右・上下の余白）＝屋台の板壁 */
+.app-body {
+  background-color: #140f0a;
+  background-image:
+    linear-gradient(180deg, rgba(255,168,92,.06), transparent 44%),
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,.34) 0 1px, rgba(255,255,255,.014) 1px 2px, transparent 2px 74px);
+}
+
+/* スマホ幅（〜599px）：フレームは全画面のまま。従来の見え方を一切変えない */
+.app-frame { width: 100%; }
+
+@media (min-width: 600px) {
+  /* スマホ枠を画面中央（縦横）に配置 */
+  .app-main { align-items: center; justify-content: center; padding: 16px; }
+
+  .app-frame {
+    position: relative;
+    flex: 0 1 auto;               /* 伸びずに固定サイズの枠になる */
+    width: 500px;
+    max-width: calc(100vw - 32px);
+    height: min(100dvh - 32px, 920px);
+    border-radius: 30px;
+    overflow: hidden;             /* 中身をスマホ画面の角丸に収める */
+    /* transform で内側の position:fixed オーバーレイ（クイズ・バトル・
+       VS・のれんワイプ・食券・ミュート）をこの枠に閉じ込める */
+    transform: translateZ(0);
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.6),
+      0 0 0 7px #0d0a07,          /* スマホの黒いベゼル */
+      0 0 0 8px rgba(255,255,255,.05),
+      0 40px 80px rgba(0,0,0,.6);
+  }
+
+  /* 枠に閉じ込めた全画面オーバーレイの内側高さを、枠基準（100%）に */
+  .app-frame .qz-in { height: 100%; }
+  .app-frame .mb-app { height: 100%; }
+}
