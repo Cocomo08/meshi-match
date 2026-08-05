@@ -19,7 +19,9 @@ import MealTicket from "@/components/MealTicket";
 import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
 import VsIntro from "@/components/VsIntro";
 
-const genreCards = GENRES.map((g) => ({ ...g }));
+// スワイプ画面の短冊枚数（1箇所で管理・あとから調整可）
+const SWIPE_GENRE_COUNT = 12;
+const genreCards = GENRES.slice(0, SWIPE_GENRE_COUNT).map((g) => ({ ...g }));
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 // 選べるミニゲーム（battle は次のアップデートで2台対応予定）
@@ -450,10 +452,12 @@ export default function MeshiMatchPage() {
       )}
       <MuteToggle />
 
+      {/* 開発時のみの検証表示（本番=Firature接続時は非表示・折りたたみ）*/}
       {mounted && !isOnline && (
-        <div className="relative z-20 mx-auto mb-3 max-w-md rounded-lg border border-amber-300/40 bg-amber-400/10 px-3 py-2 text-center text-[11px] font-bold text-amber-200/90">
-          ⚙️ オフライン検証モード（Firebase未設定）— 同じ端末のタブ間でのみ動作します
-        </div>
+        <details className="relative z-20 mx-auto mb-2 max-w-max rounded border border-white/15 bg-black/30 px-2 py-0.5 text-[10px] font-bold text-white/45">
+          <summary className="cursor-pointer list-none select-none">検証モード</summary>
+          <span className="mt-1 block">オフライン検証（Firebase未設定）— 同じ端末のタブ間でのみ動作します</span>
+        </details>
       )}
 
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center">
@@ -630,14 +634,17 @@ export default function MeshiMatchPage() {
             {/* スワイプ：自分の端末で選ぶ */}
             {stage === "swipe" && (
               <div className="flex w-full flex-col items-center">
-                <p className="mb-3 -skew-x-6 rounded-md border-2 border-emerald-400/60 bg-emerald-500/15 px-4 py-1 text-xs font-black italic tracking-widest text-emerald-200">
-                  🟢 {oppName} が入室中！スワイプで選ぼう
-                </p>
+                <div className="sd-status mb-3">
+                  <span className="dot" />
+                  {oppName} が入室中！スワイプで選ぼう
+                </div>
                 <SwipeDeck
                   key={`swipe-${room?.round || 0}`}
                   cards={genreCards}
                   renderCard={(card) => <GenreCard key={card.id} card={card} />}
                   stack
+                  likeLabel="頼む"
+                  nopeLabel="見送り"
                   onFinish={(liked) => update({ likes: liked, phase: "done" })}
                 />
               </div>

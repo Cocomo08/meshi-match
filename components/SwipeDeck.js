@@ -3,34 +3,38 @@
 import { useEffect, useRef, useState } from "react";
 import { playLike, playNope } from "@/components/sound";
 
-// ハート弾け演出の飛び散り方向
-const HEART_PARTICLES = [
-  { dx: "-72px", dy: "-64px", rot: "-25deg" },
-  { dx: "72px", dy: "-64px", rot: "25deg" },
-  { dx: "-96px", dy: "8px", rot: "-15deg" },
-  { dx: "96px", dy: "8px", rot: "15deg" },
-  { dx: "-44px", dy: "-96px", rot: "-8deg" },
-  { dx: "44px", dy: "-96px", rot: "8deg" },
-];
-
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+// 1〜99 を漢数字に（残り枚数表示用）
+function toKanjiNum(n) {
+  const d = "〇一二三四五六七八九";
+  if (n <= 0) return "〇";
+  if (n < 10) return d[n];
+  if (n < 20) return "十" + (n > 10 ? d[n - 10] : "");
+  const t = Math.floor(n / 10), o = n % 10;
+  return d[t] + "十" + (o ? d[o] : "");
+}
+
+// 剥がれ落ちる紙（退場演出・装飾）
+const PEELS = [
+  { left: "16%", delay: 0 },
+  { left: "40%", delay: 0.05 },
+  { left: "62%", delay: 0.02 },
+  { left: "80%", delay: 0.08 },
+];
+
 // カードの山をスワイプで消化する共通コンポーネント。
-//  右スワイプ＝「頼む」（右下の注文票へ吸い込まれる）
-//  左スワイプ＝「今日はいいや」（ひらひら落下）
-//  画面幅の25%以上で確定。未満は元へ戻る。矢印キー対応。連打ロックあり。
-// props:
-//   stack     : true で背後2枚を積み重ね表示（短冊用）
-//   stampYes/stampNo : 判子スタンプの文言
+//  右＝「頼む」／左＝「見送り」。画面幅25%以上で確定。矢印キー対応。連打ロック。
+//  stack=true（短冊）のとき、入場＝上から降下、退場＝一斉に剥がれ落ちる紙の演出。
 export function SwipeDeck({
   cards,
   renderCard,
   onFinish,
-  likeLabel = "アリ",
-  nopeLabel = "パス",
+  likeLabel = "頼む",
+  nopeLabel = "見送り",
   stampYes = "頼む",
   stampNo = "またこんど",
   loop = false,
@@ -43,9 +47,10 @@ export function SwipeDeck({
   const [leaving, setLeaving] = useState(null); // { dir, sx, sy, srot }
   const [burst, setBurst] = useState(0);
   const [screenW, setScreenW] = useState(0);
+  const [phase, setPhase] = useState(stack ? "intro" : "live"); // intro | live | outro
   const likedRef = useRef([]);
   const startRef = useRef(null);
-  const lockRef = useRef(false); // 連打・二重発火の同期ロック
+  const lockRef = useRef(false);
 
   const current = cards[index];
   const next = cards[index + 1] ?? (loop ? cards[0] : undefined);
@@ -60,12 +65,17 @@ export function SwipeDeck({
   }, []);
   const threshold = (screenW || 390) * 0.25;
 
+  // 入場ロック解除（降下0.6s／reduced-motionは即）
+  useEffect(() => {
+    if (phase !== "intro") return;
+    const t = setTimeout(() => setPhase("live"), prefersReducedMotion() ? 200 : 600);
+    return () => clearTimeout(t);
+  }, [phase]);
+
   const commit = (liked) => {
-    if (!current || lockRef.current) return;
+    if (!current || phase !== "live" || lockRef.current) return;
     lockRef.current = true;
-    const sx = drag.x;
-    const sy = drag.y * 0.25;
-    const srot = drag.x / 14;
+    const sx = drag.x, sy = drag.y * 0.25, srot = drag.x / 14;
     if (liked) {
       likedRef.current.push(current.id);
       setBurst((b) => b + 1);
@@ -81,18 +91,22 @@ export function SwipeDeck({
       lockRef.current = false;
       if (index + 1 >= cards.length) {
         if (loop) setIndex(0);
-        else onFinish(likedRef.current);
+        else if (stack) {
+          // 最後の1枚 → 紙が剥がれて暗転 → 遷移
+          setPhase("outro");
+          setTimeout(() => onFinish(likedRef.current), prefersReducedMotion() ? 250 : 500);
+        } else {
+          onFinish(likedRef.current);
+        }
       } else {
         setIndex(index + 1);
       }
     }, dur);
   };
 
-  // 最新の commit を参照（キーボード用に stale closure を避ける）
   const commitRef = useRef(commit);
   commitRef.current = commit;
 
-  // 矢印キー操作
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "ArrowRight") {
@@ -108,7 +122,7 @@ export function SwipeDeck({
   }, []);
 
   const onPointerDown = (e) => {
-    if (leaving || lockRef.current) return;
+    if (phase !== "live" || leaving || lockRef.current) return;
     startRef.current = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
     setDrag({ x: 0, y: 0, active: true });
@@ -121,11 +135,8 @@ export function SwipeDeck({
     if (!startRef.current || leaving) return;
     const dx = drag.x;
     startRef.current = null;
-    if (Math.abs(dx) > threshold) {
-      commit(dx > 0);
-    } else {
-      setDrag({ x: 0, y: 0, active: false }); // 元の位置へ（0.25s・バウンドなし）
-    }
+    if (Math.abs(dx) > threshold) commit(dx > 0);
+    else setDrag({ x: 0, y: 0, active: false });
   };
 
   if (!current) return null;
@@ -145,64 +156,50 @@ export function SwipeDeck({
         : "sd-leave-decline"
     : "";
 
+  // 入場の降下ラッパ（短冊のみ・マウント時1回）
+  const drop = (node, delay, rot) =>
+    stack ? (
+      <div className="sd-drop" style={{ animationDelay: `${delay}s`, "--dropRot": rot }}>
+        {node}
+      </div>
+    ) : (
+      node
+    );
+
   return (
     <>
       {/* 画面全体が方向に応じて色づく */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-l from-emerald-400/30 via-emerald-300/5 to-transparent"
-        style={{ opacity: yesOp }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-r from-rose-400/30 via-rose-300/5 to-transparent"
-        style={{ opacity: noOp }}
-      />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-l from-emerald-400/30 via-emerald-300/5 to-transparent" style={{ opacity: yesOp }} />
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-r from-rose-400/30 via-rose-300/5 to-transparent" style={{ opacity: noOp }} />
 
-      {/* 右スワイプでハートが弾ける演出 */}
       {burst > 0 && (
         <div key={burst} aria-hidden className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
           <div className="relative flex items-center justify-center">
             <span className="heart-pop text-8xl drop-shadow-lg">❤️</span>
-            {HEART_PARTICLES.map((p, i) => (
-              <span key={i} className="heart-fly absolute text-3xl" style={{ "--dx": p.dx, "--dy": p.dy, "--rot": p.rot }}>
-                ❤️
-              </span>
-            ))}
           </div>
         </div>
       )}
 
       <div className="relative z-10 flex w-full flex-col items-center">
-        {controls && (
-          <p className="mb-4 -skew-x-6 text-xs font-black italic tracking-[0.3em] text-white/60">
-            あと{cards.length - index}枚
-          </p>
-        )}
+        {controls && <p className="sd-count mb-4 text-sm font-black">のこり{toKanjiNum(cards.length - index)}枚</p>}
 
-        <div className={`relative w-full max-w-sm select-none ${heightClass}`}>
+        <div className={`relative w-full max-w-sm select-none ${heightClass}`} style={{ opacity: phase === "outro" ? 0 : 1 }}>
           {stack ? (
             <>
               {third && (
                 <div
                   className={`sd-behind absolute inset-0 ${leaving ? "go" : ""}`}
-                  style={{
-                    transform: `translate(${leaving ? 4 : 8}px, ${leaving ? 8 : 16}px)`,
-                    filter: `brightness(${leaving ? 0.85 : 0.7})`,
-                  }}
+                  style={{ transform: `translate(${leaving ? 4 : 8}px, ${leaving ? 8 : 16}px)`, filter: `brightness(${leaving ? 0.85 : 0.7})` }}
                 >
-                  {renderCard(third)}
+                  {drop(renderCard(third), 0, "-6deg")}
                 </div>
               )}
               {next && (
                 <div
                   className={`sd-behind absolute inset-0 ${leaving ? "go" : ""}`}
-                  style={{
-                    transform: `translate(${leaving ? 0 : 4}px, ${leaving ? 0 : 8}px)`,
-                    filter: `brightness(${leaving ? 1 : 0.85})`,
-                  }}
+                  style={{ transform: `translate(${leaving ? 0 : 4}px, ${leaving ? 0 : 8}px)`, filter: `brightness(${leaving ? 1 : 0.85})` }}
                 >
-                  {renderCard(next)}
+                  {drop(renderCard(next), 0.05, "5deg")}
                 </div>
               )}
             </>
@@ -226,56 +223,44 @@ export function SwipeDeck({
             style={
               leaving
                 ? { "--sx": `${leaving.sx}px`, "--sy": `${leaving.sy}px`, "--srot": `${leaving.srot}deg` }
-                : {
-                    transform: `translate(${drag.x}px, ${drag.y * 0.25}px) rotate(${dragRot}deg)`,
-                    transition: drag.active ? "none" : "transform 0.25s ease-out",
-                  }
+                : { transform: `translate(${drag.x}px, ${drag.y * 0.25}px) rotate(${dragRot}deg)`, transition: drag.active ? "none" : "transform 0.25s ease-out" }
             }
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
           >
-            {renderCard(current)}
-
-            {/* 判子風スタンプ（右：頼む／左：またこんど）*/}
-            <span className="sd-stamp yes" aria-hidden style={{ opacity: yesOp }}>
-              {stampYes}
-            </span>
-            <span className="sd-stamp no" aria-hidden style={{ opacity: noOp }}>
-              {stampNo}
-            </span>
+            {drop(renderCard(current), 0.1, "-3deg")}
+            <span className="sd-stamp yes" aria-hidden style={{ opacity: yesOp }}>{stampYes}</span>
+            <span className="sd-stamp no" aria-hidden style={{ opacity: noOp }}>{stampNo}</span>
           </div>
         </div>
 
         {controls ? (
           <>
-            <div className="mt-6 flex items-center gap-10">
-              <button
-                type="button"
-                onClick={() => commit(false)}
-                aria-label={nopeLabel}
-                className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-white to-stone-100 text-xl text-stone-500 ring-1 ring-rose-200 shadow-[0_5px_0_0_#fecdd3,0_9px_12px_-4px_rgba(120,113,108,0.4)] transition-all duration-100 ease-out active:translate-y-[4px] active:shadow-[0_1px_0_0_#fecdd3,0_3px_6px_-3px_rgba(120,113,108,0.35)]"
-              >
-                <span aria-hidden className="pointer-events-none absolute inset-x-1 top-1 h-[40%] rounded-full bg-gradient-to-b from-white/80 to-transparent" />
-                <span className="relative">✕</span>
+            <div className="mt-6 flex items-center gap-5">
+              <button type="button" onClick={() => commit(false)} disabled={phase !== "live"} className="sd-tag no">
+                {nopeLabel}
               </button>
-              <button
-                type="button"
-                onClick={() => commit(true)}
-                aria-label={likeLabel}
-                className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-white to-stone-100 text-xl ring-1 ring-emerald-200 shadow-[0_5px_0_0_#a7f3d0,0_9px_12px_-4px_rgba(120,113,108,0.4)] transition-all duration-100 ease-out active:translate-y-[4px] active:shadow-[0_1px_0_0_#a7f3d0,0_3px_6px_-3px_rgba(120,113,108,0.35)]"
-              >
-                <span aria-hidden className="pointer-events-none absolute inset-x-1 top-1 h-[40%] rounded-full bg-gradient-to-b from-white/80 to-transparent" />
-                <span className="relative">❤️</span>
+              <button type="button" onClick={() => commit(true)} disabled={phase !== "live"} className="sd-tag yes">
+                {likeLabel}
               </button>
             </div>
-            <p className="mt-4 text-xs font-medium tracking-wide text-white/55">左右にスワイプして選ぶ</p>
+            <p className="sd-hint mt-4 text-xs font-bold">左右にスワイプして選ぶ</p>
           </>
         ) : (
-          <p className="mt-5 text-xs font-bold tracking-wide text-white/70">👈 スワイプして試してみて 👉</p>
+          <p className="sd-hint mt-5 text-xs font-bold">スワイプして試してみて</p>
         )}
       </div>
+
+      {/* 退場：紙が剥がれて暗転 */}
+      {phase === "outro" && (
+        <div className="sd-outro" aria-hidden>
+          {PEELS.map((p, i) => (
+            <div key={i} className="sd-peel" style={{ left: p.left, animationDelay: `${p.delay}s` }} />
+          ))}
+        </div>
+      )}
     </>
   );
 }

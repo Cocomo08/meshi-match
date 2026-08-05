@@ -648,6 +648,54 @@ body {
     radial-gradient(58% 40% at 50% 40%, rgba(255,200,140,.13), transparent 72%),
     linear-gradient(180deg, rgba(255,186,116,.20) 0%, rgba(255,150,86,.06) 24%, rgba(0,0,0,0) 48%, rgba(0,0,0,.42) 100%); }
 
+/* ── スワイプ画面のUI（木札ボタン・のれん帯・紙の演出）── */
+/* 操作ボタン＝横長の木札（ベベル・押下で反転＋2px沈む）*/
+.sd-tag { position: relative; padding: 13px 30px; border-radius: 5px; border: 1px solid #3f2a15;
+  background: #6f4b2a; font-family: var(--font-klee), var(--font-zen-maru), sans-serif; font-weight: 800;
+  font-size: 17px; letter-spacing: .1em; cursor: pointer; transition: transform .05s ease;
+  box-shadow: inset 0 1px 0 rgba(255,224,170,.32), inset 0 -1px 0 rgba(0,0,0,.42); }
+.sd-tag.no { color: #241c14; }   /* 墨：見送り */
+.sd-tag.yes { color: #e0483b; }  /* 提灯の赤：頼む */
+.sd-tag:disabled { opacity: .5; cursor: default; }
+.sd-tag:not(:disabled):active { transform: translateY(2px);
+  box-shadow: inset 0 1px 0 rgba(0,0,0,.42), inset 0 -1px 0 rgba(255,224,170,.32); }
+/* ヒント・残り枚数は短冊と同じ手書き風 */
+.sd-hint { font-family: var(--font-klee), var(--font-zen-maru), sans-serif; letter-spacing: .08em; color: rgba(240,230,210,.6); }
+.sd-count { font-family: var(--font-klee), var(--font-zen-maru), sans-serif; letter-spacing: .1em; color: rgba(240,230,210,.72); }
+/* 入室ステータス＝生成り色ののれん状の細い帯（墨文字・提灯の赤の点）*/
+.sd-status { display: inline-flex; align-items: center; gap: 8px; background: #f0e6d2; color: #2a2520;
+  padding: 5px 16px; border-radius: 3px; font-size: 12px; font-weight: 800;
+  box-shadow: inset 0 1px 0 #fffdf5, inset 0 -1px 0 #b0a37d; }
+.sd-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #e0483b; box-shadow: 0 0 7px rgba(224,72,59,.75); }
+
+/* 入場：短冊が上からバラバラと降ってきて壁に貼られる（着地でわずかに刺さる）*/
+@keyframes sdDrop {
+  0%   { transform: translateY(-130vh) rotate(var(--dropRot, -7deg)); opacity: 0; }
+  60%  { opacity: 1; }
+  85%  { transform: translateY(7px) rotate(1deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(0); opacity: 1; }
+}
+.sd-drop { animation: sdDrop .5s cubic-bezier(.3,.7,.4,1) both; }
+@keyframes sdFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* 退場：残った短冊が一斉に剥がれてひらひら落下＋画面暗転 */
+.sd-outro { position: fixed; inset: 0; z-index: 45; pointer-events: auto; overflow: hidden;
+  animation: sdDim .5s ease forwards; }
+@keyframes sdDim { from { background: rgba(8,6,3,0); } to { background: rgba(8,6,3,.92); } }
+.sd-peel { position: absolute; top: 26%; width: 66px; height: 198px; border-radius: 3px 3px 7px 7px;
+  background: #f0e6d2; box-shadow: 0 6px 10px -5px rgba(0,0,0,.5);
+  animation: sdPeel .5s cubic-bezier(.4,0,.9,.5) forwards; }
+@keyframes sdPeel {
+  0%   { transform: translateY(0) rotate(-4deg); opacity: 1; }
+  100% { transform: translateY(96vh) rotate(560deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sd-drop { animation: sdFadeIn .2s ease both; }
+  .sd-outro { animation: sdDim .25s ease forwards; }
+  .sd-peel { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ymt-steam { animation: none; opacity: 0; }
   .ymt-ticket { animation: none; transform: rotate(-3deg); }
