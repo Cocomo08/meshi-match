@@ -325,23 +325,20 @@ export default function MeshiMatchPage() {
     }
   }, [room, view, update]);
 
-  // 二人が揃った瞬間にVS画面を出す（スワイプ前・1回だけ）
+  // スワイプ完了で共通ジャンルが0個のときだけVS画面を出す（割り箸バトルの合図・1回だけ）
   useEffect(() => {
     if (view !== "room") {
       vsSeenRef.current = false;
       setShowVs(false);
       return;
     }
-    if (!opponentPresent) {
-      vsSeenRef.current = false;
-      return;
-    }
-    // 揃った直後（まだジャンル未確定・結果前・ゲーム前・自分未完了）だけ
-    if (!vsSeenRef.current && !decidedGenre && !bothDone && !game && !meDone) {
+    if (bothDone && noMatch && !vsSeenRef.current) {
       vsSeenRef.current = true;
       setShowVs(true);
     }
-  }, [view, opponentPresent, decidedGenre, bothDone, game, meDone]);
+    // スワイプに戻ったら（次ラウンド等）次回また出せるようリセット
+    if (!bothDone) vsSeenRef.current = false;
+  }, [view, bothDone, noMatch]);
 
   // マッチ不成立になったら、ホストが対戦カード＋seedを初期化（ゲーム選択へ）
   useEffect(() => {
@@ -924,9 +921,9 @@ export default function MeshiMatchPage() {
         />
       )}
 
-      {/* VS画面（二人が揃った瞬間・スワイプ直前）*/}
+      {/* VS画面（スワイプ完了・共通ジャンル0個→割り箸バトルの合図）*/}
       {view === "room" && showVs && (
-        <VsIntro leftName={hostName} rightName={guestName} onDone={() => setShowVs(false)} />
+        <VsIntro key="vsintro" leftName={hostName} rightName={guestName} onDone={() => setShowVs(false)} />
       )}
 
       {/* のれんワイプ遷移（全画面・最前面）*/}

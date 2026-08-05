@@ -14,13 +14,13 @@ import { NorenWipe } from "@/components/NorenWipe";
 //   2.0s-    自動でスワイプへ
 //  props: leftName / rightName / onDone
 
-// 大将のセリフ（あとから増やせる）
+// 大将のセリフ（意見が割れた＝箸で決着の合図。あとから増やせる）
 const SHOUT = [
-  "今日はどっちが勝つかね",
-  "腹の減り具合で決まるぞ",
-  "遠慮すんな、好きなもん選べ",
-  "揃ったな。始めるか",
-  "いい面構えだ、二人とも",
+  "好みが割れたな。箸で決めるぞ",
+  "意見が合わんか。なら勝負だ",
+  "そういう日もある。箸を持て",
+  "決まらんなら勝負しかないな",
+  "譲り合っても腹は膨れんぞ",
 ];
 
 const CSS = `
@@ -93,11 +93,17 @@ export default function VsIntro({ leftName = "きみ", rightName = "あいて", 
   const [isReduced] = useState(() => reduced());
   const [line] = useState(() => SHOUT[Math.floor(Math.random() * SHOUT.length)]);
   const doneRef = useRef(false);
+  const canSkipRef = useRef(false); // マウント直後の残留タップで即閉じしないためのガード
 
   const finish = () => {
     if (doneRef.current) return;
     doneRef.current = true;
     onDone?.();
+  };
+  // タップでスキップ（のれんが開くまでの残留イベントは無視）
+  const skip = () => {
+    if (!canSkipRef.current) return;
+    finish();
   };
 
   // タイムライン
@@ -109,17 +115,20 @@ export default function VsIntro({ leftName = "きみ", rightName = "あいて", 
       setTai(true);
       setSpeak(true);
       setTyped(line.length);
+      canSkipRef.current = true;
       const t = setTimeout(finish, 800);
       return () => clearTimeout(t);
     }
     const ts = [];
     ts.push(setTimeout(() => setNoren(false), 500)); // のれん開き終わり
     ts.push(setTimeout(() => setLeftIn(true), 500));
+    ts.push(setTimeout(() => (canSkipRef.current = true), 600)); // のれんが開いてからスキップ可
     ts.push(setTimeout(() => setRightIn(true), 700));
     ts.push(setTimeout(() => setTai(true), 1100));
     ts.push(setTimeout(() => setShake(true), 1300));
     ts.push(setTimeout(() => setSpeak(true), 1300));
-    ts.push(setTimeout(() => finish(), 2000));
+    // 2.0秒のタイムラインを完走 → 対の着地後にさらに0.3秒の溜め → 遷移
+    ts.push(setTimeout(() => finish(), 2300));
     return () => ts.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -137,7 +146,7 @@ export default function VsIntro({ leftName = "きみ", rightName = "あいて", 
   }, [speak, line, isReduced]);
 
   return (
-    <div className="vs-root" role="dialog" aria-label="対戦開始" onClick={finish}>
+    <div className="vs-root" role="dialog" aria-label="対戦開始" onClick={skip}>
       <style>{CSS}</style>
       <div className={`vs-inner ${shake ? "shake" : ""}`}>
         {/* 夜の屋台の背景（トップと同じ素材）*/}
