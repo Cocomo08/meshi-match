@@ -431,9 +431,17 @@ export default function MeshiMatchPage() {
   return (
     <div
       className="mm-arena relative flex flex-1 flex-col overflow-hidden px-5 py-8"
-      style={view === "home" || view === "join" ? { paddingBottom: "calc(15vh + 26px)" } : undefined}
+      style={
+        view === "home" || view === "join" || (view === "room" && stage === "waiting")
+          ? { paddingBottom: "calc(15vh + 26px)" }
+          : undefined
+      }
     >
-      {view === "home" || view === "join" ? <NightStall /> : <div className="mm-lines" aria-hidden />}
+      {view === "home" || view === "join" || (view === "room" && stage === "waiting") ? (
+        <NightStall />
+      ) : (
+        <div className="mm-lines" aria-hidden />
+      )}
       <MuteToggle />
 
       {mounted && !isOnline && (
@@ -572,32 +580,44 @@ export default function MeshiMatchPage() {
         {/* ===== 部屋の中（待機→スワイプ→結果）===== */}
         {view === "room" && (
           <>
-            {/* 待機：相手を待つ */}
+            {/* 待機：相手を待つ（夜の屋台テーマ）*/}
             {stage === "waiting" && (
               <div className="flex w-full flex-col items-center text-center">
-                <p className="text-xs font-black tracking-widest text-white/60">部屋コード</p>
-                <button
-                  onClick={copyCode}
-                  className="mt-2 flex items-center gap-3 rounded-2xl border-[3px] border-amber-300 bg-amber-400/10 px-8 py-4 text-5xl font-black italic tracking-[0.2em] text-amber-200 shadow-[0_0_26px_rgba(255,200,80,0.3)]"
-                >
-                  {code}
-                  <span className="text-base not-italic">{copied ? "✓" : "📋"}</span>
-                </button>
-                <p className="mt-2 text-[11px] font-bold text-white/45">タップでコピー</p>
-
-                <div className="mt-8 flex items-center gap-3 text-white/80">
-                  <span className="h-3 w-3 animate-ping rounded-full bg-amber-300" />
-                  <span className="text-sm font-black italic">相手を待っています…</span>
+                {/* のれんロゴ（トップと共通）*/}
+                <div className="ymt-noren mb-6">
+                  <div className="cloth">メシマチ</div>
+                  <div className="hem">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </div>
                 </div>
-                <p className="mt-3 text-xs font-medium leading-relaxed text-white/55">
+
+                <p className="text-xs font-black tracking-widest text-[#f0e6d2]/60">部屋コード</p>
+                {/* 部屋コードの木札（焼き印風・タップでコピー）*/}
+                <button onClick={copyCode} className="ymt-code-plate mt-3" aria-label="部屋コードをコピー">
+                  <span className="ymt-code">{code}</span>
+                </button>
+                <p className="mt-2 text-[11px] font-bold text-[#f0e6d2]/50">
+                  {copied ? "コピーしました" : "タップでコピー"}
+                </p>
+
+                <div className="mt-8 flex items-center gap-3 text-[#f0e6d2]/85">
+                  <span className="ymt-ping" />
+                  <span className="text-sm font-black">相手を待っています…</span>
+                </div>
+                <p className="mt-3 text-xs font-medium leading-relaxed text-[#f0e6d2]/55">
                   このコードを相手に伝えて、
                   <br />
                   「部屋に入る」から入ってもらってね。
                 </p>
 
-                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
-                  部屋を出る
-                </Button3D>
+                <div className="mt-8 w-full max-w-[240px]">
+                  <button type="button" onClick={() => { playPush(); leaveRoom(); }} className="ymt-btn dim">
+                    部屋を出る
+                  </button>
+                </div>
               </div>
             )}
 
