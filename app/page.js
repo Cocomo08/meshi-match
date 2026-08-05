@@ -116,6 +116,35 @@ function NightStall() {
   );
 }
 
+// 屋台の内壁：不揃いな縦板（60〜100px）＋板ごとの微妙な明度差（±5%）。決め打ちで安定させる。
+const PLANKS = [
+  { w: 78, b: 2 }, { w: 64, b: -3 }, { w: 92, b: 4 }, { w: 70, b: -1 }, { w: 86, b: 3 }, { w: 60, b: -4 },
+  { w: 98, b: 1 }, { w: 72, b: 5 }, { w: 84, b: -2 }, { w: 66, b: 4 }, { w: 94, b: -3 }, { w: 74, b: 2 },
+  { w: 88, b: -5 }, { w: 62, b: 3 }, { w: 96, b: -1 }, { w: 80, b: 4 }, { w: 68, b: -2 }, { w: 90, b: 5 },
+  { w: 76, b: -4 }, { w: 82, b: 1 }, { w: 70, b: 3 }, { w: 100, b: -3 }, { w: 64, b: 2 }, { w: 86, b: -1 },
+];
+
+// 低彩度の茶を板ごとにわずかに明度変化（±5%以内）。filterを使わず背景色で（軽量）。
+function plankColor(b) {
+  const s = 1 + b / 100;
+  const c = (v) => Math.max(0, Math.min(255, Math.round(v * s)));
+  return `rgb(${c(36)}, ${c(26)}, ${c(18)})`; // 基準 #241a12
+}
+
+// スワイプ画面の背景（屋台の内壁・すべてCSS描画／画像なし）
+function StallWall() {
+  return (
+    <div className="sw-wall" aria-hidden>
+      <div className="sw-planks">
+        {PLANKS.map((p, i) => (
+          <div key={i} className="sw-plank" style={{ width: `${p.w}px`, backgroundColor: plankColor(p.b) }} />
+        ))}
+      </div>
+      <div className="sw-light" />
+    </div>
+  );
+}
+
 // ヒーローの食券（マッチ結果と同じ券面デザイン・サンプル内容）
 function HeroTicket() {
   return (
@@ -414,6 +443,8 @@ export default function MeshiMatchPage() {
     >
       {view === "home" || view === "join" || (view === "room" && stage === "waiting") ? (
         <NightStall />
+      ) : view === "room" && ["swipe", "swipeWait", "storeSwipe", "storeWait"].includes(stage) ? (
+        <StallWall />
       ) : (
         <div className="mm-lines" aria-hidden />
       )}
