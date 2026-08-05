@@ -748,6 +748,8 @@ export default function MeshiMatchPage() {
                   renderCard={(card) => <StoreCard card={card} />}
                   likeLabel="行きたい"
                   nopeLabel="パス"
+                  stampYes="行きたい"
+                  stampNo="またこんど"
                   onFinish={(liked) => update({ storeLikes: liked, storePhase: "done" })}
                 />
               </div>

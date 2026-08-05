@@ -599,6 +599,36 @@ body {
 .sd-behind.go { transition: transform .2s ease-out, filter .2s ease-out; }
 @media (prefers-reduced-motion: reduce) { .sd-behind.go { transition: none; } }
 
+/* 判子風スタンプ（ドラッグ中に短冊の上へ）*/
+.sd-stamp { position: absolute; top: 32%; left: 50%; transform: translate(-50%,-50%) rotate(-13deg);
+  width: 42%; aspect-ratio: 1 / 1; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-klee), var(--font-zen-maru), sans-serif; font-weight: 800; text-align: center;
+  border: 4px double currentColor; pointer-events: none; line-height: 1.15; z-index: 3; }
+.sd-stamp.yes { color: #c8322a; font-size: clamp(20px, 6vw, 30px); letter-spacing: .08em; }   /* 赤：頼む */
+.sd-stamp.no  { color: #2a2520; font-size: clamp(13px, 4vw, 19px); letter-spacing: .03em; padding: 0 8%; } /* 墨：またこんど */
+
+/* 頼む：手前に少し拡大 → 右下の注文票へ吸い込まれる（加速）*/
+@keyframes sdOrder {
+  0%   { transform: translate(var(--sx,0px), var(--sy,0px)) rotate(var(--srot,0deg)) scale(1); opacity: 1; }
+  24%  { transform: translate(var(--sx,0px), calc(var(--sy,0px) - 6px)) rotate(var(--srot,0deg)) scale(1.08); opacity: 1; }
+  100% { transform: translate(54vw, 82vh) rotate(12deg) scale(.42); opacity: 0; }
+}
+.sd-leave-order { animation: sdOrder .35s cubic-bezier(.55,0,.9,.35) forwards; }
+
+/* 今日はいいや：ひらひら2回転しながら重力落下＋横流れ（加速）*/
+@keyframes sdDecline {
+  0%   { transform: translate(var(--sx,0px), var(--sy,0px)) rotate(var(--srot,0deg)); opacity: 1; }
+  100% { transform: translate(-24vw, 104vh) rotate(720deg); opacity: 0; }
+}
+.sd-leave-decline { animation: sdDecline .5s cubic-bezier(.45,0,.9,.5) forwards; }
+
+/* reduced-motion：回転・落下を省略しフェードで消す */
+@keyframes sdFade { from { opacity: 1; } to { opacity: 0; } }
+.sd-leave-fade { animation: sdFade .25s ease forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .sd-leave-order, .sd-leave-decline { animation: sdFade .25s ease forwards; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ymt-steam { animation: none; opacity: 0; }
   .ymt-ticket { animation: none; transform: rotate(-3deg); }
