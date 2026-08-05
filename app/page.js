@@ -18,18 +18,12 @@ import { MeshiBattleNet } from "@/components/MeshiBattleNet";
 import MealTicket from "@/components/MealTicket";
 import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
 import VsIntro from "@/components/VsIntro";
+import GamePicker from "@/components/GamePicker";
 
 // スワイプ画面の短冊枚数（1箇所で管理・あとから調整可）
 const SWIPE_GENRE_COUNT = 12;
 const genreCards = GENRES.slice(0, SWIPE_GENRE_COUNT).map((g) => ({ ...g }));
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
-
-// 選べるミニゲーム（battle は次のアップデートで2台対応予定）
-const MINI_GAMES = [
-  { id: "slot", emoji: "🎰", name: "メシスロット", desc: "そろえて一発勝負", gradient: "from-amber-400 via-orange-500 to-yellow-600", ready: true },
-  { id: "amida", emoji: "🪜", name: "運命のあみだ", desc: "たどって運だめし", gradient: "from-sky-500 via-blue-600 to-indigo-600", ready: true },
-  { id: "battle", emoji: "🥊", name: "メシバトル", desc: "リズムタップ対決", gradient: "from-rose-500 via-red-600 to-orange-600", ready: true },
-];
 
 // 部屋コード（紛らわしい文字を除いた4桁）
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -445,7 +439,8 @@ export default function MeshiMatchPage() {
     >
       {view === "home" || view === "join" || (view === "room" && stage === "waiting") ? (
         <NightStall />
-      ) : view === "room" && ["swipe", "swipeWait", "storeSwipe", "storeWait"].includes(stage) ? (
+      ) : view === "room" &&
+        (["swipe", "swipeWait", "storeSwipe", "storeWait"].includes(stage) || (stage === "result" && noMatch)) ? (
         <StallWall />
       ) : (
         <div className="mm-lines" aria-hidden />
@@ -705,72 +700,37 @@ export default function MeshiMatchPage() {
               </div>
             )}
 
-            {/* 結果：不成立 → ミニゲームで決着（選択画面）*/}
+            {/* 結果：不成立 → 券売機で勝負のしかたを選ぶ（夜の屋台テーマ）*/}
             {stage === "result" && matches.length === 0 && (
               <div className="flex w-full flex-col items-center text-center">
-                {!game && (
-                  <div className="flex items-center gap-3 text-white/80">
-                    <span className="h-3 w-3 animate-ping rounded-full bg-amber-300" />
-                    <span className="text-sm font-black italic">対戦を準備中…</span>
-                  </div>
-                )}
-                {game && game.phase === "pick" && (
+                {game && game.phase === "pick" ? (
+                  <GamePicker
+                    leftName={getGenre(game.hostChamp)?.label}
+                    rightName={getGenre(game.guestChamp)?.label}
+                    onPick={(id) => { playPush(); setGame({ id, phase: "play", started: false }); }}
+                    onLeave={leaveRoom}
+                  />
+                ) : (
                   <>
-                    <span className="-skew-x-6 rounded-md border-2 border-rose-400/70 bg-rose-500/15 px-4 py-1 text-xs font-black italic tracking-widest text-rose-200">
-                      意見、真っ二つ！
-                    </span>
-                    <h2 className="mt-3 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                      勝負の<span className="mm-gold">しかた</span>を選ぼう
-                    </h2>
-                    <div className="mt-4 flex w-full items-center justify-center gap-2 text-white">
-                      <span className="flex-1 rounded-xl border-2 border-rose-400/70 bg-rose-500/10 px-2 py-2 text-sm font-black">
-                        {(myRole === "host" ? getGenre(game.hostChamp) : getGenre(game.guestChamp))?.emoji}{" "}
-                        {(myRole === "host" ? getGenre(game.hostChamp) : getGenre(game.guestChamp))?.label}
-                      </span>
-                      <span className="text-lg font-black italic text-amber-300">VS</span>
-                      <span className="flex-1 rounded-xl border-2 border-sky-400/70 bg-sky-500/10 px-2 py-2 text-sm font-black">
-                        {(myRole === "host" ? getGenre(game.guestChamp) : getGenre(game.hostChamp))?.emoji}{" "}
-                        {(myRole === "host" ? getGenre(game.guestChamp) : getGenre(game.hostChamp))?.label}
-                      </span>
-                    </div>
-                    <div className="mt-6 flex w-full flex-col gap-3">
-                      {MINI_GAMES.map((mg) => (
-                        <button
-                          key={mg.id}
-                          type="button"
-                          disabled={!mg.ready}
-                          onClick={() => {
-                            if (!mg.ready) return;
-                            playPush();
-                            setGame({ id: mg.id, phase: "play", started: false });
-                          }}
-                          className={`group relative flex items-center gap-4 overflow-hidden rounded-2xl border-[3px] px-5 py-4 text-left text-white transition-all duration-100 ease-out ${
-                            mg.ready
-                              ? `border-white bg-gradient-to-r ${mg.gradient} shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_22px_rgba(255,255,255,0.12)] active:translate-y-[4px] active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]`
-                              : "border-white/20 bg-white/5 opacity-55"
-                          }`}
-                        >
-                          {mg.ready && <span className="btn-shine pointer-events-none absolute inset-0" />}
-                          <span className="relative text-4xl drop-shadow">{mg.emoji}</span>
-                          <span className="relative">
-                            <span className="block text-lg font-black italic drop-shadow">{mg.name}</span>
-                            <span className="block text-xs font-bold text-white/85">{mg.desc}</span>
-                          </span>
-                          <span className="relative ml-auto text-xl font-black italic text-white/80">{mg.ready ? "▶" : "🔒"}</span>
-                        </button>
-                      ))}
+                    {!game && (
+                      <div className="flex items-center gap-3 text-[#f0e6d2]/80">
+                        <span className="ymt-ping" />
+                        <span className="text-sm font-black">対戦を準備中…</span>
+                      </div>
+                    )}
+                    {game && game.phase === "play" && (
+                      <div className="flex items-center gap-3 text-[#f0e6d2]/70">
+                        <span className="ymt-ping" />
+                        <span className="text-sm font-black">対戦中…</span>
+                      </div>
+                    )}
+                    <div className="mt-8 w-full max-w-[240px]">
+                      <button type="button" onClick={() => { playPush(); leaveRoom(); }} className="ymt-btn dim">
+                        部屋を出る
+                      </button>
                     </div>
                   </>
                 )}
-                {game && game.phase === "play" && (
-                  <div className="flex items-center gap-3 text-white/70">
-                    <span className="h-3 w-3 animate-ping rounded-full bg-amber-300" />
-                    <span className="text-sm font-black italic">対戦中…</span>
-                  </div>
-                )}
-                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
-                  部屋を出る
-                </Button3D>
               </div>
             )}
 
