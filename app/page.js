@@ -431,9 +431,9 @@ export default function MeshiMatchPage() {
   return (
     <div
       className="mm-arena relative flex flex-1 flex-col overflow-hidden px-5 py-8"
-      style={view === "home" ? { paddingBottom: "calc(15vh + 26px)" } : undefined}
+      style={view === "home" || view === "join" ? { paddingBottom: "calc(15vh + 26px)" } : undefined}
     >
-      {view === "home" ? <NightStall /> : <div className="mm-lines" aria-hidden />}
+      {view === "home" || view === "join" ? <NightStall /> : <div className="mm-lines" aria-hidden />}
       <MuteToggle />
 
       {mounted && !isOnline && (
@@ -516,13 +516,26 @@ export default function MeshiMatchPage() {
           </div>
         )}
 
-        {/* ===== 部屋コードを入力して参加 ===== */}
+        {/* ===== 部屋コードを入力して参加（夜の屋台テーマ）===== */}
         {view === "join" && (
           <div className="flex w-full flex-col items-center text-center">
-            <h2 className="text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-              部屋コードを入力
+            {/* のれんロゴ（トップと共通） */}
+            <div className="ymt-noren mb-6">
+              <div className="cloth">メシマチ</div>
+              <div className="hem">
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+            </div>
+
+            <h2 className="text-[1.65rem] font-black leading-tight text-[#f0e6d2] [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+              部屋<span className="ymt-hi">コード</span>を入力
             </h2>
-            <p className="mt-2 text-xs font-bold text-white/60">相手から聞いた4文字を入れてね</p>
+            <p className="mt-2 text-xs font-bold text-[#f0e6d2]/60">相手から聞いた4文字を入れてね</p>
+
+            {/* 投入口のような凹んだコード入力 */}
             <input
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 4))}
@@ -530,16 +543,28 @@ export default function MeshiMatchPage() {
               inputMode="text"
               autoCapitalize="characters"
               placeholder="ABCD"
-              className="mt-6 w-full max-w-[240px] rounded-xl border-[3px] border-white/60 bg-white/10 py-4 text-center text-3xl font-black italic tracking-[0.4em] text-white placeholder-white/25 outline-none focus:border-amber-300"
+              className="ymt-slot-input mt-6"
             />
-            {error && <p className="mt-3 text-xs font-bold text-rose-300">{error}</p>}
+            {error && <p className="mt-3 text-xs font-bold text-[#e0483b]">{error}</p>}
+
             <div className="mt-6 flex w-full flex-col gap-3">
-              <Button3D onClick={joinRoom} disabled={busy || joinCode.length < 4} className="w-full px-8 text-lg">
+              {/* 点灯している選択済みボタン */}
+              <button
+                type="button"
+                onClick={() => { playPush(); joinRoom(); }}
+                disabled={busy || joinCode.length < 4}
+                className="ymt-btn lit"
+              >
                 {busy ? "接続中…" : "入る"}
-              </Button3D>
-              <Button3D tone="neutral" onClick={() => { setView("home"); setJoinCode(""); }} className="w-full px-8 text-sm">
+              </button>
+              {/* 消灯しているボタン */}
+              <button
+                type="button"
+                onClick={() => { playPush(); setView("home"); setJoinCode(""); }}
+                className="ymt-btn dim"
+              >
                 もどる
-              </Button3D>
+              </button>
             </div>
           </div>
         )}
