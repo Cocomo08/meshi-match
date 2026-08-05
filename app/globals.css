@@ -563,6 +563,42 @@ body {
 @keyframes ymtPing { 0%,100% { opacity: .5; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .ymt-ping { animation: none; } }
 
+/* ============================================================
+   品書き短冊（スワイプカード・生成り紙／縦書き／画鋲）
+   斑のみグラデーション可・立体感はベベル・画像なし
+   ============================================================ */
+.tz-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.tz-paper { position: relative; height: 80%; aspect-ratio: 1 / 3; max-width: 84%;
+  color: #2a2520; border-radius: 3px 3px 8px 8px;
+  background-color: #f0e6d2;
+  /* わずかに黄ばんだ斑（透明度8%以下）*/
+  background-image:
+    radial-gradient(circle at 22% 12%, rgba(150,120,40,.07), transparent 9%),
+    radial-gradient(circle at 70% 26%, rgba(160,130,50,.06), transparent 8%),
+    radial-gradient(circle at 36% 56%, rgba(150,120,40,.05), transparent 10%),
+    radial-gradient(circle at 80% 72%, rgba(140,110,40,.06), transparent 7%),
+    radial-gradient(circle at 28% 90%, rgba(160,130,50,.05), transparent 9%);
+  /* ベベル＋下端の反り（浮いている）*/
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(255,255,255,.35),
+    inset 0 -6px 7px -4px rgba(90,70,20,.20), 0 9px 13px -6px rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center; }
+/* 上部中央の画鋲（提灯の赤・ベベル）*/
+.tz-pin { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 17px; height: 17px;
+  border-radius: 50%; background: #e0483b; border: 1px solid #9e1b14; z-index: 2;
+  box-shadow: inset 0 2px 2px rgba(255,255,255,.55), inset 0 -3px 3px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.4); }
+.tz-pin::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%;
+  transform: translate(-50%,-50%); background: #b3241a; box-shadow: inset 0 1px 1px rgba(0,0,0,.5); }
+/* ジャンル名（縦書き・太い墨色・手書き風）*/
+.tz-name { writing-mode: vertical-rl; text-orientation: upright;
+  font-family: var(--font-klee), var(--font-zen-maru), sans-serif; font-weight: 600;
+  font-size: clamp(28px, 8.4vw, 44px); line-height: 1.2; letter-spacing: .05em; color: #2a2520;
+  -webkit-text-stroke: .6px #2a2520; max-height: 84%; padding-top: 5%; }
+
+/* 背後の短冊：leaving 中だけ前へ繰り上がる（reduced-motionは即時）*/
+.sd-behind { transition: none; will-change: transform, filter; }
+.sd-behind.go { transition: transform .2s ease-out, filter .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .sd-behind.go { transition: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   .ymt-steam { animation: none; opacity: 0; }
   .ymt-ticket { animation: none; transform: rotate(-3deg); }

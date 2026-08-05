@@ -138,45 +138,23 @@ function HeroTicket() {
   );
 }
 
+// 短冊の傾き：ジャンルIDから決定（-3〜3度・カードごとに違う／再レンダーでも安定）
+function tiltFromId(id) {
+  let h = 0;
+  const s = String(id);
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return Math.round(((h % 601) / 100 - 3) * 100) / 100; // -3.00 .. 3.00
+}
+
+// 屋台の品書き短冊（生成り紙・縦書き・画鋲・画像なし）
 function GenreCard({ card }) {
-  const [hasPhoto, setHasPhoto] = useState(false);
-  const imgRef = useRef(null);
-  useEffect(() => {
-    const el = imgRef.current;
-    if (el && el.complete && el.naturalWidth > 0) setHasPhoto(true);
-  }, []);
+  const tilt = tiltFromId(card.id);
   return (
-    <div
-      className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-3xl border-[3px] border-white/85 bg-gradient-to-br ${card.gradient} text-center text-white shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_28px_rgba(255,255,255,0.12)]`}
-    >
-      <span className="absolute left-3 top-3 z-20 -skew-x-6 rounded-md border-2 border-white/80 bg-black/45 px-3 py-1 text-[11px] font-black tracking-wide text-white backdrop-blur">
-        {card.category}
-      </span>
-      {!hasPhoto && (
-        <>
-          <span className="text-8xl drop-shadow-lg">{card.emoji}</span>
-          <p className="mt-6 text-3xl font-black italic tracking-wide drop-shadow">{card.label}</p>
-          <p className="mt-2 text-sm font-bold text-white/85">今日の気分はコレ？</p>
-        </>
-      )}
-      <img
-        ref={imgRef}
-        src={`${ASSET_BASE}/images/${card.id}.jpg`}
-        alt=""
-        onLoad={() => setHasPhoto(true)}
-        onError={() => setHasPhoto(false)}
-        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
-          hasPhoto ? "opacity-100" : "opacity-0"
-        }`}
-      />
-      {hasPhoto && (
-        <>
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-          <p className="absolute inset-x-0 bottom-8 -skew-x-6 text-3xl font-black italic tracking-wide text-white [text-shadow:0_3px_8px_rgba(0,0,0,0.8)]">
-            {card.label}
-          </p>
-        </>
-      )}
+    <div className="tz-wrap" style={{ transform: `rotate(${tilt}deg)` }}>
+      <div className="tz-paper">
+        <span className="tz-pin" aria-hidden />
+        <span className="tz-name">{card.label}</span>
+      </div>
     </div>
   );
 }
@@ -628,6 +606,7 @@ export default function MeshiMatchPage() {
                   key={`swipe-${room?.round || 0}`}
                   cards={genreCards}
                   renderCard={(card) => <GenreCard key={card.id} card={card} />}
+                  stack
                   onFinish={(liked) => update({ likes: liked, phase: "done" })}
                 />
               </div>

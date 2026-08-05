@@ -29,6 +29,7 @@ export function SwipeDeck({
   nopeLabel = "パス",
   loop = false,
   controls = true,
+  stack = false, // true で背後2枚を積み重ねて表示（短冊用）
   heightClass = "h-[60vh] max-h-[560px] min-h-[400px]",
 }) {
   const [index, setIndex] = useState(0);
@@ -40,6 +41,7 @@ export function SwipeDeck({
 
   const current = cards[index];
   const next = cards[index + 1] ?? (loop ? cards[0] : undefined);
+  const third = cards[index + 2] ?? (loop ? cards[(index + 2) % cards.length] : undefined);
 
   const commit = (liked) => {
     if (!current || leaving) return;
@@ -139,17 +141,46 @@ export function SwipeDeck({
         )}
 
         <div className={`relative w-full max-w-sm select-none ${heightClass}`}>
-          {next && (
-            <div
-              className="absolute inset-0"
-              style={{
-                transform: `scale(${nextScale}) translateY(${(1 - progress) * 12}px)`,
-                opacity: nextOpacity,
-                transition: drag.active && !leaving ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
-              }}
-            >
-              {renderCard(next)}
-            </div>
+          {stack ? (
+            <>
+              {/* 3枚目（下16px・横8px・明度-30%）*/}
+              {third && (
+                <div
+                  className={`sd-behind absolute inset-0 ${leaving ? "go" : ""}`}
+                  style={{
+                    transform: `translate(${leaving ? 4 : 8}px, ${leaving ? 8 : 16}px)`,
+                    filter: `brightness(${leaving ? 0.85 : 0.7})`,
+                  }}
+                >
+                  {renderCard(third)}
+                </div>
+              )}
+              {/* 2枚目（下8px・横4px・明度-15%）*/}
+              {next && (
+                <div
+                  className={`sd-behind absolute inset-0 ${leaving ? "go" : ""}`}
+                  style={{
+                    transform: `translate(${leaving ? 0 : 4}px, ${leaving ? 0 : 8}px)`,
+                    filter: `brightness(${leaving ? 1 : 0.85})`,
+                  }}
+                >
+                  {renderCard(next)}
+                </div>
+              )}
+            </>
+          ) : (
+            next && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: `scale(${nextScale}) translateY(${(1 - progress) * 12}px)`,
+                  opacity: nextOpacity,
+                  transition: drag.active && !leaving ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
+                }}
+              >
+                {renderCard(next)}
+              </div>
+            )
           )}
 
           <div
