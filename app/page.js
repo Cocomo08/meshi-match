@@ -15,6 +15,7 @@ import { newSeed } from "@/lib/rng";
 import { MeshiSlotNet } from "@/components/MeshiSlotNet";
 import { MeshiAmidaNet } from "@/components/MeshiAmidaNet";
 import { MeshiBattleNet } from "@/components/MeshiBattleNet";
+import MeshiQuizNet from "@/components/MeshiQuizNet";
 import MealTicket from "@/components/MealTicket";
 import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
 import VsIntro from "@/components/VsIntro";
@@ -868,6 +869,26 @@ export default function MeshiMatchPage() {
             onLeave: leaveRoom,
             onDecided: (genreId) => decideGenre(genreId),
           };
+          if (game.id === "quiz")
+            return (
+              <MeshiQuizNet
+                myRole={myRole}
+                hostName={hostName}
+                guestName={guestName}
+                hostGenre={getGenre(game.hostChamp)}
+                guestGenre={getGenre(game.guestChamp)}
+                seed={game.seed}
+                quiz={game.quiz}
+                ansHost={game.ansHost}
+                ansGuest={game.ansGuest}
+                writeQuiz={(q) => setGame({ quiz: q })}
+                writeAns={(role, ans) => setGame(role === "host" ? { ansHost: ans } : { ansGuest: ans })}
+                onRematch={() => setGame({ seed: newSeed(), quiz: null, ansHost: null, ansGuest: null })}
+                onChangeGame={() => setGame({ id: null, phase: "pick", started: false, quiz: null, ansHost: null, ansGuest: null })}
+                onLeave={leaveRoom}
+                onDecided={(genreId) => decideGenre(genreId)}
+              />
+            );
           if (game.id === "slot") return <MeshiSlotNet {...props} />;
           if (game.id === "amida") return <MeshiAmidaNet {...props} />;
           if (game.id === "battle")

@@ -53,7 +53,7 @@ function IconOyakata() {
 const GAMES = [
   { id: "battle", name: "割り箸勝負", Icon: IconChopsticks },
   { id: "slot", name: "早食い勝負", Icon: IconBowl },
-  { id: "amida", name: "大将のお題", Icon: IconOyakata },
+  { id: "quiz", name: "大将のお題", Icon: IconOyakata },
 ];
 
 const CSS = `
