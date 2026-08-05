@@ -14,7 +14,7 @@ import { useRoom } from "@/lib/useRoom";
 import { newSeed } from "@/lib/rng";
 import { MeshiSlotNet } from "@/components/MeshiSlotNet";
 import { MeshiAmidaNet } from "@/components/MeshiAmidaNet";
-import { MeshiBattleNet } from "@/components/MeshiBattleNet";
+import WaribashiNet from "@/components/WaribashiNet";
 import MeshiQuizNet from "@/components/MeshiQuizNet";
 import MealTicket from "@/components/MealTicket";
 import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
@@ -893,14 +893,18 @@ export default function MeshiMatchPage() {
           if (game.id === "amida") return <MeshiAmidaNet {...props} />;
           if (game.id === "battle")
             return (
-              <MeshiBattleNet
+              <WaribashiNet
+                myRole={myRole}
+                hostName={hostName}
+                guestName={guestName}
                 hostGenre={getGenre(game.hostChamp)}
                 guestGenre={getGenre(game.guestChamp)}
-                myRole={myRole}
-                battle={game.battle}
-                writeBattle={(b) => setGame({ battle: b })}
-                onRematch={() => setGame({ battle: { phase: "vs" } })}
-                onChangeGame={() => setGame({ id: null, phase: "pick", started: false, battle: null })}
+                seed={game.seed}
+                resHost={game.resHost}
+                resGuest={game.resGuest}
+                writeRes={(role, r) => setGame(role === "host" ? { resHost: r } : { resGuest: r })}
+                onRematch={() => setGame({ seed: newSeed(), resHost: null, resGuest: null })}
+                onChangeGame={() => setGame({ id: null, phase: "pick", started: false, resHost: null, resGuest: null })}
                 onLeave={leaveRoom}
                 onDecided={(genreId) => decideGenre(genreId)}
               />
