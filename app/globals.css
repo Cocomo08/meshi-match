@@ -633,7 +633,7 @@ body {
    屋台の内壁（スワイプ画面の背景・縦板＋上からの提灯光）
    低彩度の茶と黒のみ／グラデーションは光の表現だけ／画像なし
    ============================================================ */
-.sw-wall { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-color: #1e1510; }
+.sw-wall { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-color: #18110d; }
 /* 縦板を横に並べる（継ぎ目＝縦線）*/
 .sw-planks { position: absolute; inset: 0; display: flex; }
 .sw-plank { position: relative; height: 100%; flex: 0 0 auto; background-color: #241a12;
@@ -654,8 +654,8 @@ body {
   background: #6f4b2a; font-family: var(--font-klee), var(--font-zen-maru), sans-serif; font-weight: 800;
   font-size: 17px; letter-spacing: .1em; cursor: pointer; transition: transform .05s ease;
   box-shadow: inset 0 1px 0 rgba(255,224,170,.32), inset 0 -1px 0 rgba(0,0,0,.42); }
-.sd-tag.no { color: #241c14; }   /* 墨：見送り */
-.sd-tag.yes { color: #e0483b; }  /* 提灯の赤：頼む */
+.sd-tag.no { color: #f0e6d2; }   /* 生成り：見送り（木とのコントラスト確保）*/
+.sd-tag.yes { color: #ff6a5a; }  /* 明るい赤：頼む */
 .sd-tag:disabled { opacity: .5; cursor: default; }
 .sd-tag:not(:disabled):active { transform: translateY(2px);
   box-shadow: inset 0 1px 0 rgba(0,0,0,.42), inset 0 -1px 0 rgba(255,224,170,.32); }
@@ -675,7 +675,8 @@ body {
   85%  { transform: translateY(7px) rotate(1deg); opacity: 1; }
   100% { transform: translateY(0) rotate(0); opacity: 1; }
 }
-.sd-drop { animation: sdDrop .5s cubic-bezier(.3,.7,.4,1) both; }
+/* カード領域いっぱいの大きさを持たせる（絶対配置にしないと中の短冊が0pxに潰れる）*/
+.sd-drop { position: absolute; inset: 0; animation: sdDrop .5s cubic-bezier(.3,.7,.4,1) both; }
 @keyframes sdFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* 退場：残った短冊が一斉に剥がれてひらひら落下＋画面暗転 */
