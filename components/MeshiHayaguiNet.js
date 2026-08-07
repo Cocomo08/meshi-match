@@ -50,8 +50,8 @@ const CSS = `
 .hy-in { position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; align-items:center;
   padding:12px 16px calc(14px + env(safe-area-inset-bottom)); }
 
-/* 大将の帯 */
-.hy-master { display:flex; align-items:center; gap:10px; align-self:stretch; max-width:440px; margin:0 auto; }
+/* 大将の帯（右上の「ゲーム変更」ボタンと重ならないよう右側を空ける）*/
+.hy-master { display:flex; align-items:center; gap:10px; align-self:stretch; max-width:440px; margin:0 auto; padding-right:80px; }
 .hy-face { flex:0 0 auto; width:44px; height:44px; }
 .hy-face svg { width:100%; height:100%; display:block; }
 .hy-speech { position:relative; flex:1; background:#f0e6d2; color:#2a2520; border-radius:4px; padding:8px 12px;
@@ -142,7 +142,7 @@ const CSS = `
 .hy-btn.wood { background:#3a2a1b; color:#e8dcc4; border-color:#241811; box-shadow: inset 0 1px 0 rgba(255,224,170,.25), inset 0 -1px 0 rgba(0,0,0,.5); }
 .hy-btn.wood.small { padding:8px 18px; font-size:13px; }
 .hy-over-row { display:flex; gap:10px; margin-top:2px; }
-.hy-quit { position:absolute; top:10px; left:12px; z-index:7; background:#3a2a1b; color:#e8dcc4; border:1px solid #241811;
+.hy-quit { position:absolute; top:10px; right:12px; z-index:7; background:#3a2a1b; color:#e8dcc4; border:1px solid #241811;
   border-radius:5px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; }
 
@@ -175,23 +175,26 @@ function Bowl({ fill = 1, hot = false, className = "" }) {
   const rim = hot ? "#ff6a4a" : "#c73a24";
   const glow = hot ? "drop-shadow(0 0 8px rgba(255,90,60,.9))" : "drop-shadow(0 7px 8px rgba(0,0,0,.5))";
 
-  // スープの面（fillが減るほど下がる）
-  const soupY = 52 + (1 - f) * 30;
-  const soupRx = 40 + f * 13, soupRy = 8 + f * 3;
+  // スープの面（fillが減るほど下がる。丼の口の内側に収める）
+  const soupY = 48 + (1 - f) * 10;       // 46..58
+  const soupRx = 46 + f * 8, soupRy = 9 + f * 2;
 
-  // 麺（線を重ねて束に。fillで本数が変わる・ふちから溢れるよう高く盛る）
-  const nLines = f <= 0.02 ? 0 : Math.max(3, Math.round(3 + f * 11)); // 3〜14本
-  const topY = 40 - f * 20;      // 山の頂（f=1で口縁より上＝溢れる）
-  const botY = soupY - 1;
+  // 麺（線を重ねて束に。fillで本数が変わる。すべて口の楕円内にクリップ）
+  const nLines = f <= 0.02 ? 0 : Math.max(3, Math.round(4 + f * 10)); // 4〜14本
+  const topY = 37 + (1 - f) * 6;         // 山の頂（口縁のすぐ内側・溢れさせない）
+  const botY = soupY;
   const noodlePaths = [];
   for (let i = 0; i < nLines; i++) {
-    const t = nLines <= 1 ? 0 : i / (nLines - 1);
+    const t = nLines <= 1 ? 0 : i / (nLines - 1);   // 0=下(スープ側) .. 1=上
     const yy = botY - (botY - topY) * t;
-    const w = 30 + (1 - t) * 20;         // 下ほど広い山型
+    const w = 30 + (1 - t) * 14;         // 下ほど広い山型
     const amp = 4 + (i % 3) * 2;         // うねりを大きく
     const dir = i % 2 ? 1 : -1;
     const x0 = 80 - w + (i % 2) * 4;
-    noodlePaths.push(`M ${x0.toFixed(1)} ${yy.toFixed(1)} q ${(w * 0.25).toFixed(1)} ${(dir * -amp).toFixed(1)} ${(w * 0.5).toFixed(1)} 0 t ${(w * 0.5).toFixed(1)} 0`);
+    // 黄みのある麺。スープに浸かる下部は暗く、上に出る部分は明るく
+    const col = t < 0.34 ? "#a9824a" : t < 0.68 ? "#d8bd72" : "#f0dc9a";
+    const d = `M ${x0.toFixed(1)} ${yy.toFixed(1)} q ${(w * 0.25).toFixed(1)} ${(dir * -amp).toFixed(1)} ${(w * 0.5).toFixed(1)} 0 t ${(w * 0.5).toFixed(1)} 0`;
+    noodlePaths.push({ d, col });
   }
 
   // 雷文（四角い渦巻きの連続）
@@ -223,45 +226,48 @@ function Bowl({ fill = 1, hot = false, className = "" }) {
       {/* 内側（一段暗い）*/}
       <ellipse cx="80" cy="49" rx="56" ry="13" fill="#3a1d0f" />
 
-      {/* スープの面（開口部にクリップ）*/}
+      {/* 中身はすべて丼の口（楕円）でクリップ＝口の外に一切出さない */}
       <g clipPath={`url(#${clipId})`}>
+        {/* スープの面 */}
         <ellipse cx="80" cy={soupY} rx={soupRx} ry={soupRy} fill={`url(#${soupId})`} />
+        {/* 麺の束 */}
+        <g strokeWidth="2.8" strokeLinecap="round" fill="none" opacity=".97">
+          {noodlePaths.map((n, i) => <path key={i} d={n.d} stroke={n.col} />)}
+        </g>
+        {/* 海苔：口の内側に立てかけ、下端をスープに挿す（傾き浅め）*/}
+        {f > 0.6 && (
+          <rect x="90" y={topY - 2} width="15" height={(soupY - topY + 6).toFixed(1)} rx="1" fill="#171717"
+            transform={`rotate(6 97 ${((topY + soupY) / 2).toFixed(1)})`} />
+        )}
+        {/* チャーシュー（外周濃く中央淡く）*/}
+        {f > 0.12 && (
+          <g>
+            <ellipse cx="70" cy={topY + 9} rx="15" ry="9" fill="#7a3b26" />
+            <ellipse cx="70" cy={topY + 9} rx="9" ry="5" fill="#c07a4e" />
+          </g>
+        )}
+        {/* メンマ：細長い長方形を3本（麺の上に散らす）*/}
+        {f > 0.28 && (
+          <g fill="#cda24a">
+            <rect x="78" y={topY + 2} width="20" height="5" rx="2" transform={`rotate(-14 88 ${(topY + 4).toFixed(1)})`} />
+            <rect x="84" y={topY + 8} width="18" height="5" rx="2" transform={`rotate(-4 93 ${(topY + 10).toFixed(1)})`} />
+            <rect x="76" y={topY + 13} width="19" height="5" rx="2" transform={`rotate(-20 85 ${(topY + 15).toFixed(1)})`} />
+          </g>
+        )}
+        {/* ネギ（緑の輪切り・大きめ・中央寄りに散らす）*/}
+        {f > 0.45 && (
+          <g>
+            {[[54, topY + 6], [96, topY + 5], [78, topY + 13], [64, topY - 1]].map(([cx, cy], i) => (
+              <g key={i}><circle cx={cx} cy={cy} r="6.5" fill="#5fa53c" /><circle cx={cx} cy={cy} r="2.8" fill="#c4e493" /></g>
+            ))}
+          </g>
+        )}
       </g>
 
-      {/* 口縁の朱色（麺の下＝麺がふちに被さって見える）*/}
+      {/* 丼の手前側の縁（麺・具の下部を隠して「載っている」ように見せる）*/}
+      <path d="M 24 49 A 56 13 0 0 0 136 49" fill="none" stroke="#8a4a22" strokeWidth="7" strokeLinecap="round" />
+      {/* 口縁の朱色 */}
       <ellipse cx="80" cy="48" rx="60" ry="14" stroke={rim} strokeWidth="2.6" fill="none" />
-
-      {/* 麺（クリップなし＝ふちから溢れて盛る。太くうねる線を重ねる）*/}
-      <g stroke="#f0e2bc" strokeWidth="2.8" strokeLinecap="round" fill="none" opacity=".96">
-        {noodlePaths.map((d, i) => <path key={i} d={d} />)}
-      </g>
-
-      {/* 具（麺の上に載せる・クリップなしで全体を見せる）*/}
-      {/* 海苔：黒い長方形をふちに立てかける */}
-      {f > 0.6 && <rect x="101" y={topY - 20} width="17" height="30" rx="1" fill="#171717" stroke="#000" strokeWidth="0.6" transform={`rotate(9 109 ${(topY - 5).toFixed(1)})`} />}
-      {/* チャーシュー（外周濃く中央淡く）*/}
-      {f > 0.12 && (
-        <g>
-          <ellipse cx="60" cy={topY + 12} rx="16" ry="10" fill="#7a3b26" />
-          <ellipse cx="60" cy={topY + 12} rx="10" ry="6" fill="#c07a4e" />
-        </g>
-      )}
-      {/* メンマ：細長い長方形を3本 */}
-      {f > 0.28 && (
-        <g fill="#cda24a">
-          <rect x="86" y={topY + 3} width="21" height="5" rx="2" transform={`rotate(-15 96 ${(topY + 5).toFixed(1)})`} />
-          <rect x="90" y={topY + 10} width="19" height="5" rx="2" transform={`rotate(-6 99 ${(topY + 12).toFixed(1)})`} />
-          <rect x="84" y={topY + 16} width="20" height="5" rx="2" transform={`rotate(-20 93 ${(topY + 18).toFixed(1)})`} />
-        </g>
-      )}
-      {/* ネギ（緑の輪切り・大きめ）*/}
-      {f > 0.45 && (
-        <g>
-          {[[46, topY + 9], [112, topY + 15], [78, topY + 3], [98, topY + 21]].map(([cx, cy], i) => (
-            <g key={i}><circle cx={cx} cy={cy} r="7" fill="#5fa53c" /><circle cx={cx} cy={cy} r="3" fill="#c4e493" /></g>
-          ))}
-        </g>
-      )}
     </svg>
   );
 }
@@ -310,7 +316,13 @@ export default function MeshiHayaguiNet({
   useEffect(() => {
     doneRef.current = false; remRef.current = N; lastBiteRef.current = -9999;
     setRemaining(N); setHot(false); setFrozen(false); setProg(0); setLocal("ready");
-    const t = setTimeout(() => { t0Ref.current = performance.now(); setLocal("go"); }, isRed ? 300 : 700);
+    setSensei({ text: "腹減ったろ。よーい…", key: 0, achi: false });
+    // ゲーム開始（go）と同時に t0 を打ち、合図も「はじめ」に切り替える（＝ここから計時）
+    const t = setTimeout(() => {
+      t0Ref.current = performance.now();
+      setLocal("go");
+      setSensei((s) => ({ text: "はじめっ！ 隙を見て食え", key: s.key + 1, achi: false }));
+    }, isRed ? 300 : 700);
     return () => clearTimeout(t);
   }, [seed, isRed]);
 
@@ -402,7 +414,7 @@ export default function MeshiHayaguiNet({
       <style>{CSS}</style>
       <div className="hy-wall" />
       <div className="hy-light" />
-      <button className="hy-quit" onClick={onChangeGame}>ゲーム変更</button>
+      {!bothDone && <button className="hy-quit" onClick={onChangeGame}>ゲーム変更</button>}
 
       <div className="hy-in">
         {/* 大将 */}
