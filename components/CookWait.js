@@ -60,63 +60,71 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
         <div className="cw-steam"><i /><i /><i /></div>
         <svg className="cw-art" viewBox="0 0 240 212" fill="none" aria-hidden>
           {/* ── 大将（のれんの奥）── */}
-          {/* 法被（藍）*/}
+          {/* 法被（藍）※体は次段階で描き直し予定 */}
           <path d="M84 124 Q120 114 156 124 L165 182 L75 182 Z" fill="#223a58" stroke="#16283d" strokeWidth="2" strokeLinejoin="round" />
-          {/* 襟 */}
-          <path d="M112 118 L120 142 L128 118 Z" fill="#e9ddc4" />
           {/* 帯 */}
           <rect x="80" y="164" width="80" height="9" rx="1" fill="#7a1f16" />
 
           {/* ── 顔（線画・筆線ベース）── */}
           <g>
-            {/* 髪（鉢巻の奥）*/}
-            <path d="M97,88 Q95,75 108,72 Q120,70 132,72 Q145,75 143,88 Q120,81 97,88 Z" fill="#2a2520" />
-            {/* 耳 */}
-            <path d="M98,102 Q93,105 97,112 Q99,108 100,104 Z" fill="#ecc9a0" />
-            <path d="M142,102 Q147,105 143,112 Q141,108 140,104 Z" fill="#ecc9a0" />
-            <path d="M97,105 q2,2 1,5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M143,105 q-2,2 -1,5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            {/* 顔の肌（顎が角ばり・頬下がくびれる）*/}
-            <path d="M99,88 C96,96 97,101 97,104 C97,110 99,113 100,116 C101,121 103,124 106,126 C110,129 116,131 120,131 C124,131 130,129 134,126 C137,124 139,121 140,116 C141,113 143,110 143,104 C143,101 144,96 141,88 C133,84 107,84 99,88 Z" fill="#ecc9a0" />
+            {/* 首＋作務衣の襟（顎の下に少し覗かせる）*/}
+            <path d="M113,131 L112,141 Q120,144 128,141 L127,131 Z" fill="#ecc9a0" />
+            <path d="M112.6,133 Q112,138 113,141.5" fill="none" stroke="#2a2520" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M127.4,133 Q128,138 127,141.5" fill="none" stroke="#2a2520" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M104,141 L120,152 L136,141 L136,147 L120,157 L104,147 Z" fill="#223a58" />
+            <path d="M107,141 L120,151 L133,141" fill="none" stroke="#e9ddc4" strokeWidth="1.6" strokeLinejoin="round" />
+            {/* 側頭部の髪（短いもみあげ）＋生え際だけ（頭頂は塗らない）*/}
+            <path d="M98,86 Q96,90 98,94 Q100.5,90 100,87 Z" fill="#2a2520" />
+            <path d="M142,86 Q144,90 142,94 Q139.5,90 140,87 Z" fill="#2a2520" />
+            <path d="M100,82 Q120,77 140,82 Q120,80 100,82 Z" fill="#2a2520" />
+            {/* 耳（輪郭＋穴の線のみ）*/}
+            <path d="M96,104 Q90,107 95,115 Q98,111 99,106 Z" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1.4" strokeLinejoin="round" />
+            <path d="M144,104 Q150,107 145,115 Q142,111 141,106 Z" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1.4" strokeLinejoin="round" />
+            <path d="M96,107 q2.5,2 1.5,5.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M144,107 q-2.5,2 -1.5,5.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            {/* 顔の肌（顎が角ばり・頬下くびれ）*/}
+            <path d="M99,88 C96,96 97,101 97,104 C97,110 99,113 100,117 C101,122 103,125 106,127 C110,130 116,133 120,133 C124,133 130,130 134,127 C137,125 139,122 140,117 C141,113 143,110 143,104 C143,101 144,96 141,88 C133,84 107,84 99,88 Z" fill="#ecc9a0" />
             {/* 影（1段・顎下の平坦なベタ）*/}
-            <path d="M105,124 Q112,129.5 120,131 Q128,129.5 135,124 Q136,126 133,128 Q127,130.5 120,130 Q113,130.5 107,128 Q104,126 105,124 Z" fill="#d3a575" />
-            {/* 輪郭の筆線（顎〜顔の縁・太さを変化）*/}
-            <path d="M96.5,104 Q98,111 99,116 Q100.5,122 105,126 Q112,130.5 120,132 Q128,130.5 135,126 Q139.5,122 141,116 Q142,111 143.5,104 L142,104 Q140.5,111 139,116 Q137.5,121 134,124 Q127,128.5 120,129.6 Q113,128.5 106,124 Q102.5,121 101,116 Q99.5,111 98,104 Z" fill="#2a2520" />
-            {/* 鉢巻（布の厚み＋結び目＋しわ）*/}
-            <path d="M96,86 Q120,77 144,86 L144,90 Q120,82 96,90 Z" fill="#d23a2c" />
-            <path d="M96,90 Q120,82 144,90 L144,92.5 Q120,85 96,92.5 Z" fill="#a82418" />
-            <path d="M143,86 l9,-3 l-2,5 l7,3 l-8,2 l1,-4 Z" fill="#d23a2c" />
-            <path d="M143,89 l8,1 l-7,3 Z" fill="#a82418" />
-            <path d="M104,85 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
-            <path d="M118,83 q1,3 0,6" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
-            <path d="M132,84 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
-            {/* 眉（太い墨・左右で角度差）*/}
-            <path d="M103,96 Q110,90 118,92.5 Q111,96.5 103,96 Z" fill="#2a2520" />
-            <path d="M122,92.5 Q130,90 137,94 Q130,95.8 122,92.5 Z" fill="#2a2520" />
-            {/* 左目（上まぶた・瞳・ハイライト）*/}
-            <ellipse cx="111" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
-            <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
-            <circle cx="109.6" cy="102" r="1" fill="#f0e6d2" />
-            <circle cx="112" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
-            <path d="M106,107.5 Q111,109 116,107.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M104,104.5 q-2,2.5 -1,4.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M106,105.6 q-2,2 -1,3.6" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+            <path d="M106,126 Q113,131 120,132.5 Q127,131 134,126 Q135,128 132,130 Q126,132.5 120,132 Q114,132.5 108,130 Q105,128 106,126 Z" fill="#d3a575" />
+            {/* 輪郭の筆線【最も太い】*/}
+            <path d="M95.5,104 Q97,111 98,117 Q99.5,123 105,127 Q112,131.5 120,133.5 Q128,131.5 135,127 Q140.5,123 142,117 Q143,111 144.5,104 L141,104 Q139.5,111 138.5,117 Q137,122 133,125.5 Q127,129.5 120,130.6 Q113,129.5 107,125.5 Q103,122 101.5,117 Q100.5,111 99,104 Z" fill="#2a2520" />
+            {/* 鉢巻（生え際・布の厚み＋結び目＋長い垂れ＋しわ）*/}
+            <path d="M96,83 Q120,75 144,83 L144,87 Q120,79.5 96,87 Z" fill="#d23a2c" />
+            <path d="M96,87 Q120,79.5 144,87 L144,89.5 Q120,82 96,89.5 Z" fill="#a82418" />
+            <path d="M143,83 l7,-2 l1,6 l-6,1 Z" fill="#d23a2c" />
+            <path d="M150,84 Q157,88 156,96 Q155,103 150,108 L147,105 Q151,100 150,94 Q150,88 147,86 Z" fill="#d23a2c" />
+            <path d="M149,89 Q154,93 152,100 L149,98 Q150,94 147.5,91 Z" fill="#a82418" />
+            <path d="M104,82 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+            <path d="M118,80 q1,3 0,6" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+            <path d="M132,81 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+            {/* 眉【中くらい】左右で角度差 */}
+            <path d="M100,100.5 Q108,96.5 116,99 Q109,101 100,100.5 Z" fill="#2a2520" />
+            <path d="M124,99 Q132,96.8 140,100.2 Q132,100.8 124,99 Z" fill="#2a2520" />
+            {/* 左目：上まぶた【中】・瞳・ハイライト（現状維持）*/}
+            <ellipse cx="107" cy="110" rx="3" ry="3.8" fill="#2a2520" />
+            <path d="M114,106.5 Q107,106.9 100,110.5 Q106,109.2 113,108 Z" fill="#2a2520" />
+            <circle cx="105.6" cy="108.5" r="1" fill="#f0e6d2" />
+            <circle cx="108" cy="111.9" r="0.8" fill="#f0e6d2" opacity="0.5" />
+            <path d="M102,114 Q107,115.6 112,114" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+            <path d="M100,111 q-2.2,2.6 -1.2,4.8" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+            <path d="M102,112.2 q-2,2 -1,3.6" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
             {/* 右目 */}
-            <ellipse cx="129" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
-            <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
-            <circle cx="127.6" cy="102" r="1" fill="#f0e6d2" />
-            <circle cx="130" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
-            <path d="M124,107.5 Q129,109 134,107.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M136,104.5 q2,2.5 1,4.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M134,105.6 q2,2 1,3.6" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
-            {/* 鼻（短い線＋小鼻の点）*/}
-            <path d="M120.4,103.5 Q118.7,108 120.1,110.2 Q121.4,111 122.6,110.1" fill="none" stroke="#2a2520" strokeWidth="1.1" strokeLinecap="round" />
-            <circle cx="118.4" cy="110.1" r="0.7" fill="#2a2520" />
-            {/* 頬（平坦な赤み）*/}
-            <path d="M101,110 Q105,107.5 109,110 Q106,113.5 105,113.5 Q102,113.5 101,110 Z" fill="#e58a72" />
-            <path d="M131,110 Q135,107.5 139,110 Q136,113.5 135,113.5 Q132,113.5 131,110 Z" fill="#e58a72" />
-            {/* 口（口角の上がった線・歯なし）*/}
-            <path d="M111,117 Q120,122 129,117 Q120,119.4 111,117 Z" fill="#2a2520" />
+            <ellipse cx="133" cy="110" rx="3" ry="3.8" fill="#2a2520" />
+            <path d="M126,106.5 Q133,106.9 140,110.5 Q134,109.2 127,108 Z" fill="#2a2520" />
+            <circle cx="131.6" cy="108.5" r="1" fill="#f0e6d2" />
+            <circle cx="134" cy="111.9" r="0.8" fill="#f0e6d2" opacity="0.5" />
+            <path d="M128,114 Q133,115.6 138,114" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+            {/* 笑い皺【細】右は角度を変えて崩す */}
+            <path d="M140,110.6 q2.4,2.2 1.4,4.6" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+            <path d="M138.4,112.4 q2.2,1.4 1.2,3" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+            {/* 鼻【細】短い線＋小鼻の点 */}
+            <path d="M120.4,108 Q118.7,113 120.1,115.2 Q121.4,116 122.6,115.1" fill="none" stroke="#2a2520" strokeWidth="1" strokeLinecap="round" />
+            <circle cx="118.4" cy="115.1" r="0.7" fill="#2a2520" />
+            {/* 頬（平坦な赤み・現状維持）*/}
+            <path d="M102,116 Q106,113.5 110,116 Q107,119.5 106,119.5 Q103,119.5 102,116 Z" fill="#e58a72" />
+            <path d="M130,116 Q134,113.5 138,116 Q135,119.5 134,119.5 Q131,119.5 130,116 Z" fill="#e58a72" />
+            {/* 口（現状維持の表情）*/}
+            <path d="M111,122 Q120,127 129,122 Q120,124.4 111,122 Z" fill="#2a2520" />
           </g>
 
           {/* ── 振る腕＋中華鍋（2秒周期のループ）── */}
