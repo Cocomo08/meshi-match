@@ -58,7 +58,7 @@ const CSS = `
   padding:14px 16px calc(16px + env(safe-area-inset-bottom)); }
 
 /* 大将の帯 */
-.wb-call { position:relative; background:#f0e6d2; color:#2a2520; border-radius:3px; padding:8px 22px; margin-top:4px;
+.wb-call { position:relative; background:#f0e6d2; color:#2a2520; border-radius:3px; padding:8px 22px; margin-top:30px;
   font-size:14px; font-weight:900; letter-spacing:.06em; min-height:20px; z-index:4;
   box-shadow: inset 0 1px 0 #fffdf5, inset 0 -1px 0 #b0a37d; }
 .wb-call::before { content:""; position:absolute; left:10px; right:10px; top:-3px; height:3px; background:#241f1c; border-radius:2px; }
@@ -128,19 +128,33 @@ const CSS = `
 
 /* 決着 */
 .wb-over { position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:10px; padding:18px 18px calc(18px + env(safe-area-inset-bottom)); text-align:center; background:rgba(6,8,16,.87); animation: wbFade .3s; }
+  gap:6px; padding:18px 18px calc(18px + env(safe-area-inset-bottom)); text-align:center; background:rgba(6,8,16,.92); animation: wbFade .3s; overflow-y:auto; }
 @keyframes wbFade { from{opacity:0} to{opacity:1} }
-.wb-duel { display:flex; align-items:flex-end; justify-content:center; gap:20px; }
-.wb-duel .col { display:flex; flex-direction:column; align-items:center; }
-.wb-duel .wb-svg { width:92px; height:auto; }
-.wb-win-nm { font-size:25px; font-weight:900; color:#f0e6d2; }
-.wb-win-sub { font-size:14px; color:#ffe9cf; font-weight:700; }
+.wb-win-nm { font-size:26px; font-weight:900; color:#f0e6d2; }
+.wb-win-sub { font-size:14px; color:#ffe9cf; font-weight:700; margin-bottom:2px; }
+
+/* 箸の比較（半分サイズ・勝者＝明るい＋赤囲み／敗者＝明度40%ダウン）*/
+.wb-duel { display:flex; align-items:flex-start; justify-content:center; gap:22px; }
+.wb-duel .col { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.wb-duelbox { padding:5px; border-radius:9px; border:2px solid transparent; }
+.wb-duelbox.win { border-color:#e0483b; box-shadow:0 0 12px rgba(224,72,59,.5); }
+.wb-duelbox.win .wb-svg { filter: brightness(1.08); }
+.wb-duelbox.lose .wb-svg { filter: brightness(.6); }
+.wb-duel .wb-svg { height:150px; width:auto; display:block; }
+.wb-tier.big { font-size:26px; margin-top:0; line-height:1; }
+
+/* 比較ゲージ（単独・上下24px余白＋ラベル分の内側余白）*/
+.wb-resgauge { margin:24px 0; padding:28px 0; display:flex; justify-content:center; width:100%; }
+
+/* ボタン */
 .wb-btn { border-radius:5px; padding:11px 26px; font-weight:800; letter-spacing:.06em; cursor:pointer;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; border:1px solid; }
 .wb-btn.prim { background:#ece0bf; color:#2a2520; border-color:#b7ab84; box-shadow: inset 0 1px 0 #fff6db, inset 0 -1px 0 #b0a37d; }
 .wb-btn.prim:active { transform:translateY(2px); box-shadow: inset 0 1px 0 #b0a37d, inset 0 -1px 0 #fff6db; }
+.wb-btn.prim.wide { width:min(100%,340px); padding:17px; font-size:19px; letter-spacing:.12em; }
 .wb-btn.wood { background:#3a2a1b; color:#e8dcc4; border-color:#241811; box-shadow: inset 0 1px 0 rgba(255,224,170,.25), inset 0 -1px 0 rgba(0,0,0,.5); }
-.wb-over-row { display:flex; gap:10px; }
+.wb-btn.wood.small { padding:8px 18px; font-size:13px; letter-spacing:.04em; }
+.wb-over-row { display:flex; gap:10px; margin-top:2px; }
 .wb-quit { position:absolute; top:10px; left:12px; z-index:5; background:#3a2a1b; color:#e8dcc4; border:1px solid #241811;
   border-radius:5px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; }
@@ -319,16 +333,17 @@ export default function WaribashiNet({
       <style>{CSS}</style>
       <div className="wb-wall" />
       <div className="wb-light" />
-      <button className="wb-quit" onClick={onChangeGame} onPointerDown={(e) => e.stopPropagation()}>ゲーム変更</button>
+      {!(bothIn && winner) && (
+        <button className="wb-quit" onClick={onChangeGame} onPointerDown={(e) => e.stopPropagation()}>ゲーム変更</button>
+      )}
 
       <div className="wb-in">
-        <div className={`wb-call ${canStop ? "go" : ""}`}>{call || "割り箸勝負"}</div>
-        {canStop && (
-          <div className={`wb-timer ${remainSec <= 3 ? "hurry" : ""}`}>のこり<b>{remainSec}</b>秒</div>
-        )}
-
         {!(bothIn && winner) && (
           <>
+            <div className={`wb-call ${canStop ? "go" : ""}`}>{call || "割り箸勝負"}</div>
+            {canStop && (
+              <div className={`wb-timer ${remainSec <= 3 ? "hurry" : ""}`}>のこり<b>{remainSec}</b>秒</div>
+            )}
             <div className="wb-stage">
               {/* 相手（奥・小）*/}
               <div className="wb-opp">
@@ -360,12 +375,7 @@ export default function WaribashiNet({
                 <GaugeBands />
                 <div className="wb-center" />
                 {canStop && <div className="wb-cursor" ref={cursorRef} />}
-                {myRes && (
-                  <>
-                    <div className="wb-mark" style={{ left: `${myRes.pos * 100}%` }} />
-                    <div className="wb-marklbl" style={{ left: `${myRes.pos * 100}%` }}>きみ</div>
-                  </>
-                )}
+                {myRes && <div className="wb-mark" style={{ left: `${myRes.pos * 100}%` }} />}
               </div>
               {myRes ? (
                 <>
@@ -390,37 +400,47 @@ export default function WaribashiNet({
       {/* 決着 */}
       {bothIn && winner && (
         <div className="wb-over">
-          <div className="wb-duel">
-            <div className="col">
-              <Chopsticks result={isHost ? resHost : resGuest} />
-              <div className="wb-plabel">{nameOf(myRole)}</div>
-              <div className={`wb-tier ${myRes.tier}`}>{myRes.tier}</div>
-            </div>
-            <div className="col">
-              <Chopsticks result={isHost ? resGuest : resHost} />
-              <div className="wb-plabel">{nameOf(oppRole)}</div>
-              <div className={`wb-tier ${oppRes.tier}`}>{oppRes.tier}</div>
-            </div>
-          </div>
-
-          {/* 比較ゲージ：両者のマーカーを残す（きみ＝上/赤・あいて＝下/生成り）*/}
-          <div className="wb-gauge" style={{ marginTop: "4px" }}>
-            <GaugeBands />
-            <div className="wb-center" />
-            <div className="wb-mark" style={{ left: `${myRes.pos * 100}%` }} />
-            <div className="wb-marklbl" style={{ left: `${myRes.pos * 100}%` }}>きみ</div>
-            <div className="wb-mark opp" style={{ left: `${oppRes.pos * 100}%` }} />
-            <div className="wb-marklbl opp" style={{ left: `${oppRes.pos * 100}%` }}>あいて</div>
-          </div>
-
+          {/* 見出し */}
           <div className="wb-win-nm">{nameOf(winner)} の勝ち</div>
           <div className="wb-win-sub">
             {tie ? "同着…大将の独断で " : ""}今日は「{winGenre?.label}」で決まりだ
           </div>
-          <button className="wb-btn prim" onClick={() => onDecided?.(winGenre?.id)}>この味に決める</button>
+
+          {/* 箸の比較（勝者＝明るい＋赤囲み／敗者＝暗い。判定文字は各箸の真下に大きく）*/}
+          <div className="wb-duel">
+            <div className="col">
+              <div className={`wb-duelbox ${winner === myRole ? "win" : "lose"}`}>
+                <Chopsticks result={isHost ? resHost : resGuest} />
+              </div>
+              <div className={`wb-tier big ${myRes.tier}`}>{myRes.tier}</div>
+              <div className="wb-plabel">{nameOf(myRole)}</div>
+            </div>
+            <div className="col">
+              <div className={`wb-duelbox ${winner === oppRole ? "win" : "lose"}`}>
+                <Chopsticks result={isHost ? resGuest : resHost} />
+              </div>
+              <div className={`wb-tier big ${oppRes.tier}`}>{oppRes.tier}</div>
+              <div className="wb-plabel">{nameOf(oppRole)}</div>
+            </div>
+          </div>
+
+          {/* 比較ゲージ（単独・上下24px余白／きみ＝上赤・あいて＝下生成り）*/}
+          <div className="wb-resgauge">
+            <div className="wb-gauge">
+              <GaugeBands />
+              <div className="wb-center" />
+              <div className="wb-mark" style={{ left: `${myRes.pos * 100}%` }} />
+              <div className="wb-marklbl" style={{ left: `${myRes.pos * 100}%` }}>きみ</div>
+              <div className="wb-mark opp" style={{ left: `${oppRes.pos * 100}%` }} />
+              <div className="wb-marklbl opp" style={{ left: `${oppRes.pos * 100}%` }}>あいて</div>
+            </div>
+          </div>
+
+          {/* ボタン（店をさがす＝本命・全幅／もう一回・部屋を出る＝小さめ暗木札）*/}
+          <button className="wb-btn prim wide" onClick={() => onDecided?.(winGenre?.id)}>店をさがす</button>
           <div className="wb-over-row">
-            <button className="wb-btn wood" onClick={onRematch}>もう一番</button>
-            <button className="wb-btn wood" onClick={onLeave}>部屋を出る</button>
+            <button className="wb-btn wood small" onClick={onRematch}>もう一回</button>
+            <button className="wb-btn wood small" onClick={onLeave}>部屋を出る</button>
           </div>
         </div>
       )}

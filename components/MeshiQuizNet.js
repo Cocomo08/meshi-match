@@ -339,9 +339,9 @@ export default function MeshiQuizNet({
           <div className="qz-win-sub">
             {tie ? "痛み分け…大将の独断で" : ""}今日は「{winGenre?.label}」で決まりだ
           </div>
-          <button className="qz-btn prim" onClick={() => onDecided?.(winGenre?.id)}>この味に決める</button>
+          <button className="qz-btn prim" onClick={() => onDecided?.(winGenre?.id)}>店をさがす</button>
           <div className="qz-over-row">
-            <button className="qz-btn wood" onClick={onRematch}>もう一番</button>
+            <button className="qz-btn wood" onClick={onRematch}>もう一回</button>
             <button className="qz-btn wood" onClick={onLeave}>部屋を出る</button>
           </div>
         </div>

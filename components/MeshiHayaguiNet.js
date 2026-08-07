@@ -363,9 +363,9 @@ export default function MeshiHayaguiNet({
           <div className="hy-win-sub">
             {tie ? "同着…大将の独断で " : ""}今日は「{winGenre?.label}」で決まりだ
           </div>
-          <button className="hy-btn prim" onClick={() => onDecided?.(winGenre?.id)}>この味に決める</button>
+          <button className="hy-btn prim" onClick={() => onDecided?.(winGenre?.id)}>店をさがす</button>
           <div className="hy-over-row">
-            <button className="hy-btn wood" onClick={onRematch}>もう一番</button>
+            <button className="hy-btn wood" onClick={onRematch}>もう一回</button>
             <button className="hy-btn wood" onClick={onLeave}>部屋を出る</button>
           </div>
         </div>
