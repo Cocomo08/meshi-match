@@ -92,18 +92,18 @@ function MuteToggle() {
 function NightStall() {
   return (
     <div className="ymt-bg" aria-hidden>
-      {/* 手前（大・明るい） */}
-      <span className="ymt-lantern" style={{ top: "5%", left: "8%", transform: "scale(1.4)", filter: "brightness(1.06)" }}>
+      {/* 左（大・明るい・高い位置）＝画面の外側寄り・見出しに被らない */}
+      <span className="ymt-lantern" style={{ top: "1%", left: "-2%", transform: "scale(1.3)", filter: "brightness(1.06)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
-      {/* 中景 */}
-      <span className="ymt-lantern" style={{ top: "8%", right: "9%", transform: "scale(1.0)" }}>
+      {/* 右（小・やや暗い・左より下げる）＝左右で非対称に。見出しの上に収める */}
+      <span className="ymt-lantern" style={{ top: "4%", right: "-3%", transform: "scale(.8)", filter: "brightness(.82)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
-      {/* 奥（小・暗い・わずかにぼかす／のれんから離して上に） */}
-      <span className="ymt-lantern" style={{ top: "1%", left: "39%", transform: "scale(.6)", filter: "brightness(.62) blur(0.7px)" }}>
+      {/* 奥（小・暗い・わずかにぼかす／中央上・見出しの上方）*/}
+      <span className="ymt-lantern" style={{ top: "-2%", left: "44%", transform: "scale(.5)", filter: "brightness(.6) blur(0.7px)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
@@ -165,8 +165,10 @@ function TicketBowl() {
   );
 }
 
-// ヒーローの食券（マッチ結果と同じ券面デザイン・サンプル内容）
-function HeroTicket() {
+// ヒーローの食券（マッチ結果と同じ券面デザイン・入力に連動）
+function HeroTicket({ name, ticketNo, date }) {
+  // 入力が空なら「あなた」、あれば入力値。相手は未定なので「？」
+  const left = name && name.trim() ? name.trim() : "あなた";
   return (
     <div className="ymt-ticket-wrap" aria-hidden>
       <div className="ymt-ticket">
@@ -181,11 +183,11 @@ function HeroTicket() {
             <TicketBowl />
             <div className="genre">ラーメン</div>
           </div>
-          <div className="names">たろ　×　はな</div>
+          <div className="names">{left}　×　？</div>
           <div className="fee"><span className="yen">¥0</span><span className="free">本日無料</span></div>
           <div className="foot">
-            <span className="tno">No.0001234</span>
-            <span className="date">発行 2026.08.04</span>
+            <span className="tno">No.{ticketNo}</span>
+            <span className="date">発行 {date}</span>
           </div>
         </div>
       </div>
@@ -291,6 +293,9 @@ export default function MeshiMatchPage() {
   const [mounted, setMounted] = useState(false);
   const [nick, setNick] = useState("");
   const [nickWarn, setNickWarn] = useState(false);
+  // ヒーロー食券の見本：券番号（ランダム7桁）と発行日（本日）はクライアントで一度だけ生成
+  const [heroTno, setHeroTno] = useState("0000000");
+  const [heroDate, setHeroDate] = useState("");
   const [ticketAcked, setTicketAcked] = useState(false);
   const [showVs, setShowVs] = useState(false);
   const vsSeenRef = useRef(false);
@@ -298,8 +303,13 @@ export default function MeshiMatchPage() {
 
   // クライアントでのみバナー判定（SSRとの不一致を防ぐ）
   // ニックネームは毎回空から入力する（以前の値は復元しない）
+  // 見本食券の券番号（ランダム7桁ゼロ埋め）と発行日（本日）もここで生成
   useEffect(() => {
     setMounted(true);
+    setHeroTno(String(Math.floor(Math.random() * 10000000)).padStart(7, "0"));
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    setHeroDate(`${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`);
   }, []);
 
   const players = room?.players || {};
@@ -473,7 +483,7 @@ export default function MeshiMatchPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center">
         {/* ===== ホーム：部屋を作る / 入る ===== */}
         {view === "home" && (
-          <div className="flex w-full flex-col items-center">
+          <div className="flex w-full flex-col items-center pt-5">
             {/* ロゴ：白いのれん（手書き風・下端に3本の切れ目） */}
             <div className="ymt-noren mb-4">
               <div className="cloth">メシマチ</div>
@@ -493,7 +503,7 @@ export default function MeshiMatchPage() {
 
             {/* ヒーロー：実際の食券を1枚（このアプリで何が起きるかを一目で） */}
             <div className="my-5 w-full">
-              <HeroTicket />
+              <HeroTicket name={nick} ticketNo={heroTno} date={heroDate} />
             </div>
 
             <p className="mb-6 text-center text-xs font-bold tracking-wide text-[#f0e6d2]/70">

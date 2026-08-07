@@ -507,11 +507,11 @@ body {
 @keyframes ymtIssue {
   0%   { transform: rotate(0deg) translateY(120px); opacity: 0; }
   40%  { transform: rotate(0deg) translateY(0px);   opacity: 1; }
-  72%  { transform: rotate(-4.2deg) translateY(-9px); opacity: 1; }
-  100% { transform: rotate(-3deg) translateY(-4px);  opacity: 1; } }
+  72%  { transform: rotate(-2.1deg) translateY(-9px); opacity: 1; }
+  100% { transform: rotate(-1.5deg) translateY(-4px);  opacity: 1; } }
 @keyframes ymtBob {
-  0%, 100% { transform: rotate(-3deg) translateY(-4px); }
-  50%      { transform: rotate(-3deg) translateY(4px); } }
+  0%, 100% { transform: rotate(-1.5deg) translateY(-4px); }
+  50%      { transform: rotate(-1.5deg) translateY(4px); } }
 /* 提灯の光が券の上部にわずかに届く（暖色・グラデーションは光の表現）*/
 .ymt-ticket::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(180deg, rgba(255,188,118,.20), transparent 36%); }
@@ -533,7 +533,7 @@ body {
 .ymt-ticket .tno { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: #4a463a; }
 .ymt-ticket .date { font-size: 9px; letter-spacing: .05em; color: #7a7460; }
 @media (prefers-reduced-motion: reduce) {
-  .ymt-ticket { animation: none; transform: rotate(-3deg); } }
+  .ymt-ticket { animation: none; transform: rotate(-1.5deg); } }
 
 /* 券売機ボタン（ベベルで立体感・押下でベベル反転＋2px沈む）*/
 .ymt-btn { position: relative; width: 100%; border: 1px solid; border-radius: 4px;
@@ -726,7 +726,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .ymt-steam { animation: none; opacity: 0; }
-  .ymt-ticket { animation: none; transform: rotate(-3deg); }
+  .ymt-ticket { animation: none; transform: rotate(-1.5deg); }
 }
 
 /* ============================================================
