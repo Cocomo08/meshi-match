@@ -12,7 +12,7 @@ import { mulberry32, seedFrom } from "@/lib/rng";
 // ── 調整用の定数（1箇所で管理／両者で完全に同一）──
 const CFG = {
   CYCLE_MS: 1500,      // カーソル1往復の時間（遅めで狙いやすく＝技術介入）
-  TIME_LIMIT: 5000,    // 無操作で自動「無残」になるまで
+  TIME_LIMIT: 8000,    // 無操作で自動「無残」になるまで（余裕をもって狙える）
   BAND_MIGOTO: 0.06,   // 見事：中心から±(バー幅の)6%
   BAND_MAZU: 0.18,     // まずまず：±18%（これより外は無残）
   YOI_MS: 800,         // よーいの震え
@@ -63,6 +63,20 @@ const CSS = `
   box-shadow: inset 0 1px 0 #fffdf5, inset 0 -1px 0 #b0a37d; }
 .wb-call::before { content:""; position:absolute; left:10px; right:10px; top:-3px; height:3px; background:#241f1c; border-radius:2px; }
 .wb-call.go { color:#c0301f; }
+
+/* 残り時間の表記 */
+.wb-timer { z-index:4; margin-top:8px; font-size:14px; font-weight:900; letter-spacing:.08em; color:#ffd9a0;
+  font-family: var(--font-klee), var(--font-zen-maru), sans-serif; }
+.wb-timer b { font-size:20px; color:#ffcf6a; margin:0 2px; }
+.wb-timer.hurry b { color:#ff7a5a; }
+
+/* 止めるボタン（木札・赤／操作を明示）*/
+.wb-stopbtn { z-index:4; margin-top:4px; padding:13px 46px; border-radius:6px; border:1px solid #241811;
+  background:#7a2018; color:#ffe6d8; font-weight:900; font-size:18px; letter-spacing:.18em; cursor:pointer;
+  font-family: var(--font-klee), var(--font-zen-maru), sans-serif;
+  box-shadow: inset 0 1px 0 rgba(255,200,170,.35), inset 0 -2px 0 rgba(0,0,0,.5), 0 3px 0 #3a0d08; }
+.wb-stopbtn:active { transform:translateY(2px);
+  box-shadow: inset 0 1px 0 rgba(0,0,0,.5), inset 0 -1px 0 rgba(255,200,170,.3), 0 1px 0 #3a0d08; }
 
 /* 舞台：相手（奥・小）＋自分（手前・大）。高さでサイズを決めゲージを必ず画面内に収める */
 .wb-stage { flex:1 1 auto; min-height:0; position:relative; width:100%; display:flex; flex-direction:column;
@@ -200,12 +214,14 @@ export default function WaribashiNet({
   const [isRed] = useState(() => reduced());
   const [local, setLocal] = useState("yoi");     // yoi → go
   const [fx, setFx] = useState(null);            // {key, chips}
+  const [remainSec, setRemainSec] = useState(Math.ceil(CFG.TIME_LIMIT / 1000));
 
   const cursorRef = useRef(null);
   const rootRef = useRef(null);
   const t0Ref = useRef(0);
   const rafRef = useRef(0);
   const lastPosRef = useRef(0.5);
+  const lastSecRef = useRef(-1);
   const doneRef = useRef(false);
   const stopRef = useRef(() => {});
 
@@ -216,7 +232,8 @@ export default function WaribashiNet({
 
   // 新しい番でリセット → よーい → はじめ
   useEffect(() => {
-    doneRef.current = false; lastPosRef.current = 0.5; setFx(null); setLocal("yoi");
+    doneRef.current = false; lastPosRef.current = 0.5; lastSecRef.current = -1;
+    setFx(null); setLocal("yoi"); setRemainSec(Math.ceil(CFG.TIME_LIMIT / 1000));
     const t = setTimeout(() => { t0Ref.current = performance.now(); setLocal("go"); }, isRed ? 300 : CFG.YOI_MS);
     return () => clearTimeout(t);
   }, [seed, isRed]);
@@ -234,6 +251,8 @@ export default function WaribashiNet({
       const pos = ph < 0.5 ? ph * 2 : 2 - ph * 2;
       lastPosRef.current = pos;
       if (cursorRef.current) cursorRef.current.style.left = pos * 100 + "%";
+      const sec = Math.max(0, Math.ceil((CFG.TIME_LIMIT - el) / 1000));
+      if (sec !== lastSecRef.current) { lastSecRef.current = sec; setRemainSec(sec); }
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);
@@ -304,6 +323,9 @@ export default function WaribashiNet({
 
       <div className="wb-in">
         <div className={`wb-call ${canStop ? "go" : ""}`}>{call || "割り箸勝負"}</div>
+        {canStop && (
+          <div className={`wb-timer ${remainSec <= 3 ? "hurry" : ""}`}>のこり<b>{remainSec}</b>秒</div>
+        )}
 
         {!(bothIn && winner) && (
           <>
@@ -351,7 +373,14 @@ export default function WaribashiNet({
                   {!bothIn && <div className="wb-wait">相手を待て…</div>}
                 </>
               ) : (
-                <div className="wb-legend"><span>中心＝<b>見事</b></span><span>外側＝まずまず</span><span>端＝無残</span></div>
+                <>
+                  {canStop && (
+                    <button className="wb-stopbtn" onPointerDown={(e) => { e.stopPropagation(); stop(); }}>
+                      止める
+                    </button>
+                  )}
+                  <div className="wb-legend"><span>中心＝<b>見事</b></span><span>外側＝まずまず</span><span>端＝無残</span></div>
+                </>
               )}
             </div>
           </>
