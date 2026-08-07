@@ -180,7 +180,7 @@ function Chopsticks({ result, tremble = false }) {
   const rightPath = `M ${cx + gap} ${topY} L ${cx + gap + Rw} ${topY} L ${cx + gap + Rw * 0.62} ${Rbot} L ${cx + gap} ${Rbot} Z`;
   const wood = "#d8b487", edge = "#9c7440", grain = "rgba(120,80,40,.45)";
   return (
-    <svg className={`wb-svg ${tremble ? "wb-tremble" : ""}`} viewBox="0 0 80 300" fill="none" aria-hidden>
+    <svg className={`wb-svg ${tremble ? "wb-tremble" : ""}`} viewBox={result ? "-26 0 132 300" : "0 0 80 300"} fill="none" aria-hidden>
       {!result && <rect x={cx - gap - Lw} y="6" width={2 * span + 2 * gap} height="15" rx="3" fill="#e4c491" stroke={edge} strokeWidth="1" />}
       <g transform={`rotate(${angle} ${cx} ${pivotY})`}>
         <path d={leftPath} fill={wood} stroke={edge} strokeWidth="1.1" strokeLinejoin="round" />
