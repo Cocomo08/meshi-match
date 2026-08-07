@@ -11,10 +11,10 @@ import { mulberry32, seedFrom } from "@/lib/rng";
 
 // ── 調整用の定数（1箇所で管理／両者で完全に同一）──
 const CFG = {
-  CYCLE_MS: 1200,      // カーソル1往復の時間
-  TIME_LIMIT: 4000,    // 無操作で自動「無残」になるまで
-  BAND_MIGOTO: 0.05,   // 見事：中心から±(バー幅の)5%
-  BAND_MAZU: 0.17,     // まずまず：±17%（これより外は無残）
+  CYCLE_MS: 1500,      // カーソル1往復の時間（遅めで狙いやすく＝技術介入）
+  TIME_LIMIT: 5000,    // 無操作で自動「無残」になるまで
+  BAND_MIGOTO: 0.06,   // 見事：中心から±(バー幅の)6%
+  BAND_MAZU: 0.18,     // まずまず：±18%（これより外は無残）
   YOI_MS: 800,         // よーいの震え
 };
 
@@ -55,8 +55,7 @@ const CSS = `
 @keyframes wbShake { 0%,100%{ transform:translate(0,0) } 25%{ transform:translate(-3px,2px) } 60%{ transform:translate(3px,-2px) } }
 
 .wb-in { position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; align-items:center;
-  padding:14px 16px calc(18px + env(safe-area-inset-bottom)); }
-.wb-tapzone { position:absolute; inset:0; z-index:3; }
+  padding:14px 16px calc(16px + env(safe-area-inset-bottom)); }
 
 /* 大将の帯 */
 .wb-call { position:relative; background:#f0e6d2; color:#2a2520; border-radius:3px; padding:8px 22px; margin-top:4px;
@@ -65,14 +64,15 @@ const CSS = `
 .wb-call::before { content:""; position:absolute; left:10px; right:10px; top:-3px; height:3px; background:#241f1c; border-radius:2px; }
 .wb-call.go { color:#c0301f; }
 
-/* 舞台：相手（奥・小）＋自分（手前・大）*/
-.wb-stage { flex:1; position:relative; width:100%; display:flex; align-items:center; justify-content:center; }
-.wb-opp { position:absolute; top:1%; left:50%; transform:translateX(-50%) scale(.5); transform-origin:top center;
-  opacity:.72; filter:brightness(.66) blur(.4px); }
-.wb-mine { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; margin-top:26%; }
+/* 舞台：相手（奥・小）＋自分（手前・大）。高さでサイズを決めゲージを必ず画面内に収める */
+.wb-stage { flex:1 1 auto; min-height:0; position:relative; width:100%; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; }
+.wb-opp { position:absolute; top:0; left:50%; transform:translateX(-50%); transform-origin:top center;
+  display:flex; flex-direction:column; align-items:center; opacity:.72; filter:brightness(.66) blur(.4px); }
+.wb-mine { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; }
 .wb-svg { display:block; }
-.wb-mine .wb-svg { width:min(42vw,150px); height:auto; filter: drop-shadow(0 10px 14px rgba(0,0,0,.5)); }
-.wb-opp .wb-svg { width:150px; height:auto; }
+.wb-mine .wb-svg { height:clamp(190px, 38vh, 340px); width:auto; filter: drop-shadow(0 10px 14px rgba(0,0,0,.5)); }
+.wb-opp .wb-svg { height:clamp(96px, 16vh, 150px); width:auto; }
 .wb-tremble { animation: wbTremble .12s linear infinite; transform-origin:50% 8%; }
 @keyframes wbTremble { 0%{ transform:rotate(-1.1deg) } 50%{ transform:rotate(1.1deg) } 100%{ transform:rotate(-1.1deg) } }
 .wb-plabel { margin-top:6px; font-size:12px; font-weight:900; letter-spacing:.12em; color:#e8dcc4;
@@ -296,12 +296,11 @@ export default function WaribashiNet({
   const missClass = myRes ? (myRes.tier === "見事" ? "見事" : myRes.dist <= CFG.BAND_MAZU ? "near" : "far") : "";
 
   return (
-    <div className="wb" ref={rootRef}>
+    <div className="wb" ref={rootRef} onPointerDown={canStop ? stop : undefined}>
       <style>{CSS}</style>
       <div className="wb-wall" />
       <div className="wb-light" />
-      <button className="wb-quit" onClick={onChangeGame}>ゲーム変更</button>
-      {canStop && <div className="wb-tapzone" onPointerDown={stop} role="button" aria-label="止める" />}
+      <button className="wb-quit" onClick={onChangeGame} onPointerDown={(e) => e.stopPropagation()}>ゲーム変更</button>
 
       <div className="wb-in">
         <div className={`wb-call ${canStop ? "go" : ""}`}>{call || "割り箸勝負"}</div>
