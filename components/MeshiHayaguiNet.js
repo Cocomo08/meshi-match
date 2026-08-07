@@ -179,18 +179,19 @@ function Bowl({ fill = 1, hot = false, className = "" }) {
   const soupY = 52 + (1 - f) * 30;
   const soupRx = 40 + f * 13, soupRy = 8 + f * 3;
 
-  // 麺（線を重ねて束に。fillで本数が変わる）
-  const nLines = f <= 0.02 ? 0 : Math.max(2, Math.round(f * 10));
-  const topY = 52 - f * 16;
-  const botY = soupY - 3;
+  // 麺（線を重ねて束に。fillで本数が変わる・ふちから溢れるよう高く盛る）
+  const nLines = f <= 0.02 ? 0 : Math.max(3, Math.round(3 + f * 11)); // 3〜14本
+  const topY = 40 - f * 20;      // 山の頂（f=1で口縁より上＝溢れる）
+  const botY = soupY - 1;
   const noodlePaths = [];
   for (let i = 0; i < nLines; i++) {
     const t = nLines <= 1 ? 0 : i / (nLines - 1);
     const yy = botY - (botY - topY) * t;
-    const w = 44 - i * 0.6;
-    const amp = 3 + (i % 3);
+    const w = 30 + (1 - t) * 20;         // 下ほど広い山型
+    const amp = 4 + (i % 3) * 2;         // うねりを大きく
     const dir = i % 2 ? 1 : -1;
-    noodlePaths.push(`M ${(80 - w).toFixed(1)} ${yy.toFixed(1)} q ${(w * 0.33).toFixed(1)} ${(dir * -amp).toFixed(1)} ${(w * 0.66).toFixed(1)} 0 t ${(w * 0.66).toFixed(1)} 0`);
+    const x0 = 80 - w + (i % 2) * 4;
+    noodlePaths.push(`M ${x0.toFixed(1)} ${yy.toFixed(1)} q ${(w * 0.25).toFixed(1)} ${(dir * -amp).toFixed(1)} ${(w * 0.5).toFixed(1)} 0 t ${(w * 0.5).toFixed(1)} 0`);
   }
 
   // 雷文（四角い渦巻きの連続）
@@ -222,46 +223,43 @@ function Bowl({ fill = 1, hot = false, className = "" }) {
       {/* 内側（一段暗い）*/}
       <ellipse cx="80" cy="49" rx="56" ry="13" fill="#3a1d0f" />
 
-      {/* 中身（開口部にクリップ）*/}
+      {/* スープの面（開口部にクリップ）*/}
       <g clipPath={`url(#${clipId})`}>
         <ellipse cx="80" cy={soupY} rx={soupRx} ry={soupRy} fill={`url(#${soupId})`} />
-        <g stroke="#f0e2bc" strokeWidth="2" strokeLinecap="round" fill="none" opacity=".95">
-          {noodlePaths.map((d, i) => <path key={i} d={d} />)}
-        </g>
-        {/* 海苔（ふちに立てかける）*/}
-        {f > 0.72 && <rect x="104" y={topY - 15} width="14" height="21" rx="1" fill="#171717" transform={`rotate(10 111 ${(topY - 4).toFixed(1)})`} />}
-        {/* チャーシュー（外周濃く中央淡く）*/}
-        {f > 0.15 && (
-          <g>
-            <ellipse cx="62" cy={topY + 4} rx="15" ry="9" fill="#7a3b26" />
-            <ellipse cx="62" cy={topY + 4} rx="9" ry="5" fill="#c07a4e" />
-          </g>
-        )}
-        {/* メンマ */}
-        {f > 0.3 && (
-          <g>
-            <rect x="90" y={topY - 1} width="17" height="4" rx="1.5" fill="#cda24a" transform={`rotate(-13 98 ${(topY + 1).toFixed(1)})`} />
-            <rect x="92" y={topY + 5} width="15" height="4" rx="1.5" fill="#c39a40" transform={`rotate(-6 99 ${(topY + 7).toFixed(1)})`} />
-          </g>
-        )}
-        {/* ネギ（緑の輪切り）*/}
-        {f > 0.5 && (
-          <g>
-            {[[48, topY - 2], [104, topY + 7], [80, topY - 5], [92, topY + 9]].map(([cx, cy], i) => (
-              <g key={i}><circle cx={cx} cy={cy} r="2.6" fill="#5fa53c" /><circle cx={cx} cy={cy} r="1" fill="#c4e493" /></g>
-            ))}
-          </g>
-        )}
       </g>
 
-      {/* 口縁の朱色 */}
+      {/* 口縁の朱色（麺の下＝麺がふちに被さって見える）*/}
       <ellipse cx="80" cy="48" rx="60" ry="14" stroke={rim} strokeWidth="2.6" fill="none" />
 
-      {/* ふちから少しはみ出す麺 */}
-      {nLines > 1 && (
-        <g stroke="#f0e2bc" strokeWidth="2" strokeLinecap="round" fill="none" opacity=".95">
-          <path d="M 70 58 q -3 10 -6 15" />
-          <path d="M 88 59 q 4 9 7 13" />
+      {/* 麺（クリップなし＝ふちから溢れて盛る。太くうねる線を重ねる）*/}
+      <g stroke="#f0e2bc" strokeWidth="2.8" strokeLinecap="round" fill="none" opacity=".96">
+        {noodlePaths.map((d, i) => <path key={i} d={d} />)}
+      </g>
+
+      {/* 具（麺の上に載せる・クリップなしで全体を見せる）*/}
+      {/* 海苔：黒い長方形をふちに立てかける */}
+      {f > 0.6 && <rect x="101" y={topY - 20} width="17" height="30" rx="1" fill="#171717" stroke="#000" strokeWidth="0.6" transform={`rotate(9 109 ${(topY - 5).toFixed(1)})`} />}
+      {/* チャーシュー（外周濃く中央淡く）*/}
+      {f > 0.12 && (
+        <g>
+          <ellipse cx="60" cy={topY + 12} rx="16" ry="10" fill="#7a3b26" />
+          <ellipse cx="60" cy={topY + 12} rx="10" ry="6" fill="#c07a4e" />
+        </g>
+      )}
+      {/* メンマ：細長い長方形を3本 */}
+      {f > 0.28 && (
+        <g fill="#cda24a">
+          <rect x="86" y={topY + 3} width="21" height="5" rx="2" transform={`rotate(-15 96 ${(topY + 5).toFixed(1)})`} />
+          <rect x="90" y={topY + 10} width="19" height="5" rx="2" transform={`rotate(-6 99 ${(topY + 12).toFixed(1)})`} />
+          <rect x="84" y={topY + 16} width="20" height="5" rx="2" transform={`rotate(-20 93 ${(topY + 18).toFixed(1)})`} />
+        </g>
+      )}
+      {/* ネギ（緑の輪切り・大きめ）*/}
+      {f > 0.45 && (
+        <g>
+          {[[46, topY + 9], [112, topY + 15], [78, topY + 3], [98, topY + 21]].map(([cx, cy], i) => (
+            <g key={i}><circle cx={cx} cy={cy} r="7" fill="#5fa53c" /><circle cx={cx} cy={cy} r="3" fill="#c4e493" /></g>
+          ))}
         </g>
       )}
     </svg>
