@@ -20,6 +20,7 @@ import MealTicket from "@/components/MealTicket";
 import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
 import VsIntro from "@/components/VsIntro";
 import GamePicker from "@/components/GamePicker";
+import CookWait from "@/components/CookWait";
 
 // スワイプ画面の短冊枚数（1箇所で管理・あとから調整可）
 const SWIPE_GENRE_COUNT = 12;
@@ -646,21 +647,9 @@ export default function MeshiMatchPage() {
               </div>
             )}
 
-            {/* 自分は完了、相手待ち */}
+            {/* 自分は完了、相手待ち（夜の屋台テーマ・大将が調理中）*/}
             {stage === "swipeWait" && (
-              <div className="flex w-full flex-col items-center text-center">
-                <span className="text-6xl drop-shadow-lg">✅</span>
-                <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                  スワイプ完了！
-                </h2>
-                <div className="mt-6 flex items-center gap-3 text-white/80">
-                  <span className="h-3 w-3 animate-ping rounded-full bg-sky-300" />
-                  <span className="text-sm font-black italic">相手がスワイプ中…</span>
-                </div>
-                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
-                  部屋を出る
-                </Button3D>
-              </div>
+              <CookWait title="きみの注文は通った" sub="相手がスワイプ中…" onLeave={leaveRoom} />
             )}
 
             {/* 結果：マッチ成立 */}
@@ -755,19 +744,7 @@ export default function MeshiMatchPage() {
             )}
 
             {stage === "storeWait" && (
-              <div className="flex w-full flex-col items-center text-center">
-                <span className="text-6xl drop-shadow-lg">✅</span>
-                <h2 className="mt-4 text-2xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                  お店えらび完了！
-                </h2>
-                <div className="mt-6 flex items-center gap-3 text-white/80">
-                  <span className="h-3 w-3 animate-ping rounded-full bg-sky-300" />
-                  <span className="text-sm font-black italic">相手がえらび中…</span>
-                </div>
-                <Button3D tone="neutral" onClick={leaveRoom} className="mt-8 px-10 text-sm">
-                  部屋を出る
-                </Button3D>
-              </div>
+              <CookWait title="きみは店を選んだ" sub="相手が店をえらび中…" onLeave={leaveRoom} />
             )}
 
             {stage === "storeResult" && (
