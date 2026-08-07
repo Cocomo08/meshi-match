@@ -93,22 +93,16 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
             {/* 眉（太い墨・左右で角度差）*/}
             <path d="M103,96 Q110,90 118,92.5 Q111,96.5 103,96 Z" fill="#2a2520" />
             <path d="M122,92.5 Q130,90 137,94 Q130,95.8 122,92.5 Z" fill="#2a2520" />
-            {/* 左目（上まぶた・瞳・ハイライト）*/}
+            {/* 左目（上まぶた・瞳・ハイライト）※目そのものは変更しない・目を囲む線は眼鏡のみ */}
             <ellipse cx="111" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
             <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
             <circle cx="109.6" cy="102" r="1" fill="#f0e6d2" />
             <circle cx="112" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
-            <path d="M106,107.5 Q111,109 116,107.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M104,104.5 q-2,2.5 -1,4.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M106,105.6 q-2,2 -1,3.6" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
             {/* 右目 */}
             <ellipse cx="129" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
             <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
             <circle cx="127.6" cy="102" r="1" fill="#f0e6d2" />
             <circle cx="130" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
-            <path d="M124,107.5 Q129,109 134,107.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M136,104.5 q2,2.5 1,4.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M134,105.6 q2,2 1,3.6" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
             {/* 鼻（短い線＋小鼻の点）*/}
             <path d="M120.4,103.5 Q118.7,108 120.1,110.2 Q121.4,111 122.6,110.1" fill="none" stroke="#2a2520" strokeWidth="1.1" strokeLinecap="round" />
             <circle cx="118.4" cy="110.1" r="0.7" fill="#2a2520" />
@@ -117,6 +111,23 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
             <path d="M131,110 Q135,107.5 139,110 Q136,113.5 135,113.5 Q132,113.5 131,110 Z" fill="#e58a72" />
             {/* 口（口角の上がった線・歯なし）*/}
             <path d="M111,117 Q120,122 129,117 Q120,119.4 111,117 Z" fill="#2a2520" />
+            {/* 笑い皺（目尻の外側・眼鏡フレームより外だけ）*/}
+            <path d="M102.4,105.4 q-2,2.5 -1,4.6" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+            <path d="M103.6,106.8 q-1.8,1.7 -0.8,3.2" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+            <path d="M137.6,105.4 q2,2.5 1,4.6" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+            <path d="M136.4,106.8 q1.8,1.7 0.8,3.2" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+            {/* ── 眼鏡（意図的パーツ・墨色／フレームは輪郭より細く皺より太い中間）── */}
+            {/* つる（耳の手前で自然に消す）*/}
+            <path d="M104,102.6 Q101,101.4 98.6,101.7" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
+            <path d="M136,102.6 Q139,101.4 141.4,101.7" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
+            {/* レンズ（わずかに横長の楕円・中は透明）*/}
+            <ellipse cx="111" cy="103" rx="7" ry="5.8" fill="none" stroke="#2a2520" strokeWidth="1.3" />
+            <ellipse cx="129" cy="103" rx="7" ry="5.8" fill="none" stroke="#2a2520" strokeWidth="1.3" />
+            {/* ブリッジ（鼻の付け根）*/}
+            <path d="M118,102 Q120,99.8 122,102" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
+            {/* 反射（レンズ左上に細い斜め線・瞳のハイライトと重ねない）*/}
+            <path d="M106.2,100.6 L108.6,98.4" fill="none" stroke="#f0e6d2" strokeWidth="1" strokeLinecap="round" />
+            <path d="M124.2,100.6 L126.6,98.4" fill="none" stroke="#f0e6d2" strokeWidth="1" strokeLinecap="round" />
           </g>
 
           {/* ── 振る腕＋中華鍋（2秒周期のループ）── */}
