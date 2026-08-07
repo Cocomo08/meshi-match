@@ -143,6 +143,28 @@ function StallWall() {
   );
 }
 
+// 丼の墨一色ライン画（早食い勝負の丼を券印刷ふうに簡略化）
+function TicketBowl() {
+  return (
+    <svg className="tk-bowl" viewBox="0 0 48 46" fill="none" stroke="#2a2520"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {/* 湯気 */}
+      <path d="M19,9 q-2.6,-4 1,-8" strokeWidth="1.2" />
+      <path d="M29,9 q2.6,-4 -1,-8" strokeWidth="1.2" />
+      {/* 麺・具のあたり（口の中）*/}
+      <path d="M12,17 q4,3 8,0 t8,0 t6,0" strokeWidth="1" />
+      {/* 口（縁）*/}
+      <ellipse cx="24" cy="18" rx="17" ry="5" strokeWidth="1.5" />
+      {/* 丼の胴 */}
+      <path d="M8,18 Q10,36 24,39 Q38,36 40,18" strokeWidth="1.7" />
+      {/* 雷文 */}
+      <path d="M13.5,28 h4 v-3.2 h-2.4 v1.6 M22,28 h4 v-3.2 h-2.4 v1.6 M30.5,28 h4 v-3.2 h-2.4 v1.6" strokeWidth="0.9" />
+      {/* 高台 */}
+      <path d="M18,39.5 h12" strokeWidth="1.7" />
+    </svg>
+  );
+}
+
 // ヒーローの食券（マッチ結果と同じ券面デザイン・サンプル内容）
 function HeroTicket() {
   return (
@@ -154,11 +176,17 @@ function HeroTicket() {
         </div>
         <div className="perf" />
         <div className="body">
-          <div className="tno">No.0001234</div>
           <div className="cap">本日のマッチ</div>
-          <div className="genre">ラーメン</div>
+          <div className="main">
+            <TicketBowl />
+            <div className="genre">ラーメン</div>
+          </div>
           <div className="names">たろ　×　はな</div>
-          <div className="date">発行 2026.08.04</div>
+          <div className="fee"><span className="yen">¥0</span><span className="free">本日無料</span></div>
+          <div className="foot">
+            <span className="tno">No.0001234</span>
+            <span className="date">発行 2026.08.04</span>
+          </div>
         </div>
       </div>
     </div>
@@ -268,15 +296,10 @@ export default function MeshiMatchPage() {
   const vsSeenRef = useRef(false);
   const seenRound = useRef(0);
 
-  // クライアントでのみバナー判定（SSRとの不一致を防ぐ）＆ニックネーム復元
+  // クライアントでのみバナー判定（SSRとの不一致を防ぐ）
+  // ニックネームは毎回空から入力する（以前の値は復元しない）
   useEffect(() => {
     setMounted(true);
-    try {
-      const saved = localStorage.getItem("meshi-nick");
-      if (saved) setNick(saved);
-    } catch {
-      /* 無視 */
-    }
   }, []);
 
   const players = room?.players || {};
@@ -358,17 +381,8 @@ export default function MeshiMatchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, noMatch, myRole, game]);
 
-  const saveNick = () => {
-    try {
-      localStorage.setItem("meshi-nick", nick.trim());
-    } catch {
-      /* 無視 */
-    }
-  };
-
   const createRoom = async () => {
     if (!nick.trim()) return;
-    saveNick();
     setBusy(true);
     const c = genCode();
     const ok = await connect(c, true, nick.trim());
@@ -382,7 +396,6 @@ export default function MeshiMatchPage() {
   const joinRoom = async () => {
     const c = joinCode.trim().toUpperCase();
     if (c.length < 4 || !nick.trim()) return;
-    saveNick();
     setBusy(true);
     const ok = await connect(c, false, nick.trim());
     setBusy(false);
@@ -484,7 +497,7 @@ export default function MeshiMatchPage() {
             </div>
 
             <p className="mb-6 text-center text-xs font-bold tracking-wide text-[#f0e6d2]/70">
-              二人がそれぞれの端末でスワイプ → マッチで今日のごはんを決める
+              ふたりでスワイプ → 今日のごはんが決まる
             </p>
 
             {/* ニックネーム入力（左端にラベル＋左揃え・凹んだ枠） */}
@@ -513,7 +526,7 @@ export default function MeshiMatchPage() {
               <button
                 type="button"
                 onClick={() => { playPush(); if (!nick.trim()) { setNickWarn(true); return; } wipe(() => setView("join")); }}
-                className="ymt-btn dim"
+                className="ymt-btn dim sub"
               >
                 部屋に入る
               </button>

@@ -443,11 +443,16 @@ body {
 
 /* 提灯（赤い紙提灯＋周囲ににじむ暖色の光）*/
 .ymt-lantern { position: absolute; z-index: 0; pointer-events: none; }
-/* 本体を包む暖色の光（本体よりやや大きい程度に留め、形を潰さない）*/
+/* 本体を包む暖色の光（強め・近くの背景を照らす）*/
 .ymt-lantern::before { content: ""; position: absolute; left: 50%; top: 50%;
-  width: 116px; height: 120px; transform: translate(-50%,-50%); border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255,180,100,.30), rgba(255,140,70,.12) 56%, transparent 80%);
-  filter: blur(10px); z-index: 0; }
+  width: 150px; height: 158px; transform: translate(-50%,-50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,196,120,.5), rgba(255,150,80,.2) 50%, transparent 78%);
+  filter: blur(14px); z-index: 0; }
+/* さらに広い暖色のにじみ（背景をほんのり照らす・提灯本体の後ろ）*/
+.ymt-lantern::after { content: ""; position: absolute; left: 50%; top: 46%;
+  width: 250px; height: 250px; transform: translate(-50%,-50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,172,92,.22), rgba(255,140,70,.08) 42%, transparent 72%);
+  filter: blur(28px); z-index: 0; pointer-events: none; }
 /* 灯った提灯：中心を明るい橙寄りの赤、縁に向かって暗く。横骨4〜5本＋下部に黄色い房 */
 .ymt-lantern .paper { display: block; position: relative; z-index: 1; width: 50px; height: 78px; border-radius: 50% / 46%;
   border-top: 7px solid #1c1714; border-bottom: 7px solid #1c1714;
@@ -497,20 +502,38 @@ body {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace; font-weight: 700;
   /* 真下やや右の落ち影（ぼかし強め・30%）で背景に馴染ませる */
   box-shadow: 5px 9px 16px rgba(0,0,0,.30);
-  animation: ymtBob 4s ease-in-out infinite; }
+  /* 発行：下から出る→浮き上がって傾いて静止（0.8s）→以降ゆっくり上下に揺れる */
+  animation: ymtIssue .8s cubic-bezier(.2,.72,.32,1) both, ymtBob 4s ease-in-out .8s infinite; }
+@keyframes ymtIssue {
+  0%   { transform: rotate(0deg) translateY(120px); opacity: 0; }
+  40%  { transform: rotate(0deg) translateY(0px);   opacity: 1; }
+  72%  { transform: rotate(-4.2deg) translateY(-9px); opacity: 1; }
+  100% { transform: rotate(-3deg) translateY(-4px);  opacity: 1; } }
 @keyframes ymtBob {
   0%, 100% { transform: rotate(-3deg) translateY(-4px); }
   50%      { transform: rotate(-3deg) translateY(4px); } }
-.ymt-ticket .stub { display: flex; align-items: center; justify-content: space-between;
+/* 提灯の光が券の上部にわずかに届く（暖色・グラデーションは光の表現）*/
+.ymt-ticket::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,188,118,.20), transparent 36%); }
+.ymt-ticket .stub { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;
   background: #ddceac; color: #514c3c; padding: 5px 12px; font-size: 10px; letter-spacing: .14em; font-weight: 800; }
 .ymt-ticket .stub .brand { opacity: .85; letter-spacing: .1em; }
 .ymt-ticket .perf { border-top: 2px dashed #b8ac8c; }
-.ymt-ticket .body { padding: 7px 14px 11px; text-align: center; }
-.ymt-ticket .tno { text-align: right; font-size: 11px; letter-spacing: .08em; color: #6b6552; }
-.ymt-ticket .cap { font-size: 9px; letter-spacing: .34em; color: #8a836c; margin-top: 2px; }
-.ymt-ticket .genre { font-size: 30px; line-height: 1.05; font-weight: 900; letter-spacing: .03em; margin: 2px 0 5px; color: #26251f; }
-.ymt-ticket .names { font-size: 13px; letter-spacing: .06em; color: #4a463a; }
-.ymt-ticket .date { font-size: 9px; letter-spacing: .05em; color: #7a7460; margin-top: 5px; }
+.ymt-ticket .body { position: relative; z-index: 1; padding: 7px 14px 9px; text-align: center; }
+.ymt-ticket .cap { font-size: 9px; letter-spacing: .34em; color: #8a836c; }
+.ymt-ticket .main { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 3px 0 4px; }
+.tk-bowl { flex: 0 0 auto; width: 40px; height: 38px; display: block; }
+.ymt-ticket .genre { font-size: 30px; line-height: 1.02; font-weight: 900; letter-spacing: .03em; color: #26251f; }
+.ymt-ticket .names { font-size: 12px; letter-spacing: .06em; color: #4a463a; }
+.ymt-ticket .fee { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-top: 6px;
+  padding-top: 5px; border-top: 1px dashed #c6b994; }
+.ymt-ticket .fee .yen { font-size: 17px; font-weight: 900; color: #26251f; }
+.ymt-ticket .fee .free { font-size: 10px; letter-spacing: .18em; color: #8a836c; }
+.ymt-ticket .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.ymt-ticket .tno { font-size: 13px; font-weight: 800; letter-spacing: .06em; color: #4a463a; }
+.ymt-ticket .date { font-size: 9px; letter-spacing: .05em; color: #7a7460; }
+@media (prefers-reduced-motion: reduce) {
+  .ymt-ticket { animation: none; transform: rotate(-3deg); } }
 
 /* 券売機ボタン（ベベルで立体感・押下でベベル反転＋2px沈む）*/
 .ymt-btn { position: relative; width: 100%; border: 1px solid; border-radius: 4px;
@@ -523,6 +546,10 @@ body {
 /* 消灯＝暗い面に生成り色の文字 */
 .ymt-btn.dim { background: #2b3037; color: #f0e6d2; border-color: #14171c;
   box-shadow: inset 0 1px 0 #4a515c, inset 0 -1px 0 #0f1216; }
+/* 副ボタン（部屋に入る）＝少し小さく・暗く（優先度を下げる）*/
+.ymt-btn.dim.sub { padding: 11px 18px; font-size: 15px; letter-spacing: .08em;
+  background: #232830; color: rgba(240,230,210,.85); border-color: #0f1216;
+  box-shadow: inset 0 1px 0 #363c46, inset 0 -1px 0 #0b0e12; }
 .ymt-btn:not(:disabled):active { transform: translateY(2px); }
 /* 押下でベベル反転 */
 .ymt-btn.lit:not(:disabled):active { box-shadow: inset 0 1px 0 #b0a37d, inset 0 -1px 0 #fffdf5; }
