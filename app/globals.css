@@ -493,6 +493,13 @@ body {
 
 /* ヒーローの食券（マッチ結果と同じ券面・傾けて上下に揺れる）*/
 .ymt-ticket-wrap { position: relative; display: flex; justify-content: center; }
+/* 触感レイヤー：ドラッグの傾きはここに載せ、ymtBob(上下揺れ)と競合させない */
+.ymt-ticket-tilt { display: inline-block; transform-origin: 50% 50%; will-change: transform;
+  touch-action: pan-y; /* 縦スクロールは活かし、横ドラッグで傾ける */ cursor: grab;
+  -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.ymt-ticket-tilt:active { cursor: grabbing; }
+/* 離したときだけ 0.3s で戻す。back-out で軽く揺り戻す */
+.ymt-ticket-tilt.springing { transition: transform .3s cubic-bezier(.34,1.42,.64,1); }
 .ymt-ticket-wrap::before { content: ""; position: absolute; left: 50%; top: 48%;
   width: 96%; height: 155%; transform: translate(-50%,-50%); border-radius: 50%;
   background: radial-gradient(closest-side, rgba(255,198,122,.52), rgba(255,150,80,.18) 46%, transparent 74%);
@@ -518,7 +525,9 @@ body {
 .ymt-ticket .stub { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;
   background: #ddceac; color: #514c3c; padding: 5px 12px; font-size: 10px; letter-spacing: .14em; font-weight: 800; }
 .ymt-ticket .stub .brand { opacity: .85; letter-spacing: .1em; }
-.ymt-ticket .perf { border-top: 2px dashed #b8ac8c; }
+/* ミシン目：触れた瞬間だけ濃くなり「ここが切れる」と予告（実際は切らない）*/
+.ymt-ticket .perf { border-top: 2px dashed #b8ac8c; transition: border-top-color .12s ease; }
+.ymt-ticket .perf.hot { border-top-color: #4a463a; }
 .ymt-ticket .body { position: relative; z-index: 1; padding: 7px 14px 9px; text-align: center; }
 .ymt-ticket .cap { font-size: 9px; letter-spacing: .34em; color: #8a836c; }
 .ymt-ticket .main { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 3px 0 4px; }
@@ -727,6 +736,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ymt-steam { animation: none; opacity: 0; }
   .ymt-ticket { animation: none; transform: rotate(-1.5deg); }
+  /* 触感インタラクションを無効化（JS側もハンドラを早期returnで抑止）*/
+  .ymt-ticket-tilt { touch-action: auto; cursor: default; transform: none !important; }
+  .ymt-ticket-tilt.springing { transition: none; }
+  .ymt-ticket .perf { transition: none; }
+  .ymt-ticket .perf.hot { border-top-color: #b8ac8c; }
 }
 
 /* ============================================================

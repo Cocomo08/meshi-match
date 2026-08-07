@@ -165,18 +165,78 @@ function TicketBowl() {
   );
 }
 
-// ヒーローの食券（マッチ結果と同じ券面デザイン・入力に連動）
+// ヒーローの食券（マッチ結果と同じ券面デザイン・入力に連動＋軽い触感）
 function HeroTicket({ name, ticketNo, date }) {
   // 入力が空なら「あなた」、あれば入力値。相手は未定なので「？」
   const left = name && name.trim() ? name.trim() : "あなた";
+
+  // 触感：タップ/ドラッグで指に合わせて傾く（最大5度）→離すと0.3sで揺り戻す。
+  // ミシン目を触るとその瞬間だけ点線が濃くなる（切れる場所の予告・実際は切らない）。
+  // 傾きは上下の揺れ(ymtBob)と別レイヤーで持ち、transformの競合を避ける。
+  const tiltRef = useRef(null);
+  const perfRef = useRef(null);
+  const draggingRef = useRef(false);
+  const reducedRef = useRef(false);
+  const [angle, setAngle] = useState(0);
+  const [springing, setSpringing] = useState(false); // 離した後の戻り（トランジション有効）
+  const [perfHot, setPerfHot] = useState(false);
+
+  useEffect(() => {
+    reducedRef.current =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
+  const track = (clientX, clientY) => {
+    const el = tiltRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const a = Math.max(-5, Math.min(5, ((clientX - cx) / (r.width / 2)) * 5));
+    setAngle(a);
+    const pr = perfRef.current?.getBoundingClientRect();
+    if (pr) {
+      const pad = 10; // ミシン目は細いので少し余白をとって触れやすく
+      setPerfHot(clientY >= pr.top - pad && clientY <= pr.bottom + pad);
+    }
+  };
+
+  const onDown = (e) => {
+    if (reducedRef.current) return;
+    draggingRef.current = true;
+    setSpringing(false);
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* noop */ }
+    track(e.clientX, e.clientY);
+  };
+  const onMove = (e) => {
+    if (!draggingRef.current) return;
+    track(e.clientX, e.clientY);
+  };
+  const release = () => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    setSpringing(true); // 0へ戻す間だけトランジション（軽く揺り戻す）
+    setAngle(0);
+    setPerfHot(false);
+  };
+
   return (
     <div className="ymt-ticket-wrap" aria-hidden>
+      <div
+        ref={tiltRef}
+        className={`ymt-ticket-tilt${springing ? " springing" : ""}`}
+        style={{ transform: `rotate(${angle}deg)` }}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={release}
+        onPointerCancel={release}
+      >
       <div className="ymt-ticket">
         <div className="stub">
           <span>半券</span>
           <span className="brand">MESHI-MACHI</span>
         </div>
-        <div className="perf" />
+        <div ref={perfRef} className={`perf${perfHot ? " hot" : ""}`} />
         <div className="body">
           <div className="cap">本日のマッチ</div>
           <div className="main">
@@ -190,6 +250,7 @@ function HeroTicket({ name, ticketNo, date }) {
             <span className="date">発行 {date}</span>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
