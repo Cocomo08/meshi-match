@@ -66,14 +66,58 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
           <path d="M112 118 L120 142 L128 118 Z" fill="#e9ddc4" />
           {/* 帯 */}
           <rect x="80" y="164" width="80" height="9" rx="1" fill="#7a1f16" />
-          {/* 頭 */}
-          <circle cx="120" cy="98" r="21" fill="#e6c6a0" stroke="#c9a578" strokeWidth="1.5" />
-          {/* 鉢巻 */}
-          <path d="M100 90 Q120 82 140 90" stroke="#e0483b" strokeWidth="6" strokeLinecap="round" />
-          <path d="M140 90 l7 -3 M140 90 l6 6" stroke="#e0483b" strokeWidth="5" strokeLinecap="round" />
-          {/* 目・口 */}
-          <circle cx="112" cy="100" r="1.9" fill="#2a2018" /><circle cx="128" cy="100" r="1.9" fill="#2a2018" />
-          <path d="M112 110 q8 5 16 0" stroke="#7a4b30" strokeWidth="2" fill="none" strokeLinecap="round" />
+
+          {/* ── 顔（線画・筆線ベース）── */}
+          <g>
+            {/* 髪（鉢巻の奥）*/}
+            <path d="M97,88 Q95,75 108,72 Q120,70 132,72 Q145,75 143,88 Q120,81 97,88 Z" fill="#2a2520" />
+            {/* 耳 */}
+            <path d="M98,102 Q93,105 97,112 Q99,108 100,104 Z" fill="#ecc9a0" />
+            <path d="M142,102 Q147,105 143,112 Q141,108 140,104 Z" fill="#ecc9a0" />
+            <path d="M97,105 q2,2 1,5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M143,105 q-2,2 -1,5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            {/* 顔の肌（顎が角ばり・頬下がくびれる）*/}
+            <path d="M99,88 C96,96 97,101 97,104 C97,110 99,113 100,116 C101,121 103,124 106,126 C110,129 116,131 120,131 C124,131 130,129 134,126 C137,124 139,121 140,116 C141,113 143,110 143,104 C143,101 144,96 141,88 C133,84 107,84 99,88 Z" fill="#ecc9a0" />
+            {/* 影（1段・顎下の平坦なベタ）*/}
+            <path d="M105,124 Q112,129.5 120,131 Q128,129.5 135,124 Q136,126 133,128 Q127,130.5 120,130 Q113,130.5 107,128 Q104,126 105,124 Z" fill="#d3a575" />
+            {/* 輪郭の筆線（顎〜顔の縁・太さを変化）*/}
+            <path d="M96.5,104 Q98,111 99,116 Q100.5,122 105,126 Q112,130.5 120,132 Q128,130.5 135,126 Q139.5,122 141,116 Q142,111 143.5,104 L142,104 Q140.5,111 139,116 Q137.5,121 134,124 Q127,128.5 120,129.6 Q113,128.5 106,124 Q102.5,121 101,116 Q99.5,111 98,104 Z" fill="#2a2520" />
+            {/* 鉢巻（布の厚み＋結び目＋しわ）*/}
+            <path d="M96,86 Q120,77 144,86 L144,90 Q120,82 96,90 Z" fill="#d23a2c" />
+            <path d="M96,90 Q120,82 144,90 L144,92.5 Q120,85 96,92.5 Z" fill="#a82418" />
+            <path d="M143,86 l9,-3 l-2,5 l7,3 l-8,2 l1,-4 Z" fill="#d23a2c" />
+            <path d="M143,89 l8,1 l-7,3 Z" fill="#a82418" />
+            <path d="M104,85 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+            <path d="M118,83 q1,3 0,6" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+            <path d="M132,84 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+            {/* 眉（太い墨・左右で角度差）*/}
+            <path d="M103,96 Q110,90 118,92.5 Q111,96.5 103,96 Z" fill="#2a2520" />
+            <path d="M122,92.5 Q130,90 137,94 Q130,95.8 122,92.5 Z" fill="#2a2520" />
+            {/* 左目（上まぶた・瞳・ハイライト）*/}
+            <ellipse cx="111" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
+            <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
+            <circle cx="109.6" cy="102" r="1" fill="#f0e6d2" />
+            <circle cx="112" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
+            <path d="M106,107.5 Q111,109 116,107.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M104,104.5 q-2,2.5 -1,4.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M106,105.6 q-2,2 -1,3.6" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+            {/* 右目 */}
+            <ellipse cx="129" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
+            <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
+            <circle cx="127.6" cy="102" r="1" fill="#f0e6d2" />
+            <circle cx="130" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
+            <path d="M124,107.5 Q129,109 134,107.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M136,104.5 q2,2.5 1,4.5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M134,105.6 q2,2 1,3.6" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+            {/* 鼻（短い線＋小鼻の点）*/}
+            <path d="M120.4,103.5 Q118.7,108 120.1,110.2 Q121.4,111 122.6,110.1" fill="none" stroke="#2a2520" strokeWidth="1.1" strokeLinecap="round" />
+            <circle cx="118.4" cy="110.1" r="0.7" fill="#2a2520" />
+            {/* 頬（平坦な赤み）*/}
+            <path d="M101,110 Q105,107.5 109,110 Q106,113.5 105,113.5 Q102,113.5 101,110 Z" fill="#e58a72" />
+            <path d="M131,110 Q135,107.5 139,110 Q136,113.5 135,113.5 Q132,113.5 131,110 Z" fill="#e58a72" />
+            {/* 口（口角の上がった線・歯なし）*/}
+            <path d="M111,117 Q120,122 129,117 Q120,119.4 111,117 Z" fill="#2a2520" />
+          </g>
 
           {/* ── 振る腕＋中華鍋（2秒周期のループ）── */}
           <g>
@@ -102,10 +146,10 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
 
           {/* ── のれん（手前・上。奥に大将が見える）── */}
           <rect x="34" y="24" width="172" height="7" rx="2" fill="#4a3320" />
-          <rect x="56" y="31" width="40" height="54" rx="1" fill="#1d3a5e" />
-          <rect x="100" y="31" width="40" height="54" rx="1" fill="#22406e" />
-          <rect x="144" y="31" width="40" height="54" rx="1" fill="#1d3a5e" />
-          <text x="120" y="63" textAnchor="middle" fontSize="21" fontWeight="900" fill="#f0e6d2"
+          <rect x="56" y="31" width="40" height="37" rx="1" fill="#1d3a5e" />
+          <rect x="100" y="31" width="40" height="37" rx="1" fill="#22406e" />
+          <rect x="144" y="31" width="40" height="37" rx="1" fill="#1d3a5e" />
+          <text x="120" y="55" textAnchor="middle" fontSize="20" fontWeight="900" fill="#f0e6d2"
             style={{ fontFamily: "var(--font-klee), var(--font-zen-maru), sans-serif" }}>めし</text>
         </svg>
       </div>
