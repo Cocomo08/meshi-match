@@ -3,72 +3,75 @@
 import { useEffect, useRef, useState } from "react";
 import { mulberry32, seedFrom } from "@/lib/rng";
 
-// 割り箸勝負（運と技術が半々・2端末同期）
-//  ・「よーい」で箸が震え→「はじめ」でドラッグして割る
-//  ・ドラッグの速さと角度で割れ方が決まる（速すぎ＝細く折れる／遅すぎ＝ささくれる／適切＝均等）
-//  ・割れた2本の太さの差が小さい方が勝ち。差は resHost/resGuest に別キーで書く
-//  ・勝敗は両者の diff から純関数で算出（両端末で一致）。同点は大将が独断（seedで一意）
+// 割り箸勝負（タイミングゲーム・2端末同期）
+//  ・カーソルがバーを往復。中心の判定帯で止めるほどきれいに割れる
+//  ・より中心に近い位置で止めた方が勝ち（同値のみ大将が独断）
+//  ・止めた位置をマーカーで残し、ずれの向きを表示して「上達」できるようにする
+//  同期：結果は resHost/resGuest に別キーで書き、勝敗は両者から純関数で算出（両端末一致）
+
+// ── 調整用の定数（1箇所で管理／両者で完全に同一）──
+const CFG = {
+  CYCLE_MS: 1200,      // カーソル1往復の時間
+  TIME_LIMIT: 4000,    // 無操作で自動「無残」になるまで
+  BAND_MIGOTO: 0.05,   // 見事：中心から±(バー幅の)5%
+  BAND_MAZU: 0.17,     // まずまず：±17%（これより外は無残）
+  YOI_MS: 800,         // よーいの震え
+};
+
+const TIER_COMMENT = { 見事: "お見事。いい手つきだ", まずまず: "まあ、悪くないな", 無残: "そりゃないだろ" };
 
 const reduced = () =>
   typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// ドラッグ→割れ方の判定（技術半分・運半分）
-function evalSplit(distPx, driftPx, dtMs) {
-  const IDEAL_LO = 0.5, IDEAL_HI = 0.95;          // px/ms の適正帯
-  const speed = distPx / Math.max(60, dtMs);
-  const tooShort = distPx < 80;
-  const tooSlow = speed < IDEAL_LO || tooShort;
-  const tooFast = speed > IDEAL_HI;
-  let speedErr = 0;
-  if (speed < IDEAL_LO) speedErr = (IDEAL_LO - speed) / IDEAL_LO;
-  else if (speed > IDEAL_HI) speedErr = (speed - IDEAL_HI) / 1.2;
-  speedErr = Math.min(1, speedErr);
-  const angleErr = Math.min(1, (driftPx / Math.max(distPx, 1)) * 2.0);
-  const tech = Math.min(1, 0.7 * speedErr + 0.55 * angleErr + (tooShort ? 0.5 : 0));
-  const luck = Math.random();                     // 運（半々）
-  const diff = Math.min(1, 0.55 * tech + 0.5 * luck * luck);
-  const splinter = tooSlow && !tooFast;
-  const thinBreak = tooFast;
-  const tier = diff < 0.14 ? "見事" : diff < 0.42 ? "まずまず" : "無残";
-  const split = Math.min(0.94, 0.5 + diff * 0.46);   // 太い側の割合（描画用）
-  const wide = Math.random() < 0.5 ? "L" : "R";
-  return { diff, tier, split, wide, splinter, thinBreak, to: false };
+// 止めた位置(pos 0..1)から割れ方を決める
+function evalStop(pos, to = false) {
+  const offset = pos - 0.5;
+  const dist = Math.abs(offset);
+  const tier = dist <= CFG.BAND_MIGOTO ? "見事" : dist <= CFG.BAND_MAZU ? "まずまず" : "無残";
+  const split = Math.min(0.94, 0.5 + dist * 0.85);   // 太い側の割合（描画用）
+  const wide = offset < 0 ? "L" : "R";
+  const thinBreak = tier === "無残";
+  return { pos, offset, dist, tier, split, wide, thinBreak, to };
 }
+
+const missHint = (pos) => {
+  const off = pos - 0.5, d = Math.abs(off);
+  if (d <= CFG.BAND_MIGOTO) return "ど真ん中！";
+  const side = off > 0 ? "右" : "左";
+  return d <= CFG.BAND_MAZU ? `惜しい（${side}へ少し）` : `${side}に行き過ぎ`;
+};
 
 const CSS = `
 .wb { position:fixed; inset:0; z-index:55; overflow:hidden; color:#f0e6d2;
   font-family: var(--font-zen-maru), sans-serif; background-color:#18110d;
-  -webkit-tap-highlight-color:transparent; user-select:none; touch-action:none; }
-/* 屋台の内壁（縦板＋上からの提灯光・低彩度の茶と黒のみ）*/
+  -webkit-tap-highlight-color:transparent; user-select:none; touch-action:manipulation; }
 .wb-wall { position:absolute; inset:0; background-color:#18110d;
   background-image: repeating-linear-gradient(90deg, #241a12 0 60px, #20160f 60px 62px, rgba(0,0,0,.5) 62px 63px); }
 .wb-light { position:absolute; inset:0; pointer-events:none;
   background:
     radial-gradient(60% 42% at 50% 34%, rgba(255,200,140,.14), transparent 72%),
     linear-gradient(180deg, rgba(255,186,116,.20) 0%, rgba(255,150,86,.06) 24%, rgba(0,0,0,0) 48%, rgba(0,0,0,.5) 100%); }
-
-.wb-in { position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; align-items:center;
-  padding:16px 16px calc(16px + env(safe-area-inset-bottom)); }
 .wb-shake { animation: wbShake .22s ease; }
 @keyframes wbShake { 0%,100%{ transform:translate(0,0) } 25%{ transform:translate(-3px,2px) } 60%{ transform:translate(3px,-2px) } }
 
-/* のれん帯：合図 */
+.wb-in { position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; align-items:center;
+  padding:14px 16px calc(18px + env(safe-area-inset-bottom)); }
+.wb-tapzone { position:absolute; inset:0; z-index:3; }
+
+/* 大将の帯 */
 .wb-call { position:relative; background:#f0e6d2; color:#2a2520; border-radius:3px; padding:8px 22px; margin-top:4px;
-  font-size:15px; font-weight:900; letter-spacing:.08em; min-height:20px;
+  font-size:14px; font-weight:900; letter-spacing:.06em; min-height:20px; z-index:4;
   box-shadow: inset 0 1px 0 #fffdf5, inset 0 -1px 0 #b0a37d; }
 .wb-call::before { content:""; position:absolute; left:10px; right:10px; top:-3px; height:3px; background:#241f1c; border-radius:2px; }
 .wb-call.go { color:#c0301f; }
 
 /* 舞台：相手（奥・小）＋自分（手前・大）*/
 .wb-stage { flex:1; position:relative; width:100%; display:flex; align-items:center; justify-content:center; }
-.wb-opp { position:absolute; top:2%; left:50%; transform:translateX(-50%) scale(.52); transform-origin:top center;
+.wb-opp { position:absolute; top:1%; left:50%; transform:translateX(-50%) scale(.5); transform-origin:top center;
   opacity:.72; filter:brightness(.66) blur(.4px); }
-.wb-opp .wb-plabel { color:#cdbfa6; }
-.wb-mine { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; }
-.wb-hold { touch-action:none; cursor:grab; }
-.wb-hold:active { cursor:grabbing; }
+.wb-mine { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; margin-top:26%; }
 .wb-svg { display:block; }
-.wb-mine .wb-svg { width:min(46vw,168px); height:auto; filter: drop-shadow(0 10px 14px rgba(0,0,0,.5)); }
+.wb-mine .wb-svg { width:min(42vw,150px); height:auto; filter: drop-shadow(0 10px 14px rgba(0,0,0,.5)); }
 .wb-opp .wb-svg { width:150px; height:auto; }
 .wb-tremble { animation: wbTremble .12s linear infinite; transform-origin:50% 8%; }
 @keyframes wbTremble { 0%{ transform:rotate(-1.1deg) } 50%{ transform:rotate(1.1deg) } 100%{ transform:rotate(-1.1deg) } }
@@ -78,46 +81,64 @@ const CSS = `
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; }
 .wb-tier.見事 { color:#ffd27a; } .wb-tier.まずまず { color:#e8dcc4; } .wb-tier.無残 { color:#c98a7a; }
 
-/* ドラッグ誘導の矢印 */
-.wb-guide { margin-top:8px; font-size:12px; font-weight:800; letter-spacing:.06em; color:rgba(240,230,210,.72);
+/* ── ゲージ（木目調・数値なし）── */
+.wb-gaugewrap { position:relative; z-index:4; margin-top:12px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.wb-gauge { position:relative; width:min(82vw,330px); height:26px; border-radius:5px; border:2px solid #241811;
+  background:#2a1d12; box-shadow: inset 0 2px 5px rgba(0,0,0,.55); overflow:visible; }
+.wb-gclip { position:absolute; inset:0; border-radius:3px; overflow:hidden; }
+.wb-band { position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%); }
+.wb-band.mazu   { background:#6f4b2a; }
+.wb-band.migoto { background:linear-gradient(180deg,#e6c48c,#bd914f); box-shadow:0 0 10px rgba(230,196,140,.55); }
+/* 木目 */
+.wb-grain { position:absolute; inset:0; pointer-events:none;
+  background: repeating-linear-gradient(90deg, rgba(50,32,16,.22) 0 1px, transparent 1px 9px); }
+.wb-center { position:absolute; top:-2px; bottom:-2px; left:50%; width:2px; background:rgba(255,248,230,.5); transform:translateX(-50%); }
+.wb-cursor { position:absolute; top:-4px; bottom:-4px; left:50%; width:4px; border-radius:2px; background:#fff0cf;
+  box-shadow:0 0 9px rgba(255,224,150,.95); transform:translateX(-50%); }
+.wb-mark { position:absolute; top:-11px; left:50%; width:0; height:0; transform:translateX(-50%);
+  border-left:6px solid transparent; border-right:6px solid transparent; border-top:10px solid #e0483b; }
+.wb-mark.opp { border-top-color:#f0e6d2; opacity:.85; top:auto; bottom:-11px; border-top:0; border-bottom:10px solid #f0e6d2; }
+.wb-marklbl { position:absolute; top:-26px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:900; color:#ffb3a6; white-space:nowrap; }
+.wb-marklbl.opp { top:auto; bottom:-26px; color:#e8dcc4; }
+.wb-miss { font-size:13px; font-weight:900; letter-spacing:.04em; min-height:18px;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; }
-.wb-arrow { display:inline-block; animation: wbA 1s ease-in-out infinite; }
-@keyframes wbA { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(4px) } }
-.wb-wait { margin-top:8px; font-size:13px; font-weight:800; color:#e8dcc4; }
+.wb-miss.見事 { color:#ffd27a; } .wb-miss.near { color:#ffe0a0; } .wb-miss.far { color:#e0a08f; }
+.wb-legend { display:flex; gap:14px; font-size:10px; font-weight:800; color:rgba(240,230,210,.6); letter-spacing:.06em; }
+.wb-legend b { color:#e6c48c; } .wb-wait { font-size:13px; font-weight:800; color:#e8dcc4; }
 
 /* 飛び散る木片 */
-.wb-chips { position:absolute; left:0; right:0; top:44%; pointer-events:none; z-index:3; }
-.wb-chip { position:absolute; left:50%; top:0; width:7px; height:3px; background:#caa06a; border-radius:1px;
+.wb-chips { position:absolute; left:50%; top:46%; pointer-events:none; z-index:4; }
+.wb-chip { position:absolute; left:0; top:0; width:7px; height:3px; background:#caa06a; border-radius:1px;
   animation: wbChip .6s ease-out forwards; }
 @keyframes wbChip { from{ transform:translate(-50%,0) rotate(0); opacity:1 } to{ transform:translate(var(--cx),var(--cy)) rotate(var(--cr)); opacity:0 } }
 
 /* 決着 */
-.wb-over { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:10px; padding:20px 18px calc(20px + env(safe-area-inset-bottom)); text-align:center; background:rgba(6,8,16,.86); animation: wbFade .3s; }
+.wb-over { position:absolute; inset:0; z-index:6; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:18px 18px calc(18px + env(safe-area-inset-bottom)); text-align:center; background:rgba(6,8,16,.87); animation: wbFade .3s; }
 @keyframes wbFade { from{opacity:0} to{opacity:1} }
-.wb-duel { display:flex; align-items:flex-end; justify-content:center; gap:18px; }
+.wb-duel { display:flex; align-items:flex-end; justify-content:center; gap:20px; }
 .wb-duel .col { display:flex; flex-direction:column; align-items:center; }
-.wb-duel .wb-svg { width:96px; height:auto; }
-.wb-win-nm { font-size:26px; font-weight:900; color:#f0e6d2; }
+.wb-duel .wb-svg { width:92px; height:auto; }
+.wb-win-nm { font-size:25px; font-weight:900; color:#f0e6d2; }
 .wb-win-sub { font-size:14px; color:#ffe9cf; font-weight:700; }
-.wb-btn { border-radius:5px; padding:12px 28px; font-weight:800; letter-spacing:.06em; cursor:pointer;
+.wb-btn { border-radius:5px; padding:11px 26px; font-weight:800; letter-spacing:.06em; cursor:pointer;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; border:1px solid; }
 .wb-btn.prim { background:#ece0bf; color:#2a2520; border-color:#b7ab84; box-shadow: inset 0 1px 0 #fff6db, inset 0 -1px 0 #b0a37d; }
 .wb-btn.prim:active { transform:translateY(2px); box-shadow: inset 0 1px 0 #b0a37d, inset 0 -1px 0 #fff6db; }
 .wb-btn.wood { background:#3a2a1b; color:#e8dcc4; border-color:#241811; box-shadow: inset 0 1px 0 rgba(255,224,170,.25), inset 0 -1px 0 rgba(0,0,0,.5); }
 .wb-over-row { display:flex; gap:10px; }
-.wb-quit { position:absolute; top:10px; left:12px; z-index:4; background:#3a2a1b; color:#e8dcc4; border:1px solid #241811;
+.wb-quit { position:absolute; top:10px; left:12px; z-index:5; background:#3a2a1b; color:#e8dcc4; border:1px solid #241811;
   border-radius:5px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; }
 
 @media (prefers-reduced-motion: reduce) {
-  .wb-shake, .wb-tremble, .wb-arrow, .wb-chip { animation:none !important; }
+  .wb-shake, .wb-tremble, .wb-chip { animation:none !important; }   /* 震えと画面の揺れは省略。カーソル往復はJSで維持 */
 }
 `;
 
 // 割り箸の描画（未使用＝上部で連結／割れると2本に分離）
-function Chopsticks({ result, openAmt = 0, tremble = false }) {
-  const angle = result ? (result.splinter ? 3.5 : 7.5) : openAmt * 8;
+function Chopsticks({ result, tremble = false }) {
+  const angle = result ? 7.5 : 0;
   const cx = 40, gap = 1.5, span = 20, topY = 18, pivotY = 20, fullBot = 286;
   let Lw = span, Rw = span, Lbot = fullBot, Rbot = fullBot;
   if (result) {
@@ -125,45 +146,38 @@ function Chopsticks({ result, openAmt = 0, tremble = false }) {
     const wideW = Math.max(6, total * result.split);
     const thinW = Math.max(5, total - wideW);
     if (result.wide === "L") { Lw = wideW; Rw = thinW; } else { Lw = thinW; Rw = wideW; }
-    if (result.thinBreak) { if (Rw <= Lw) Rbot = 206; else Lbot = 206; } // 細い方が短く折れる
+    if (result.thinBreak) { if (Rw <= Lw) Rbot = 206; else Lbot = 206; }
   }
   const leftPath = `M ${cx - gap} ${topY} L ${cx - gap - Lw} ${topY} L ${cx - gap - Lw * 0.62} ${Lbot} L ${cx - gap} ${Lbot} Z`;
   const rightPath = `M ${cx + gap} ${topY} L ${cx + gap + Rw} ${topY} L ${cx + gap + Rw * 0.62} ${Rbot} L ${cx + gap} ${Rbot} Z`;
   const wood = "#d8b487", edge = "#9c7440", grain = "rgba(120,80,40,.45)";
-  // ささくれ（内側に短い毛羽）
-  const fray = (x, y, dir) =>
-    result?.splinter ? (
-      <g stroke={edge} strokeWidth="0.8" opacity=".8">
-        <path d={`M ${x} ${y} l ${dir * 3} 6`} />
-        <path d={`M ${x} ${y + 5} l ${dir * 2} 7`} />
-        <path d={`M ${x} ${y + 10} l ${dir * 4} 5`} />
-      </g>
-    ) : null;
   return (
     <svg className={`wb-svg ${tremble ? "wb-tremble" : ""}`} viewBox="0 0 80 300" fill="none" aria-hidden>
-      {/* 連結部（未使用時のみ・上でつながっている）*/}
       {!result && <rect x={cx - gap - Lw} y="6" width={2 * span + 2 * gap} height="15" rx="3" fill="#e4c491" stroke={edge} strokeWidth="1" />}
-      {/* 左箸 */}
       <g transform={`rotate(${angle} ${cx} ${pivotY})`}>
         <path d={leftPath} fill={wood} stroke={edge} strokeWidth="1.1" strokeLinejoin="round" />
         <line x1={cx - gap - Lw * 0.34} y1={topY + 6} x2={cx - gap - Lw * 0.34} y2={Lbot - 8} stroke={grain} strokeWidth="0.9" />
         <line x1={cx - gap - Lw * 0.72} y1={topY + 10} x2={cx - gap - Lw * 0.72} y2={Lbot - 14} stroke={grain} strokeWidth="0.7" opacity=".7" />
-        {result?.thinBreak && Lbot < fullBot && (
-          <path d={`M ${cx - gap} ${Lbot} l -3 4 l -3 -3 l -3 4`} stroke={edge} strokeWidth="1" />
-        )}
-        {fray(cx - gap - 1, Lbot - 26, -1)}
+        {result?.thinBreak && Lbot < fullBot && <path d={`M ${cx - gap} ${Lbot} l -3 4 l -3 -3 l -3 4`} stroke={edge} strokeWidth="1" />}
       </g>
-      {/* 右箸 */}
       <g transform={`rotate(${-angle} ${cx} ${pivotY})`}>
         <path d={rightPath} fill={wood} stroke={edge} strokeWidth="1.1" strokeLinejoin="round" />
         <line x1={cx + gap + Rw * 0.34} y1={topY + 6} x2={cx + gap + Rw * 0.34} y2={Rbot - 8} stroke={grain} strokeWidth="0.9" />
         <line x1={cx + gap + Rw * 0.72} y1={topY + 10} x2={cx + gap + Rw * 0.72} y2={Rbot - 14} stroke={grain} strokeWidth="0.7" opacity=".7" />
-        {result?.thinBreak && Rbot < fullBot && (
-          <path d={`M ${cx + gap} ${Rbot} l 3 4 l 3 -3 l 3 4`} stroke={edge} strokeWidth="1" />
-        )}
-        {fray(cx + gap + 1, Rbot - 26, 1)}
+        {result?.thinBreak && Rbot < fullBot && <path d={`M ${cx + gap} ${Rbot} l 3 4 l 3 -3 l 3 4`} stroke={edge} strokeWidth="1" />}
       </g>
     </svg>
+  );
+}
+
+// ゲージの帯（木目調・数値なし）。markers=[{pos,label,opp}]・cursorRefで生きたカーソル
+function GaugeBands() {
+  return (
+    <div className="wb-gclip">
+      <div className="wb-band mazu" style={{ width: `${CFG.BAND_MAZU * 200}%` }} />
+      <div className="wb-band migoto" style={{ width: `${CFG.BAND_MIGOTO * 200}%` }} />
+      <div className="wb-grain" />
+    </div>
   );
 }
 
@@ -185,39 +199,75 @@ export default function WaribashiNet({
   const isHost = myRole === "host";
   const [isRed] = useState(() => reduced());
   const [local, setLocal] = useState("yoi");     // yoi → go
-  const [openAmt, setOpenAmt] = useState(0);
   const [fx, setFx] = useState(null);            // {key, chips}
-  const dragRef = useRef(null);
-  const autoRef = useRef(0);
+
+  const cursorRef = useRef(null);
   const rootRef = useRef(null);
+  const t0Ref = useRef(0);
+  const rafRef = useRef(0);
+  const lastPosRef = useRef(0.5);
+  const doneRef = useRef(false);
+  const stopRef = useRef(() => {});
 
   const myRes = isHost ? resHost : resGuest;
   const oppRes = isHost ? resGuest : resHost;
   const myDone = !!myRes;
   const bothIn = !!resHost && !!resGuest;
 
-  // 新しい番（seed変更・もう一番）でローカルをリセット → よーい → はじめ
+  // 新しい番でリセット → よーい → はじめ
   useEffect(() => {
-    setLocal("yoi"); setOpenAmt(0); dragRef.current = null;
-    const t = setTimeout(() => setLocal("go"), isRed ? 300 : 800);
+    doneRef.current = false; lastPosRef.current = 0.5; setFx(null); setLocal("yoi");
+    const t = setTimeout(() => { t0Ref.current = performance.now(); setLocal("go"); }, isRed ? 300 : CFG.YOI_MS);
     return () => clearTimeout(t);
   }, [seed, isRed]);
 
-  // 時間切れ（放置対策・合図から3秒以内に決着）
+  // カーソル往復（JSで駆動＝見た目と停止位置が一致。reduced-motionでも維持）＋制限時間
   useEffect(() => {
     if (local !== "go" || myDone) return;
-    autoRef.current = setTimeout(() => {
-      writeRes(myRole, {
-        diff: 0.6 + Math.random() * 0.3, tier: "無残",
-        split: 0.72 + Math.random() * 0.2, wide: Math.random() < 0.5 ? "L" : "R",
-        splinter: true, thinBreak: false, to: true,
-      });
-    }, 2600);
-    return () => clearTimeout(autoRef.current);
+    const loop = () => {
+      const el = performance.now() - t0Ref.current;
+      if (el >= CFG.TIME_LIMIT) {
+        if (!doneRef.current) { doneRef.current = true; writeRes(myRole, evalStop(lastPosRef.current, true)); }
+        return;
+      }
+      const ph = (el % CFG.CYCLE_MS) / CFG.CYCLE_MS;
+      const pos = ph < 0.5 ? ph * 2 : 2 - ph * 2;
+      lastPosRef.current = pos;
+      if (cursorRef.current) cursorRef.current.style.left = pos * 100 + "%";
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [local, myDone]);
 
-  // 割れる瞬間の演出（画面3px揺れ＋木片）
+  // 停止（タップ／スペース）
+  const stop = () => {
+    if (local !== "go" || myDone || doneRef.current) return;
+    doneRef.current = true;
+    cancelAnimationFrame(rafRef.current);
+    const res = evalStop(lastPosRef.current, false);
+    if (!isRed) {
+      const chips = Array.from({ length: 6 }, () => ({
+        cx: (Math.random() * 2 - 1) * 90 + "px", cy: 60 + Math.random() * 120 + "px",
+        cr: (Math.random() * 2 - 1) * 220 + "deg", d: (Math.random() * 0.1).toFixed(2),
+      }));
+      setFx({ key: (fx?.key || 0) + 1, chips });
+    }
+    writeRes(myRole, res);
+  };
+  stopRef.current = stop;
+
+  // キーボード（スペース／Enter）
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.code === "Space" || e.key === " " || e.code === "Enter") { e.preventDefault(); stopRef.current(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // 割れる瞬間の画面揺れ
   useEffect(() => {
     if (!fx || isRed) return;
     const el = rootRef.current;
@@ -226,57 +276,24 @@ export default function WaribashiNet({
     return () => clearTimeout(t);
   }, [fx, isRed]);
 
-  const canDrag = local === "go" && !myDone;
-
-  const onDown = (e) => {
-    if (!canDrag) return;
-    dragRef.current = { sx: e.clientX, sy: e.clientY, t0: performance.now(), maxDown: 0, driftMax: 0, active: true };
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-  };
-  const onMove = (e) => {
-    const d = dragRef.current;
-    if (!d?.active) return;
-    const down = Math.max(0, e.clientY - d.sy);
-    d.maxDown = Math.max(d.maxDown, down);
-    d.driftMax = Math.max(d.driftMax, Math.abs(e.clientX - d.sx));
-    setOpenAmt(Math.min(1, down / 170));
-  };
-  const onUp = () => {
-    const d = dragRef.current;
-    if (!d?.active) return;
-    d.active = false;
-    clearTimeout(autoRef.current);
-    const dt = performance.now() - d.t0;
-    const result = evalSplit(d.maxDown, d.driftMax, dt);
-    if (!isRed) {
-      const chips = Array.from({ length: 6 }, (_, k) => ({
-        cx: (Math.random() * 2 - 1) * 90 + "px",
-        cy: 60 + Math.random() * 120 + "px",
-        cr: (Math.random() * 2 - 1) * 220 + "deg",
-        d: (Math.random() * 0.1).toFixed(2),
-      }));
-      setFx({ key: (fx?.key || 0) + 1, chips });
-    }
-    writeRes(myRole, result);
-  };
-
   const genreOf = (role) => (role === "host" ? hostGenre : guestGenre);
   const nameOf = (role) => (role === "host" ? hostName : guestName);
   const oppRole = isHost ? "guest" : "host";
 
-  // 勝敗（差が小さい方が勝ち・同点は大将の独断＝seedで一意）
-  const near = bothIn && Math.abs(resHost.diff - resGuest.diff) < 0.02;
-  const bothTo = bothIn && resHost.to && resGuest.to;
-  const tie = near || bothTo;
+  // 勝敗（中心に近い＝distが小さい方勝ち・完全同値のみ大将）
+  const tie = bothIn && resHost.dist === resGuest.dist;
   const winner = !bothIn ? null
     : tie ? (mulberry32(seedFrom(String(seed) + "waritie"))() < 0.5 ? "host" : "guest")
-    : resHost.diff < resGuest.diff ? "host" : "guest";
+    : resHost.dist < resGuest.dist ? "host" : "guest";
   const winGenre = winner ? genreOf(winner) : null;
 
+  const canStop = local === "go" && !myDone;
   const call = local === "yoi" ? "よーい…"
-    : canDrag ? "はじめっ！"
-    : myDone && !bothIn ? "相手が割ってる…"
+    : canStop ? "はじめっ！ ここぞで止めろ"
+    : myDone && !bothIn ? (myRes ? TIER_COMMENT[myRes.tier] : "")
     : "";
+
+  const missClass = myRes ? (myRes.tier === "見事" ? "見事" : myRes.dist <= CFG.BAND_MAZU ? "near" : "far") : "";
 
   return (
     <div className="wb" ref={rootRef}>
@@ -284,42 +301,61 @@ export default function WaribashiNet({
       <div className="wb-wall" />
       <div className="wb-light" />
       <button className="wb-quit" onClick={onChangeGame}>ゲーム変更</button>
+      {canStop && <div className="wb-tapzone" onPointerDown={stop} role="button" aria-label="止める" />}
 
       <div className="wb-in">
-        <div className={`wb-call ${canDrag ? "go" : ""}`}>{call || "割り箸勝負"}</div>
+        <div className={`wb-call ${canStop ? "go" : ""}`}>{call || "割り箸勝負"}</div>
 
         {!(bothIn && winner) && (
-        <div className="wb-stage">
-          {/* 相手（奥・小）*/}
-          <div className="wb-opp">
-            <Chopsticks result={oppRes} openAmt={0} tremble={local !== "yoi" && !oppRes && !isRed ? false : false} />
-            <div className="wb-plabel">{nameOf(oppRole)}</div>
-            {oppRes && <div className={`wb-tier ${oppRes.tier}`}>{oppRes.tier}</div>}
-          </div>
+          <>
+            <div className="wb-stage">
+              {/* 相手（奥・小）*/}
+              <div className="wb-opp">
+                <Chopsticks result={oppRes} />
+                <div className="wb-plabel">{nameOf(oppRole)}</div>
+                {oppRes && <div className={`wb-tier ${oppRes.tier}`}>{oppRes.tier}</div>}
+              </div>
 
-          {/* 自分（手前・大）*/}
-          <div className="wb-mine" style={{ marginTop: "34%" }}>
-            <div className="wb-hold" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-              <Chopsticks result={myRes} openAmt={openAmt} tremble={local === "yoi" && !isRed} />
-            </div>
-            <div className="wb-plabel">{nameOf(myRole)}（きみ）</div>
-            {myRes ? (
-              <div className={`wb-tier ${myRes.tier}`}>{myRes.tier}</div>
-            ) : canDrag ? (
-              <div className="wb-guide"><span className="wb-arrow">▼</span> 下へ引いて割れ</div>
-            ) : null}
-            {myDone && !bothIn && <div className="wb-wait">相手を待て…</div>}
-          </div>
+              {/* 自分（手前・大）*/}
+              <div className="wb-mine">
+                <Chopsticks result={myRes} tremble={local === "yoi" && !isRed} />
+                <div className="wb-plabel">{nameOf(myRole)}（きみ）</div>
+                {myRes && <div className={`wb-tier ${myRes.tier}`}>{myRes.tier}</div>}
+              </div>
 
-          {/* 木片 */}
-          {fx && (
-            <div className="wb-chips" key={fx.key}>
-              {fx.chips.map((c, k) => (
-                <span key={k} className="wb-chip" style={{ "--cx": c.cx, "--cy": c.cy, "--cr": c.cr, animationDelay: c.d + "s" }} />
-              ))}
+              {/* 木片 */}
+              {fx && (
+                <div className="wb-chips" key={fx.key}>
+                  {fx.chips.map((c, k) => (
+                    <span key={k} className="wb-chip" style={{ "--cx": c.cx, "--cy": c.cy, "--cr": c.cr, animationDelay: c.d + "s" }} />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* ゲージ */}
+            <div className="wb-gaugewrap">
+              <div className="wb-gauge">
+                <GaugeBands />
+                <div className="wb-center" />
+                {canStop && <div className="wb-cursor" ref={cursorRef} />}
+                {myRes && (
+                  <>
+                    <div className="wb-mark" style={{ left: `${myRes.pos * 100}%` }} />
+                    <div className="wb-marklbl" style={{ left: `${myRes.pos * 100}%` }}>きみ</div>
+                  </>
+                )}
+              </div>
+              {myRes ? (
+                <>
+                  <div className={`wb-miss ${missClass}`}>{missHint(myRes.pos)}</div>
+                  {!bothIn && <div className="wb-wait">相手を待て…</div>}
+                </>
+              ) : (
+                <div className="wb-legend"><span>中心＝<b>見事</b></span><span>外側＝まずまず</span><span>端＝無残</span></div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -338,9 +374,20 @@ export default function WaribashiNet({
               <div className={`wb-tier ${oppRes.tier}`}>{oppRes.tier}</div>
             </div>
           </div>
+
+          {/* 比較ゲージ：両者のマーカーを残す（きみ＝上/赤・あいて＝下/生成り）*/}
+          <div className="wb-gauge" style={{ marginTop: "4px" }}>
+            <GaugeBands />
+            <div className="wb-center" />
+            <div className="wb-mark" style={{ left: `${myRes.pos * 100}%` }} />
+            <div className="wb-marklbl" style={{ left: `${myRes.pos * 100}%` }}>きみ</div>
+            <div className="wb-mark opp" style={{ left: `${oppRes.pos * 100}%` }} />
+            <div className="wb-marklbl opp" style={{ left: `${oppRes.pos * 100}%` }}>あいて</div>
+          </div>
+
           <div className="wb-win-nm">{nameOf(winner)} の勝ち</div>
           <div className="wb-win-sub">
-            {tie ? "痛み分け…大将の独断で " : ""}今日は「{winGenre?.label}」で決まりだ
+            {tie ? "同着…大将の独断で " : ""}今日は「{winGenre?.label}」で決まりだ
           </div>
           <button className="wb-btn prim" onClick={() => onDecided?.(winGenre?.id)}>この味に決める</button>
           <div className="wb-over-row">
