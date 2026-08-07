@@ -147,21 +147,15 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
               <clipPath id="cwWokClip"><ellipse cx="116" cy="146" rx="41" ry="11" /></clipPath>
             </defs>
 
-            {/* 腕（法被の袖）：左は鍋の左縁、右は柄を握る手へ */}
-            <path d="M92 128 Q78 140 74 149" stroke="#223a58" strokeWidth="11" fill="none" strokeLinecap="round" />
-            <path d="M148 128 Q160 130 164 135" stroke="#223a58" strokeWidth="11" fill="none" strokeLinecap="round" />
+            {/* 腕（法被の袖）：左は鍋の左縁、右は上腕→前腕（前腕は柄と一直線）*/}
+            <path d="M92 128 Q80 140 74 148" stroke="#223a58" strokeWidth="11" fill="none" strokeLinecap="round" />
+            <path d="M150,127 Q174,123 195,123" stroke="#223a58" strokeWidth="11" fill="none" strokeLinecap="round" />
+            <path d="M195,123 Q187,128 179,131" stroke="#223a58" strokeWidth="10" fill="none" strokeLinecap="round" />
 
-            {/* 柄（木・右上へ）＋握る拳 */}
-            <g transform="rotate(-24 160 128)">
-              <rect x="158" y="123" width="44" height="7.5" rx="3.5" fill="#6a4a28" />
-              <rect x="158" y="123.6" width="44" height="2.2" rx="1" fill="#8a6a40" />
-              <rect x="196" y="122.4" width="7" height="9" rx="2.5" fill="#4a3018" />
-            </g>
-            <g transform="rotate(-24 166 136)">
-              <path d="M159,133 Q159,128.5 165,128.5 L172,129.5 Q176.5,130 176.5,135.5 Q176.5,141.5 170,141.5 L163,140.5 Q159,139.5 159,133 Z" fill="#ecc9a0" />
-              <path d="M162.5,130 v9.5 M167,129.6 v10 M171.2,130 v9.6" fill="none" stroke="#c9a578" strokeWidth="0.8" />
-              <path d="M159.5,136 q-3.2,1 -2.2,4.3 q1,2 3.5,1.8" fill="#ecc9a0" stroke="#c9a578" strokeWidth="0.7" />
-            </g>
+            {/* 炎（鍋の後ろ・鍋底の下だけ／描画順は炎→鍋）*/}
+            <path d="M100,181 Q96,171 104,165 Q101,172 108,170 Q106,182 100,181 Z" fill="url(#cwFlame2)" opacity="0.9" />
+            <path d="M116,184 Q111,172 120,165 Q116,174 125,171 Q122,185 116,184 Z" fill="url(#cwFlame)" opacity="0.95" />
+            <path d="M132,181 Q128,171 136,165 Q133,172 140,170 Q138,182 132,181 Z" fill="url(#cwFlame2)" opacity="0.9" />
 
             {/* 鍋 本体（鉄・やや上から）*/}
             <path d="M70,146 C72,161 87,173 116,173 C145,173 160,161 162,146 A 46 12 0 0 1 70 146 Z" fill="#26262b" />
@@ -169,8 +163,6 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
             <ellipse cx="116" cy="146" rx="43" ry="12" fill="#44444d" />
             <ellipse cx="116" cy="147.5" rx="40" ry="10" fill="#3c3c45" />
             <path d="M77,142.5 A 41 10.5 0 0 1 155 142.5" fill="none" stroke="#82828e" strokeWidth="1.2" strokeLinecap="round" />
-            {/* 左手（前縁を握る）*/}
-            <ellipse cx="73" cy="148" rx="6" ry="5" fill="#ecc9a0" />
 
             {/* 中身（炒め物・口の楕円にクリップ）*/}
             <g clipPath="url(#cwWokClip)">
@@ -207,16 +199,21 @@ export default function CookWait({ title = "きみの注文は通った", sub = 
             <path d="M144,141 Q148,136 154,138 Q159,141 156,146 Q150,148 145,145 Q142,143 144,141 Z" fill="#83a064" />
             <ellipse cx="150" cy="141.5" rx="2.8" ry="1.6" fill="#cdd2b4" />
 
-            {/* 宙に舞う具（小さめ・傾ける）*/}
-            <g transform="rotate(-18 96 126)"><rect x="90" y="124" width="12" height="4.4" rx="1.4" fill="#bd9060" /><rect x="90" y="124" width="12" height="1.4" fill="#6e3f1e" /><rect x="90" y="127" width="12" height="1.4" fill="#6e3f1e" /></g>
-            <g transform="rotate(24 128 120)"><ellipse cx="128" cy="120" rx="3.2" ry="1.5" fill="#6f8f3f" /><ellipse cx="128" cy="120" rx="1.3" ry="0.6" fill="#b8cc88" /></g>
-            <g transform="rotate(-32 146 128)"><rect x="141" y="126.5" width="11" height="2.4" rx="1" fill="#c0763a" /></g>
-            <g transform="rotate(16 114 117)"><path d="M108,116 Q112,111 118,113 Q123,116 120,120 Q114,123 109,120 Q106,118 108,116 Z" fill="#7c9a5e" /><ellipse cx="114" cy="117" rx="2.6" ry="1.5" fill="#cdd2b4" /></g>
+            {/* 左手（鍋の左ふちを下から支える・鍋→手の順）*/}
+            <path d="M64,147 Q61,153 68,155 Q75,155 77,150 Q78,146 74,145 Q69,144 64,147 Z" fill="#ecc9a0" />
+            <path d="M70,146 q1,-2.5 3.5,-1.5 M74,147 q1.5,-2.5 4,-1" fill="none" stroke="#c9a578" strokeWidth="0.8" strokeLinecap="round" />
 
-            {/* 炎（手前・鍋底を舐める・短め・グラデーション）*/}
-            <path d="M93,175 Q88,165 97,158 Q94,166 102,163 Q100,176 93,175 Z" fill="url(#cwFlame2)" opacity="0.88" />
-            <path d="M113,177 Q108,165 118,157 Q114,167 124,163 Q121,178 113,177 Z" fill="url(#cwFlame)" opacity="0.92" />
-            <path d="M134,175 Q130,165 140,158 Q136,166 145,163 Q142,176 134,175 Z" fill="url(#cwFlame2)" opacity="0.88" />
+            {/* 柄（木）→ 右手（拳）の順で握る。柄の先端は手のひらに収まる */}
+            <path d="M157,147 L179,131" stroke="#6a4a28" strokeWidth="7" strokeLinecap="round" />
+            <path d="M158,146 L176,132.5" stroke="#8a6a40" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M168,126 Q179,123 185,129 Q188,136 181,139 Q170,141 166,134 Q164,128 168,126 Z" fill="#ecc9a0" />
+            <path d="M166,131 Q170,127 176,128 Q181,129 180,133 Q176,131 172,132 Q169,133 166,131 Z" fill="#ecc9a0" stroke="#c9a578" strokeWidth="0.5" />
+            <path d="M173,136 q1,2 0.3,3.4 M177.5,136.4 q1,2 0.3,3.4 M181.4,134.6 q0.8,1.8 0.2,3.2" stroke="#c9a578" strokeWidth="0.7" fill="none" strokeLinecap="round" />
+
+            {/* 宙に舞う具（鍋の口の真上だけ・3個・顔に重ねない）*/}
+            <g transform="rotate(-16 104 137)"><rect x="99" y="135" width="11" height="4" rx="1.3" fill="#bd9060" /><rect x="99" y="135" width="11" height="1.3" fill="#6e3f1e" /><rect x="99" y="138" width="11" height="1.3" fill="#6e3f1e" /></g>
+            <g transform="rotate(22 120 133)"><ellipse cx="120" cy="133" rx="3" ry="1.4" fill="#6f8f3f" /><ellipse cx="120" cy="133" rx="1.2" ry="0.6" fill="#b8cc88" /></g>
+            <g transform="rotate(-28 132 138)"><rect x="127" y="136.5" width="10" height="2.3" rx="1" fill="#c0763a" /></g>
           </g>
 
           {/* ── のれん（手前・上。奥に大将が見える）── */}
