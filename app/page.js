@@ -264,13 +264,44 @@ function tiltFromId(id) {
   return Math.round(((h % 601) / 100 - 3) * 100) / 100; // -3.00 .. 3.00
 }
 
-// 屋台の品書き短冊（生成り紙・縦書き・画鋲・画像なし）
-function GenreCard({ card }) {
+// 料理の墨一色ライン画（食券と同じ描き味・筆の太さムラ／カラー・写真は使わない）
+// viewBox 0 0 80 64 で統一。器や象徴物1つに絞る。
+const GENRE_ART = {
+  sushi: `<path d="M40 28 Q55 21 69 29" stroke-width="3.2"/><rect x="40" y="28" width="29" height="14" rx="7" stroke-width="2.4"/><path d="M8 42 Q26 33 44 42" stroke-width="3.6"/><rect x="8" y="41" width="36" height="16" rx="8" stroke-width="2.6"/><path d="M15 49 h22" stroke-width="1"/>`,
+  ramen: `<path d="M52 8 L31 30" stroke-width="2.4"/><path d="M58 12 L37 32" stroke-width="2.4"/><path d="M34 30 q-2 8 2 12" stroke-width="1.3"/><path d="M40 32 q-2 8 1 11" stroke-width="1.3"/><path d="M12 40 Q14 60 40 60 Q66 60 68 40" stroke-width="3"/><ellipse cx="40" cy="40" rx="28" ry="6" stroke-width="2.4"/><path d="M20 42 q6 3 12 0 t12 0" stroke-width="1.2"/><path d="M22 52 h5 v-3 h-3" stroke-width="1"/>`,
+  udon_soba: `<ellipse cx="40" cy="42" rx="28" ry="9" stroke-width="2.6"/><path d="M12 42 Q14 52 40 52 Q66 52 68 42" stroke-width="2.4"/><path d="M18 46 h44 M22 49 h36" stroke-width="0.8"/><path d="M24 40 q8 -6 16 0" stroke-width="1.4"/><path d="M40 40 q8 -6 16 0" stroke-width="1.4"/><path d="M28 37 q6 -5 12 0" stroke-width="1.3"/><path d="M40 37 q6 -5 12 0" stroke-width="1.3"/><path d="M60 12 L47 34" stroke-width="2.2"/><path d="M64 16 L51 36" stroke-width="2.2"/>`,
+  teishoku: `<path d="M8 50 L72 50 L66 60 L14 60 Z" stroke-width="2.4"/><path d="M16 40 Q18 50 30 50 Q42 50 44 40" stroke-width="2.4"/><ellipse cx="30" cy="40" rx="14" ry="3.4" stroke-width="1.8"/><path d="M24 41 q6 3 12 0" stroke-width="1"/><path d="M48 42 Q50 50 58 50 Q66 50 68 42" stroke-width="2.2"/><ellipse cx="58" cy="42" rx="10" ry="2.8" stroke-width="1.6"/>`,
+  donburi: `<path d="M12 36 Q14 60 40 60 Q66 60 68 36" stroke-width="3.2"/><ellipse cx="40" cy="36" rx="28" ry="7" stroke-width="2.6"/><path d="M18 35 Q40 20 62 35" stroke-width="2"/><path d="M26 32 q6 -4 12 0 t12 0" stroke-width="1.2"/><path d="M31 60 h18" stroke-width="2"/>`,
+  hamburg: `<ellipse cx="40" cy="49" rx="32" ry="8" stroke-width="2.2"/><path d="M18 42 Q20 32 40 32 Q60 32 62 42 Q60 48 40 48 Q20 48 18 42 Z" stroke-width="3"/><path d="M28 40 q12 4 24 0" stroke-width="1.1"/><path d="M34 26 q-2 -4 1 -7" stroke-width="1.2"/><path d="M46 26 q2 -4 -1 -7" stroke-width="1.2"/>`,
+  pasta: `<ellipse cx="40" cy="47" rx="32" ry="9" stroke-width="2.2"/><path d="M12 47 Q16 57 40 57 Q64 57 68 47" stroke-width="1.6"/><path d="M26 45 q14 -12 28 0" stroke-width="1.3"/><path d="M28 47 q12 -8 24 0" stroke-width="1.3"/><path d="M30 43 q10 -7 20 1" stroke-width="1.2"/><path d="M52 12 L46 45" stroke-width="2.4"/><path d="M48 12 v8 M52 12 v8 M56 12 v8" stroke-width="1.2"/>`,
+  pizza: `<path d="M40 10 L18 54 L62 54 Z" stroke-width="3"/><path d="M18 54 Q40 46 62 54" stroke-width="2"/><circle cx="36" cy="34" r="3" stroke-width="1.6"/><circle cx="46" cy="42" r="3" stroke-width="1.6"/><circle cx="40" cy="48" r="2.4" stroke-width="1.4"/>`,
+  omurice: `<ellipse cx="40" cy="49" rx="32" ry="8" stroke-width="2.2"/><path d="M16 41 Q18 30 40 30 Q62 30 64 41 Q62 49 40 49 Q18 49 16 41 Z" stroke-width="3"/><path d="M28 39 q6 -4 12 0 t12 0" stroke-width="1.6"/><path d="M60 14 L52 40" stroke-width="2.2"/><ellipse cx="61" cy="13" rx="4" ry="6" stroke-width="1.8"/>`,
+  steak: `<ellipse cx="40" cy="49" rx="33" ry="8" stroke-width="2.2"/><path d="M20 41 Q18 30 34 30 Q56 28 60 39 Q62 48 46 49 Q26 49 20 41 Z" stroke-width="3"/><path d="M30 37 l8 6 M40 35 l8 6 M50 37 l6 5" stroke-width="1.2"/><path d="M64 15 L58 40" stroke-width="2"/>`,
+  curry: `<ellipse cx="40" cy="45" rx="33" ry="12" stroke-width="2.4"/><path d="M40 33 Q44 45 40 57" stroke-width="1.4"/><path d="M22 43 q8 -4 16 0" stroke-width="1"/><path d="M44 41 q6 3 12 0" stroke-width="1.1"/><path d="M44 47 q6 3 12 0" stroke-width="1.1"/><path d="M60 14 L54 40" stroke-width="2.2"/><ellipse cx="61" cy="13" rx="4" ry="6" stroke-width="1.8"/>`,
+  gyoza: `<ellipse cx="40" cy="49" rx="32" ry="8" stroke-width="2.2"/><path d="M14 44 Q20 34 32 40 Q24 46 14 44 Z" stroke-width="2.6"/><path d="M18 41 l1 3 M22 39 l1 3 M26 39 l1 3" stroke-width="1"/><path d="M30 46 Q36 36 48 42 Q40 48 30 46 Z" stroke-width="2.6"/><path d="M34 43 l1 3 M38 41 l1 3 M42 41 l1 3" stroke-width="1"/><path d="M46 44 Q52 34 64 40 Q56 46 46 44 Z" stroke-width="2.6"/><path d="M50 41 l1 3 M54 39 l1 3 M58 39 l1 3" stroke-width="1"/>`,
+};
+
+function GenreArt({ id }) {
+  const paths = GENRE_ART[id] || GENRE_ART.donburi;
+  return (
+    <svg className="tz-art" viewBox="4 6 72 54" fill="none" stroke="#2a2520"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      dangerouslySetInnerHTML={{ __html: paths }} />
+  );
+}
+
+// 屋台の品書き短冊（生成り紙・縦書き・料理のライン画・画鋲・画像なし）
+function GenreCard({ card, hidePin }) {
   const tilt = tiltFromId(card.id);
+  // 断裁された紙の質感：四隅の角丸を札ごとに僅かに不揃いに（ハッシュで安定）
+  const h = Math.abs(Math.round(tilt * 100));
+  const r = (n) => 3 + ((h >> n) % 4); // 3〜6px
+  const radius = `${r(0)}px ${r(2)}px ${r(4)}px ${r(6)}px`;
   return (
     <div className="tz-wrap" style={{ transform: `rotate(${tilt}deg)` }}>
-      <div className="tz-paper">
-        <span className="tz-pin" aria-hidden />
+      <div className="tz-paper" style={{ borderRadius: radius }}>
+        {!hidePin && <span className="tz-pin" aria-hidden />}
+        <GenreArt id={card.id} />
         <span className="tz-name">{card.label}</span>
       </div>
     </div>
@@ -722,10 +753,11 @@ export default function MeshiMatchPage() {
                 <SwipeDeck
                   key={`swipe-${room?.round || 0}`}
                   cards={genreCards}
-                  renderCard={(card) => <GenreCard key={card.id} card={card} />}
+                  renderCard={(card) => <GenreCard key={card.id} card={card} hidePin />}
                   stack
                   likeLabel="頼む"
                   nopeLabel="見送り"
+                  stampNo="見送り"
                   onFinish={(liked) => update({ likes: liked, phase: "done" })}
                 />
               </div>

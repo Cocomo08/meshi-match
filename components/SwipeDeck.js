@@ -26,9 +26,18 @@ const PEELS = [
   { left: "80%", delay: 0.08 },
 ];
 
+// 残り枚数に応じた「後ろに重なる札」の枚数（＝残り札数の見た目一致）
+//  残り10枚以上=3 / 5〜9=2 / 2〜4=1 / 最後(1)=0
+function behindCountFor(remaining) {
+  if (remaining >= 10) return 3;
+  if (remaining >= 5) return 2;
+  if (remaining >= 2) return 1;
+  return 0;
+}
+
 // カードの山をスワイプで消化する共通コンポーネント。
-//  右＝「頼む」／左＝「見送り」。画面幅25%以上で確定。矢印キー対応。連打ロック。
-//  stack=true（短冊）のとき、入場＝上から降下、退場＝一斉に剥がれ落ちる紙の演出。
+//  右＝「頼む」／左＝「見送り」。矢印キー対応。連打ロック。
+//  stack=true（短冊）：束の厚み・ピンから引っ張られる手応え・頼む＝右上へ飛ぶ／見送り＝裏返り左下へ。
 export function SwipeDeck({
   cards,
   renderCard,
@@ -46,15 +55,19 @@ export function SwipeDeck({
   const [drag, setDrag] = useState({ x: 0, y: 0, active: false });
   const [leaving, setLeaving] = useState(null); // { dir, sx, sy, srot }
   const [burst, setBurst] = useState(0);
+  const [pressed, setPressed] = useState(false); // 頼む：朱色の丸印を押す（stack）
+  const [pinWobble, setPinWobble] = useState(0);
+  const [focusSide, setFocusSide] = useState(null); // reduced-motion：ボタンフォーカスで文字表示
   const [screenW, setScreenW] = useState(0);
   const [phase, setPhase] = useState(stack ? "intro" : "live"); // intro | live | outro
   const likedRef = useRef([]);
   const startRef = useRef(null);
   const lockRef = useRef(false);
+  const hapticRef = useRef(false); // このドラッグで判定振動を1度だけ
 
+  const isRed = prefersReducedMotion();
   const current = cards[index];
-  const next = cards[index + 1] ?? (loop ? cards[0] : undefined);
-  const third = cards[index + 2] ?? (loop ? cards[(index + 2) % cards.length] : undefined);
+  const remaining = cards.length - index;
 
   // 画面幅（判定しきい値＝25%）
   useEffect(() => {
@@ -68,40 +81,53 @@ export function SwipeDeck({
   // 入場ロック解除（降下0.6s／reduced-motionは即）
   useEffect(() => {
     if (phase !== "intro") return;
-    const t = setTimeout(() => setPhase("live"), prefersReducedMotion() ? 200 : 600);
+    const t = setTimeout(() => setPhase("live"), isRed ? 200 : 600);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
+  const afterLeave = () => {
+    setLeaving(null);
+    setPressed(false);
+    setDrag({ x: 0, y: 0, active: false });
+    lockRef.current = false;
+    if (index + 1 >= cards.length) {
+      if (loop) setIndex(0);
+      else if (stack) {
+        setPhase("outro");
+        setTimeout(() => onFinish(likedRef.current), isRed ? 250 : 500);
+      } else {
+        onFinish(likedRef.current);
+      }
+    } else {
+      setIndex(index + 1);
+    }
+  };
+  const afterLeaveRef = useRef(afterLeave);
+  afterLeaveRef.current = afterLeave;
 
   const commit = (liked) => {
     if (!current || phase !== "live" || lockRef.current) return;
     lockRef.current = true;
     const sx = drag.x, sy = drag.y * 0.25, srot = drag.x / 14;
-    if (liked) {
-      likedRef.current.push(current.id);
-      setBurst((b) => b + 1);
-      playLike();
+    if (liked) { likedRef.current.push(current.id); playLike(); } else { playNope(); }
+
+    const fly = () => {
+      setLeaving({ dir: liked ? 1 : -1, sx, sy, srot });
+      if (liked && stack) setPinWobble((w) => w + 1);
+      const dur = isRed ? 250 : stack ? (liked ? 450 : 500) : liked ? 350 : 500;
+      setTimeout(() => afterLeaveRef.current(), dur);
+    };
+
+    if (liked && stack) {
+      // 朱色の丸印を押す（0.15s／reduced-motionは静止表示）→ 飛ぶ
+      setPressed(true);
+      if (isRed) fly();
+      else setTimeout(fly, 150);
     } else {
-      playNope();
+      if (liked && !stack) setBurst((b) => b + 1); // 店スワイプはハート
+      fly();
     }
-    setLeaving({ dir: liked ? 1 : -1, sx, sy, srot });
-    const dur = prefersReducedMotion() ? 250 : liked ? 350 : 500;
-    setTimeout(() => {
-      setLeaving(null);
-      setDrag({ x: 0, y: 0, active: false });
-      lockRef.current = false;
-      if (index + 1 >= cards.length) {
-        if (loop) setIndex(0);
-        else if (stack) {
-          // 最後の1枚 → 紙が剥がれて暗転 → 遷移
-          setPhase("outro");
-          setTimeout(() => onFinish(likedRef.current), prefersReducedMotion() ? 250 : 500);
-        } else {
-          onFinish(likedRef.current);
-        }
-      } else {
-        setIndex(index + 1);
-      }
-    }, dur);
   };
 
   const commitRef = useRef(commit);
@@ -109,13 +135,8 @@ export function SwipeDeck({
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        commitRef.current(true);
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        commitRef.current(false);
-      }
+      if (e.key === "ArrowRight") { e.preventDefault(); commitRef.current(true); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); commitRef.current(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -124,12 +145,22 @@ export function SwipeDeck({
   const onPointerDown = (e) => {
     if (phase !== "live" || leaving || lockRef.current) return;
     startRef.current = { x: e.clientX, y: e.clientY };
+    hapticRef.current = false;
     e.currentTarget.setPointerCapture(e.pointerId);
     setDrag({ x: 0, y: 0, active: true });
   };
   const onPointerMove = (e) => {
     if (!startRef.current || leaving) return;
-    setDrag({ x: e.clientX - startRef.current.x, y: e.clientY - startRef.current.y, active: true });
+    const dx = e.clientX - startRef.current.x;
+    const dy = e.clientY - startRef.current.y;
+    // 判定に届いた瞬間、一度だけ短い振動（対応端末のみ・iOSは無反応でも成立）
+    if (!hapticRef.current && Math.abs(dx) >= threshold) {
+      hapticRef.current = true;
+      if (!isRed && typeof navigator !== "undefined" && navigator.vibrate) {
+        try { navigator.vibrate(8); } catch { /* noop */ }
+      }
+    }
+    setDrag({ x: dx, y: dy, active: true });
   };
   const onPointerUp = () => {
     if (!startRef.current || leaving) return;
@@ -142,29 +173,58 @@ export function SwipeDeck({
   if (!current) return null;
 
   const dragRot = drag.x / 14;
-  const yesOp = leaving ? (leaving.dir > 0 ? 1 : 0) : Math.min(Math.max(drag.x, 0) / threshold, 1);
-  const noOp = leaving ? (leaving.dir < 0 ? 1 : 0) : Math.min(Math.max(-drag.x, 0) / threshold, 1);
+  // 文字の濃さ：移動20pxで出現→80pxで完全（reduced-motionはボタンフォーカスで表示）
+  const labelOp = (v) => Math.min(Math.max((v - 20) / 60, 0), 1);
+  const yesOp = isRed
+    ? (focusSide === "yes" ? 1 : 0)
+    : leaving ? (leaving.dir > 0 ? 1 : 0) : labelOp(drag.x);
+  const noOp = isRed
+    ? (focusSide === "no" ? 1 : 0)
+    : leaving ? (leaving.dir < 0 ? 1 : 0) : labelOp(-drag.x);
   const progress = Math.min(Math.abs(drag.x) / (threshold * 1.1), 1);
   const nextScale = 0.92 + 0.08 * progress;
   const nextOpacity = 0.55 + 0.45 * progress;
 
   const leaveClass = leaving
-    ? prefersReducedMotion()
+    ? isRed
       ? "sd-leave-fade"
-      : leaving.dir > 0
-        ? "sd-leave-order"
-        : "sd-leave-decline"
+      : stack
+        ? leaving.dir > 0 ? "sd-order-up" : "sd-decline-flip"
+        : leaving.dir > 0 ? "sd-leave-order" : "sd-leave-decline"
     : "";
 
   // 入場の降下ラッパ（短冊のみ・マウント時1回）
   const drop = (node, delay, rot) =>
     stack ? (
-      <div className="sd-drop" style={{ animationDelay: `${delay}s`, "--dropRot": rot }}>
-        {node}
-      </div>
+      <div className="sd-drop" style={{ animationDelay: `${delay}s`, "--dropRot": rot }}>{node}</div>
     ) : (
       node
     );
+
+  // 束の厚み（後ろに重なる札・残り枚数と一致）※stack時のみ構築（store等の無駄な再描画を防ぐ）
+  const behindCount = stack ? behindCountFor(remaining) : 0;
+  const behindNodes = [];
+  for (let k = Math.min(behindCount, cards.length - 1 - index); k >= 1; k--) {
+    const c = cards[index + k] ?? (loop ? cards[(index + k) % cards.length] : undefined);
+    if (!c) continue;
+    const base = { x: k * 4, y: k * 8, b: 1 - k * 0.15 };
+    const go = { x: (k - 1) * 4, y: (k - 1) * 8, b: 1 - (k - 1) * 0.15 };
+    behindNodes.push(
+      <div
+        key={c.id ?? k}
+        className={`sd-behind absolute inset-0 ${leaving ? "go" : ""}`}
+        style={{
+          transform: `translate(${leaving ? go.x : base.x}px, ${leaving ? go.y : base.y}px)`,
+          filter: `brightness(${leaving ? go.b : base.b})`,
+          zIndex: 10 - k,
+        }}
+      >
+        {drop(renderCard(c), 0.05 * k, k % 2 ? "5deg" : "-6deg")}
+      </div>
+    );
+  }
+
+  const next = cards[index + 1] ?? (loop ? cards[0] : undefined);
 
   return (
     <>
@@ -181,28 +241,11 @@ export function SwipeDeck({
       )}
 
       <div className="relative z-10 flex w-full flex-col items-center">
-        {controls && <p className="sd-count mb-4 text-sm font-black">のこり{toKanjiNum(cards.length - index)}枚</p>}
+        {controls && <p className="sd-count mb-4 text-sm font-black">のこり{toKanjiNum(remaining)}枚</p>}
 
         <div className={`relative w-full max-w-sm select-none ${heightClass}`} style={{ opacity: phase === "outro" ? 0 : 1 }}>
           {stack ? (
-            <>
-              {third && (
-                <div
-                  className={`sd-behind absolute inset-0 ${leaving ? "go" : ""}`}
-                  style={{ transform: `translate(${leaving ? 4 : 8}px, ${leaving ? 8 : 16}px)`, filter: `brightness(${leaving ? 0.85 : 0.7})` }}
-                >
-                  {drop(renderCard(third), 0, "-6deg")}
-                </div>
-              )}
-              {next && (
-                <div
-                  className={`sd-behind absolute inset-0 ${leaving ? "go" : ""}`}
-                  style={{ transform: `translate(${leaving ? 0 : 4}px, ${leaving ? 0 : 8}px)`, filter: `brightness(${leaving ? 1 : 0.85})` }}
-                >
-                  {drop(renderCard(next), 0.05, "5deg")}
-                </div>
-              )}
-            </>
+            behindNodes
           ) : (
             next && (
               <div
@@ -222,8 +265,16 @@ export function SwipeDeck({
             className={`absolute inset-0 cursor-grab touch-none active:cursor-grabbing ${leaveClass}`}
             style={
               leaving
-                ? { "--sx": `${leaving.sx}px`, "--sy": `${leaving.sy}px`, "--srot": `${leaving.srot}deg` }
-                : { transform: `translate(${drag.x}px, ${drag.y * 0.25}px) rotate(${dragRot}deg)`, transition: drag.active ? "none" : "transform 0.25s ease-out" }
+                ? { "--sx": `${leaving.sx}px`, "--sy": `${leaving.sy}px`, "--srot": `${leaving.srot}deg`, zIndex: 15 }
+                : {
+                    transform: isRed
+                      ? "none"
+                      : `translate(${drag.x}px, ${drag.y * 0.25}px) rotate(${dragRot}deg) scale(${1 + progress * 0.03})`,
+                    transformOrigin: stack ? "50% 8%" : "center",
+                    filter: isRed ? "none" : `drop-shadow(0 ${8 + progress * 18}px ${6 + progress * 13}px rgba(0,0,0,${0.34 + progress * 0.3}))`,
+                    transition: drag.active ? "none" : "transform 0.25s ease-out",
+                    zIndex: 15,
+                  }
             }
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -233,16 +284,41 @@ export function SwipeDeck({
             {drop(renderCard(current), 0.1, "-3deg")}
             <span className="sd-stamp yes" aria-hidden style={{ opacity: yesOp }}>{stampYes}</span>
             <span className="sd-stamp no" aria-hidden style={{ opacity: noOp }}>{stampNo}</span>
+            {/* 頼む：朱色の丸印（押印）*/}
+            {pressed && <span className={`sd-press ${isRed ? "still" : ""}`} aria-hidden />}
           </div>
+
+          {/* 動かない画鋲（短冊が引っ張られている表現／頼むで揺れる）*/}
+          {stack && (
+            <span key={`pin-${pinWobble}`} className={`sd-pin ${pinWobble > 0 ? "wob" : ""}`} aria-hidden />
+          )}
         </div>
 
         {controls ? (
           <>
             <div className="mt-6 flex items-center gap-5">
-              <button type="button" onClick={() => commit(false)} disabled={phase !== "live"} className="sd-tag no">
+              <button
+                type="button"
+                onClick={() => commit(false)}
+                disabled={phase !== "live"}
+                className="sd-tag no"
+                onFocus={() => setFocusSide("no")}
+                onBlur={() => setFocusSide((s) => (s === "no" ? null : s))}
+                onPointerEnter={() => isRed && setFocusSide("no")}
+                onPointerLeave={() => isRed && setFocusSide((s) => (s === "no" ? null : s))}
+              >
                 {nopeLabel}
               </button>
-              <button type="button" onClick={() => commit(true)} disabled={phase !== "live"} className="sd-tag yes">
+              <button
+                type="button"
+                onClick={() => commit(true)}
+                disabled={phase !== "live"}
+                className="sd-tag yes"
+                onFocus={() => setFocusSide("yes")}
+                onBlur={() => setFocusSide((s) => (s === "yes" ? null : s))}
+                onPointerEnter={() => isRed && setFocusSide("yes")}
+                onPointerLeave={() => isRed && setFocusSide((s) => (s === "yes" ? null : s))}
+              >
                 {likeLabel}
               </button>
             </div>

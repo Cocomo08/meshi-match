@@ -605,19 +605,25 @@ body {
    ============================================================ */
 .tz-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .tz-paper { position: relative; height: 80%; aspect-ratio: 1 / 3; max-width: 84%;
-  color: #2a2520; border-radius: 3px 3px 8px 8px;
+  color: #2a2520; border-radius: 3px 3px 8px 8px; overflow: hidden;
   background-color: #f0e6d2;
-  /* わずかに黄ばんだ斑（透明度8%以下）*/
+  /* わずかに黄ばんだ斑（透明度8%以下）＋ごく薄い繊維のムラ */
   background-image:
     radial-gradient(circle at 22% 12%, rgba(150,120,40,.07), transparent 9%),
     radial-gradient(circle at 70% 26%, rgba(160,130,50,.06), transparent 8%),
     radial-gradient(circle at 36% 56%, rgba(150,120,40,.05), transparent 10%),
     radial-gradient(circle at 80% 72%, rgba(140,110,40,.06), transparent 7%),
-    radial-gradient(circle at 28% 90%, rgba(160,130,50,.05), transparent 9%);
-  /* ベベル＋下端の反り（浮いている）*/
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(255,255,255,.35),
+    radial-gradient(circle at 28% 90%, rgba(160,130,50,.05), transparent 9%),
+    repeating-linear-gradient(90deg, rgba(120,95,40,.05) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(84deg, rgba(120,95,40,.03) 0 1px, transparent 1px 4px);
+  /* ベベル＋下端の反り（浮いている）＋厚み1pxの明暗 */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(120,95,40,.35),
+    inset 1px 0 0 rgba(255,255,255,.3), inset -1px 0 0 rgba(120,95,40,.18),
     inset 0 -6px 7px -4px rgba(90,70,20,.20), 0 9px 13px -6px rgba(0,0,0,.5);
-  display: flex; align-items: center; justify-content: center; }
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 9% 0 6%; gap: 3%; }
+/* 料理のライン画（札幅の約58%・文字とぶつからないよう上に配置）*/
+.tz-art { flex: 0 0 auto; width: 58%; aspect-ratio: 80 / 60; display: block; }
 /* 上部中央の画鋲（提灯の赤・ベベル）*/
 .tz-pin { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 17px; height: 17px;
   border-radius: 50%; background: #e0483b; border: 1px solid #9e1b14; z-index: 2;
@@ -627,8 +633,8 @@ body {
 /* ジャンル名（縦書き・太い墨色・手書き風）*/
 .tz-name { writing-mode: vertical-rl; text-orientation: upright;
   font-family: var(--font-klee), var(--font-zen-maru), sans-serif; font-weight: 600;
-  font-size: clamp(28px, 8.4vw, 44px); line-height: 1.2; letter-spacing: .05em; color: #2a2520;
-  -webkit-text-stroke: .6px #2a2520; max-height: 84%; padding-top: 5%; }
+  font-size: clamp(24px, 7.6vw, 38px); line-height: 1.18; letter-spacing: .04em; color: #2a2520;
+  -webkit-text-stroke: .6px #2a2520; max-height: 66%; }
 
 /* 背後の短冊：leaving 中だけ前へ繰り上がる（reduced-motionは即時）*/
 .sd-behind { transition: none; will-change: transform, filter; }
@@ -658,11 +664,54 @@ body {
 }
 .sd-leave-decline { animation: sdDecline .5s cubic-bezier(.45,0,.9,.5) forwards; }
 
-/* reduced-motion：回転・落下を省略しフェードで消す */
+/* 短冊・頼む：ピンから外れ、回転しながら右上へ飛ぶ（0.45s）*/
+@keyframes sdOrderUp {
+  0%   { transform: translate(var(--sx,0px), var(--sy,0px)) rotate(var(--srot,0deg)) scale(1); opacity: 1; }
+  18%  { transform: translate(var(--sx,0px), calc(var(--sy,0px) - 6px)) rotate(var(--srot,0deg)) scale(1.06); opacity: 1; }
+  100% { transform: translate(48vw, -60vh) rotate(96deg) scale(.5); opacity: 0; }
+}
+.sd-order-up { animation: sdOrderUp .45s cubic-bezier(.4,0,.75,.4) forwards; transform-origin: 50% 8%; }
+
+/* 短冊・見送り：ひらりと裏返りながら左下へ落ちる（0.5s・頼むより緩い）*/
+@keyframes sdDeclineFlip {
+  0%   { transform: perspective(700px) translate(var(--sx,0px), var(--sy,0px)) rotate(var(--srot,0deg)) rotateY(0deg); opacity: 1; }
+  100% { transform: perspective(700px) translate(-30vw, 72vh) rotate(-22deg) rotateY(190deg); opacity: 0; }
+}
+.sd-decline-flip { animation: sdDeclineFlip .5s cubic-bezier(.3,0,.9,.6) forwards; transform-origin: 50% 12%; }
+
+/* 頼む：朱色の丸印を押す（0.15s・わずかに拡大してから定着）*/
+.sd-press { position: absolute; top: 30%; left: 50%; width: 34%; aspect-ratio: 1 / 1; border-radius: 50%;
+  transform: translate(-50%,-50%); border: 3px solid #c8322a; box-shadow: 0 0 0 2px rgba(200,50,42,.35);
+  pointer-events: none; z-index: 4; }
+.sd-press::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; border: 1.5px solid #c8322a; }
+.sd-press { animation: sdPress .15s ease-out both; }
+@keyframes sdPress {
+  0%   { transform: translate(-50%,-50%) scale(1.3); opacity: 0; }
+  45%  { opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+}
+.sd-press.still { animation: none; opacity: 1; }
+
+/* 動かない画鋲（束の上・引っ張られる表現／頼むで揺れる）*/
+.sd-pin { position: absolute; top: calc(10% - 9px); left: 50%; transform: translateX(-50%); width: 17px; height: 17px;
+  border-radius: 50%; background: #e0483b; border: 1px solid #9e1b14; z-index: 20; transform-origin: 50% 50%;
+  box-shadow: inset 0 2px 2px rgba(255,255,255,.55), inset 0 -3px 3px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.4); }
+.sd-pin::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%;
+  transform: translate(-50%,-50%); background: #b3241a; box-shadow: inset 0 1px 1px rgba(0,0,0,.5); }
+.sd-pin.wob { animation: sdPinWob .5s ease; }
+@keyframes sdPinWob {
+  0%   { transform: translateX(-50%) rotate(0deg); }
+  28%  { transform: translateX(-50%) rotate(10deg); }
+  62%  { transform: translateX(-50%) rotate(-7deg); }
+  100% { transform: translateX(-50%) rotate(0deg); }
+}
+
+/* reduced-motion：回転・落下を省略しフェード（0.2s）で消す */
 @keyframes sdFade { from { opacity: 1; } to { opacity: 0; } }
-.sd-leave-fade { animation: sdFade .25s ease forwards; }
+.sd-leave-fade { animation: sdFade .2s ease forwards; }
 @media (prefers-reduced-motion: reduce) {
-  .sd-leave-order, .sd-leave-decline { animation: sdFade .25s ease forwards; }
+  .sd-leave-order, .sd-leave-decline, .sd-order-up, .sd-decline-flip { animation: sdFade .2s ease forwards; }
+  .sd-pin.wob { animation: none; }
 }
 
 /* ============================================================
