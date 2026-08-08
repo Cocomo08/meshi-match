@@ -768,7 +768,7 @@ body {
   mask-image: linear-gradient(180deg, transparent 0%, #000 46%); }
 
 /* 大将（中央上・札より奥・弱いぼかし。表情で軽くうなずく/傾ける）*/
-.sw-master { position: absolute; left: 50%; top: 1%; width: 78px; z-index: 1; pointer-events: none;
+.sw-master { position: absolute; left: 50%; top: -3%; width: 78px; z-index: 1; pointer-events: none;
   filter: blur(.7px); transform: translate(-50%, 0); transition: transform .25s ease; }
 .sw-master svg { width: 100%; display: block; }
 .sw-master[data-expr="yes"] { transform: translate(-50%, 3px); }   /* 満足そうにうなずく */
