@@ -773,6 +773,10 @@ body {
 .sw-master svg { width: 100%; display: block; }
 .sw-master[data-expr="yes"] { transform: translate(-50%, 3px); }   /* 満足そうにうなずく */
 .sw-master[data-expr="no"] { transform: translate(-50%, 0) rotate(-4deg); } /* 少し残念そうに傾く */
+/* 大将の両手：札の上端を掴む（札より手前）*/
+.sw-hands { position: absolute; left: 50%; top: 12%; width: 118px; transform: translateX(-50%);
+  z-index: 16; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+.sw-hands svg { width: 100%; display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   .sw-steam { animation: none; opacity: 0; }

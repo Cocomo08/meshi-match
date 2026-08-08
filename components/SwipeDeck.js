@@ -130,6 +130,38 @@ function SwMaster({ expr }) {
   );
 }
 
+// 大将の丸っこい両手（札の上端を掴んで上から覗いている表現）。
+//  顔は札より奥だが、手は札の手前に重ねて「掴んでいる」ように見せる。
+function SwHand({ x, flip }) {
+  return (
+    <g transform={`translate(${x} 0) scale(${flip ? -1 : 1} 1)`}>
+      {/* 袖（藍・上＝腕の付け根）*/}
+      <path d="M-9 0 Q0 3 9 0 L8 15 Q0 18 -8 15 Z" fill="#223a58" stroke="#16283d" strokeWidth="1" strokeLinejoin="round" />
+      {/* 指（丸く垂れて札の縁に回り込む・4本）*/}
+      <g fill="#ecc9a0" stroke="#2a2520" strokeWidth="1">
+        <path d="M-9 20 q-1.5 9 2 10 q3.5 -1 2 -10 Z" />
+        <path d="M-3 22 q-1.5 10 2 11 q3.5 -1 2 -11 Z" />
+        <path d="M3 22 q-1.5 10 2 11 q3.5 -1 2 -11 Z" />
+        <path d="M9 20 q-1.5 9 2 10 q3.5 -1 2 -10 Z" />
+      </g>
+      {/* 手の甲（丸い）*/}
+      <path d="M-12 13 Q-12 4 0 4 Q12 4 12 13 Q12 21 6 24 L-6 24 Q-12 21 -12 13 Z" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1.2" />
+      {/* 親指（内側に回す）*/}
+      <path d="M11 12 Q17 12 17 17 Q17 21 12 21 Q9 20 9 16 Z" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1" />
+      {/* 影（1段）*/}
+      <path d="M-9 19 Q0 25 9 19 Q9 23 0 24 Q-9 23 -9 19 Z" fill="#d3a575" opacity=".85" />
+    </g>
+  );
+}
+function SwHands() {
+  return (
+    <svg viewBox="0 0 130 44" fill="none" aria-hidden>
+      <SwHand x={34} />
+      <SwHand x={96} flip />
+    </svg>
+  );
+}
+
 // カードの山をスワイプで消化する共通コンポーネント。
 //  右＝「頼む」／左＝「見送り」。矢印キー対応。連打ロック。
 //  stack=true（短冊）：束の厚み・ピンから引っ張られる手応え・頼む＝右上へ飛ぶ／見送り＝裏返り左下へ。
@@ -402,6 +434,12 @@ export function SwipeDeck({
               style={pinColor ? { background: pinColor } : undefined}
               aria-hidden
             />
+          )}
+          {/* 大将の両手（札の上端を掴む・札より手前）*/}
+          {stack && (
+            <div className="sw-hands" aria-hidden>
+              <SwHands />
+            </div>
           )}
         </div>
 
