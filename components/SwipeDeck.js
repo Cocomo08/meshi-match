@@ -35,21 +35,13 @@ function behindCountFor(remaining) {
   return 0;
 }
 
-// 大将の胸像（スワイプ待機画面 CookWait と同じ顔＝線画・鉢巻・眼鏡・細い髭）。
-//  スワイプ判定で眉と口だけ変える： yes=頼む(満足) / no=見送り(残念) / idle=通常
-//  ※顔のパーツ座標は CookWait.js の顔グループと同一（同じ大将に見えるように）
+// 大将の顔（頭部のみ・CookWait と同じ顔）。札の裏から覗くので、口から下は札に隠れ
+//  目から上だけが札の上端から出る想定で配置する。表情は眉と口だけ差し替え。
 function SwMaster({ expr }) {
   const yes = expr === "yes";
   const no = expr === "no";
   return (
-    <svg viewBox="80 66 80 110" fill="none" aria-hidden>
-      {/* ── 胴（法被・腕組み）※待機画面は鍋だが、ここでは腕を組んで見ている ── */}
-      <path d="M88,137 Q120,127 152,137 L158,176 L82,176 Z" fill="#223a58" stroke="#16283d" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M113,133 L120,151 L127,133 Z" fill="#e9ddc4" />
-      <path d="M98,151 L138,176" stroke="#26456a" strokeWidth="12" strokeLinecap="round" />
-      <path d="M142,151 L102,176" stroke="#223a58" strokeWidth="12" strokeLinecap="round" />
-      <path d="M114,129 q6,3 12,0 l0,6 q-6,3 -12,0 Z" fill="#ecc9a0" />
-
+    <svg viewBox="92 68 56 66" fill="none" aria-hidden>
       {/* ── 顔（CookWait と同一）── */}
       {/* 髪 */}
       <path d="M97,88 Q95,75 108,72 Q120,70 132,72 Q145,75 143,88 Q120,81 97,88 Z" fill="#2a2520" />
@@ -130,34 +122,32 @@ function SwMaster({ expr }) {
   );
 }
 
-// 大将の丸っこい両手（札の上端を掴んで上から覗いている表現）。
-//  顔は札より奥だが、手は札の手前に重ねて「掴んでいる」ように見せる。
-function SwHand({ x, flip }) {
+// 大将の手（札の上端を掴んで引き下げる形）。手の甲がこちら向き、指を揃えて軽く曲げ、
+//  札の手前側に第一〜第二関節まで回り込ませる（手のひら全体は見せない／親指は札裏で不可視）。
+//  ※手首から先だけを描き、根元は札の上端に隠れて腕とつながって見せる。
+function SwHand({ x, y = 0, rot = 0, flip }) {
   return (
-    <g transform={`translate(${x} 0) scale(${flip ? -1 : 1} 1)`}>
-      {/* 袖（藍・上＝腕の付け根）*/}
-      <path d="M-9 0 Q0 3 9 0 L8 15 Q0 18 -8 15 Z" fill="#223a58" stroke="#16283d" strokeWidth="1" strokeLinejoin="round" />
-      {/* 指（丸く垂れて札の縁に回り込む・4本）*/}
-      <g fill="#ecc9a0" stroke="#2a2520" strokeWidth="1">
-        <path d="M-9 20 q-1.5 9 2 10 q3.5 -1 2 -10 Z" />
-        <path d="M-3 22 q-1.5 10 2 11 q3.5 -1 2 -11 Z" />
-        <path d="M3 22 q-1.5 10 2 11 q3.5 -1 2 -11 Z" />
-        <path d="M9 20 q-1.5 9 2 10 q3.5 -1 2 -10 Z" />
+    <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${flip ? -1 : 1} 1)`}>
+      {/* 手の甲（縁の上・こちら向き。上端は札/顔に隠れる）*/}
+      <path d="M-11 -2 Q0 -5 11 -2 L10 7 Q0 9 -10 7 Z" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1.1" strokeLinejoin="round" />
+      {/* 指4本（揃えて軽く曲げ、縁に回り込む・第二関節まで）*/}
+      <g fill="#ecc9a0" stroke="#2a2520" strokeWidth="0.9" strokeLinejoin="round">
+        <path d="M-9.5 6 q-0.4 7 1.2 8.6 q1.8 -0.2 1.6 -3.4 l-0.1 -5.2 Z" />
+        <path d="M-4.4 7 q-0.4 8 1.2 9.4 q1.8 -0.2 1.6 -3.6 l-0.1 -5.8 Z" />
+        <path d="M0.8 7 q-0.4 8 1.2 9.4 q1.8 -0.2 1.6 -3.6 l-0.1 -5.8 Z" />
+        <path d="M6 6 q-0.4 7 1.2 8.6 q1.8 -0.2 1.6 -3.4 l-0.1 -5.2 Z" />
       </g>
-      {/* 手の甲（丸い）*/}
-      <path d="M-12 13 Q-12 4 0 4 Q12 4 12 13 Q12 21 6 24 L-6 24 Q-12 21 -12 13 Z" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1.2" />
-      {/* 親指（内側に回す）*/}
-      <path d="M11 12 Q17 12 17 17 Q17 21 12 21 Q9 20 9 16 Z" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1" />
-      {/* 影（1段）*/}
-      <path d="M-9 19 Q0 25 9 19 Q9 23 0 24 Q-9 23 -9 19 Z" fill="#d3a575" opacity=".85" />
+      {/* 関節の陰（1段）*/}
+      <path d="M-10 5.5 Q0 8.5 10 5.5 Q10 8 0 8.6 Q-10 8 -10 5.5 Z" fill="#d3a575" opacity=".85" />
     </g>
   );
 }
 function SwHands() {
   return (
-    <svg viewBox="0 0 130 44" fill="none" aria-hidden>
-      <SwHand x={34} />
-      <SwHand x={96} flip />
+    <svg viewBox="0 0 74 30" fill="none" aria-hidden>
+      {/* 左右は鏡像にせず、高さと角度をわずかに変える */}
+      <SwHand x={19} y={4} rot={-6} />
+      <SwHand x={55} y={1} rot={7} flip />
     </svg>
   );
 }
@@ -184,7 +174,6 @@ export function SwipeDeck({
   const [leaving, setLeaving] = useState(null); // { dir, sx, sy, srot }
   const [burst, setBurst] = useState(0);
   const [pressed, setPressed] = useState(false); // 頼む：朱色の丸印を押す（stack）
-  const [pinWobble, setPinWobble] = useState(0);
   const [focusSide, setFocusSide] = useState(null); // reduced-motion：ボタンフォーカスで文字表示
   const [screenW, setScreenW] = useState(0);
   const [phase, setPhase] = useState(stack ? "intro" : "live"); // intro | live | outro
@@ -242,7 +231,6 @@ export function SwipeDeck({
 
     const fly = () => {
       setLeaving({ dir: liked ? 1 : -1, sx, sy, srot });
-      if (liked && stack) setPinWobble((w) => w + 1);
       const dur = isRed ? 250 : stack ? (liked ? 450 : 500) : liked ? 350 : 500;
       setTimeout(() => afterLeaveRef.current(), dur);
     };
@@ -354,13 +342,18 @@ export function SwipeDeck({
 
   const next = cards[index + 1] ?? (loop ? cards[0] : undefined);
 
-  // 丸ピンの色（カテゴリを示す場合のみ。背景では色分けしない）
-  const pinColor = pinColorFor ? pinColorFor(current) : null;
-
   // 大将の表情（スワイプ判定に連動）：頼む=yes／見送り=no／通常=idle
   const masterExpr = leaving
     ? leaving.dir > 0 ? "yes" : "no"
     : drag.x > 26 ? "yes" : drag.x < -26 ? "no" : "idle";
+  // 顔の動き（reduced-motionでは動かさず表情のみ）：
+  //  スワイプ中=傾ける／頼む確定=大きく顔を出す／見送り確定=札の裏に引っ込む
+  let masterFig = "";
+  if (!isRed) {
+    if (leaving && masterExpr === "yes") masterFig = "translateY(-9px)";
+    else if (leaving && masterExpr === "no") masterFig = "translateY(20px)";
+    else if (drag.x) masterFig = `rotate(${Math.max(-7, Math.min(7, drag.x / 16))}deg)`;
+  }
 
   return (
     <>
@@ -376,10 +369,12 @@ export function SwipeDeck({
         {controls && <p className="sd-count mb-4 text-sm font-black">のこり{toKanjiNum(remaining)}枚</p>}
 
         <div className={`relative w-full max-w-sm select-none ${heightClass}`} style={{ opacity: phase === "outro" ? 0 : 1 }}>
-          {/* 大将（中央上の空白・札より奥／弱くぼかす／表情がスワイプに連動）*/}
+          {/* 大将の顔（札より奥・わずかに暗い／目から上だけ札の上端から覗く）*/}
           {stack && (
             <div className="sw-master" data-expr={masterExpr} aria-hidden>
-              <SwMaster expr={masterExpr} />
+              <div className="sw-master-fig" style={{ transform: masterFig || undefined }}>
+                <SwMaster expr={masterExpr} />
+              </div>
             </div>
           )}
           {stack ? (
@@ -426,18 +421,11 @@ export function SwipeDeck({
             {pressed && <span className={`sd-press ${isRed ? "still" : ""}`} aria-hidden />}
           </div>
 
-          {/* 動かない画鋲（短冊が引っ張られている表現／頼むで揺れる・色はカテゴリ）*/}
+          {/* 大将が札の上端に落とす影（札より手前・指より奥）*/}
+          {stack && <div className="sw-mshadow" data-expr={masterExpr} aria-hidden />}
+          {/* 大将の指（札の上端を掴む・札より手前）*/}
           {stack && (
-            <span
-              key={`pin-${pinWobble}`}
-              className={`sd-pin ${pinWobble > 0 ? "wob" : ""}`}
-              style={pinColor ? { background: pinColor } : undefined}
-              aria-hidden
-            />
-          )}
-          {/* 大将の両手（札の上端を掴む・札より手前）*/}
-          {stack && (
-            <div className="sw-hands" aria-hidden>
+            <div className="sw-hands" data-expr={masterExpr} aria-hidden>
               <SwHands />
             </div>
           )}

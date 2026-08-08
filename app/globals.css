@@ -767,21 +767,27 @@ body {
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 46%);
   mask-image: linear-gradient(180deg, transparent 0%, #000 46%); }
 
-/* 大将（中央上・札より奥・弱いぼかし。表情で軽くうなずく/傾ける）*/
-.sw-master { position: absolute; left: 50%; top: -3%; width: 78px; z-index: 1; pointer-events: none;
-  filter: blur(.7px); transform: translate(-50%, 0); transition: transform .25s ease; }
+/* 大将の顔（札より奥・わずかに暗い・弱いぼかし）。目から上だけ札の上端から覗く位置。
+   外側でゆっくり上下に覗く（±1.5px/5s）、内側(fig)で傾き・うなずき・引っ込みを担う */
+.sw-master { position: absolute; left: 50%; margin-left: -32px; top: 3.6%; width: 64px; z-index: 1;
+  pointer-events: none; filter: blur(.6px) brightness(.9); animation: swPeek 5s ease-in-out infinite; }
 .sw-master svg { width: 100%; display: block; }
-.sw-master[data-expr="yes"] { transform: translate(-50%, 3px); }   /* 満足そうにうなずく */
-.sw-master[data-expr="no"] { transform: translate(-50%, 0) rotate(-4deg); } /* 少し残念そうに傾く */
-/* 大将の両手：札の上端を掴む（札より手前）*/
-.sw-hands { position: absolute; left: 50%; top: 12%; width: 118px; transform: translateX(-50%);
-  z-index: 16; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+.sw-master-fig { transform-origin: 50% 100%; transition: transform .28s ease; }
+@keyframes swPeek { 0%,100% { transform: translateY(1.5px); } 50% { transform: translateY(-1.5px); } }
+/* 大将が札の上端に落とす影（札より手前・指より奥）*/
+.sw-mshadow { position: absolute; left: 50%; top: 13.5%; width: 86px; height: 13px; transform: translateX(-50%);
+  z-index: 15; border-radius: 50%; background: rgba(20,12,8,.32); filter: blur(5px); pointer-events: none; }
+/* 大将の指：札の上端を掴む（札より手前・顔の幅の範囲内・目より下）*/
+.sw-hands { position: absolute; left: 50%; top: 15.2%; width: 60px; transform: translateX(-50%);
+  z-index: 16; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,.28)); }
 .sw-hands svg { width: 100%; display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   .sw-steam { animation: none; opacity: 0; }
   .sw-glow { animation: none; opacity: 1; }
-  .sw-master { transition: none; transform: translate(-50%, 0) !important; }
+  /* 上下の動きは停止・表情の切り替えのみ（figの移動はJS側でも無効化）*/
+  .sw-master { animation: none; transform: translateY(0); }
+  .sw-master-fig { transition: none; }
 }
 
 /* ── スワイプ画面のUI（木札ボタン・のれん帯・紙の演出）── */
