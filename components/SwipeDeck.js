@@ -35,63 +35,97 @@ function behindCountFor(remaining) {
   return 0;
 }
 
-// 大将の小さな胸像（スワイプ判定で表情が変わる・線画／札より奥・弱いぼかし）
-//  yes=頼む(満足そうにうなずく) / no=見送り(少し残念) / idle=腕を組んで見ている
+// 大将の胸像（スワイプ待機画面 CookWait と同じ顔＝線画・鉢巻・眼鏡・細い髭）。
+//  スワイプ判定で眉と口だけ変える： yes=頼む(満足) / no=見送り(残念) / idle=通常
+//  ※顔のパーツ座標は CookWait.js の顔グループと同一（同じ大将に見えるように）
 function SwMaster({ expr }) {
   const yes = expr === "yes";
   const no = expr === "no";
   return (
-    <svg viewBox="0 0 80 94" fill="none" aria-hidden>
-      {/* 法被（肩）*/}
-      <path d="M12 80 Q40 66 68 80 L72 94 L8 94 Z" fill="#223a58" stroke="#16283d" strokeWidth="1.5" strokeLinejoin="round" />
-      {/* 襟 */}
-      <path d="M34 74 L40 88 L46 74 Z" fill="#e9ddc4" />
-      {/* 腕組み（袖・胸の前でクロス）*/}
-      <path d="M22 82 L50 93" stroke="#26456a" strokeWidth="9" strokeLinecap="round" />
-      <path d="M58 82 L30 93" stroke="#223a58" strokeWidth="9" strokeLinecap="round" />
-      {/* 首 */}
-      <rect x="35.5" y="59" width="9" height="10" fill="#ecc9a0" />
-      {/* 顔 */}
-      <ellipse cx="40" cy="38" rx="19" ry="20" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1.4" />
+    <svg viewBox="80 66 80 110" fill="none" aria-hidden>
+      {/* ── 胴（法被・腕組み）※待機画面は鍋だが、ここでは腕を組んで見ている ── */}
+      <path d="M88,137 Q120,127 152,137 L158,176 L82,176 Z" fill="#223a58" stroke="#16283d" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M113,133 L120,151 L127,133 Z" fill="#e9ddc4" />
+      <path d="M98,151 L138,176" stroke="#26456a" strokeWidth="12" strokeLinecap="round" />
+      <path d="M142,151 L102,176" stroke="#223a58" strokeWidth="12" strokeLinecap="round" />
+      <path d="M114,129 q6,3 12,0 l0,6 q-6,3 -12,0 Z" fill="#ecc9a0" />
+
+      {/* ── 顔（CookWait と同一）── */}
+      {/* 髪 */}
+      <path d="M97,88 Q95,75 108,72 Q120,70 132,72 Q145,75 143,88 Q120,81 97,88 Z" fill="#2a2520" />
+      {/* 耳 */}
+      <path d="M98,102 Q93,105 97,112 Q99,108 100,104 Z" fill="#ecc9a0" />
+      <path d="M142,102 Q147,105 143,112 Q141,108 140,104 Z" fill="#ecc9a0" />
+      <path d="M97,105 q2,2 1,5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+      <path d="M143,105 q-2,2 -1,5" fill="none" stroke="#2a2520" strokeWidth="0.8" strokeLinecap="round" />
+      {/* 肌 */}
+      <path d="M99,88 C96,96 97,101 97,104 C97,110 99,113 100,116 C101,121 103,124 106,126 C110,129 116,131 120,131 C124,131 130,129 134,126 C137,124 139,121 140,116 C141,113 143,110 143,104 C143,101 144,96 141,88 C133,84 107,84 99,88 Z" fill="#ecc9a0" />
+      {/* 影 */}
+      <path d="M105,124 Q112,129.5 120,131 Q128,129.5 135,124 Q136,126 133,128 Q127,130.5 120,130 Q113,130.5 107,128 Q104,126 105,124 Z" fill="#d3a575" />
       {/* 顎の細い髭輪郭 */}
-      <path d="M26 44 Q28 54 40 57 Q52 54 54 44" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
-      {/* 鉢巻＋結び目 */}
-      <path d="M22 26 Q40 18 58 26 L58 31 Q40 24 22 31 Z" fill="#d23a2c" />
-      <path d="M57 27 l8 -3 l-2 5 l6 2 l-7 2 l1 -4 Z" fill="#d23a2c" />
-      {/* 眉 */}
+      <path d="M96.5,104 Q98,111 99,116 Q100.5,122 105,126 Q112,130.5 120,132 Q128,130.5 135,126 Q139.5,122 141,116 Q142,111 143.5,104 L142,104 Q140.5,111 139,116 Q137.5,121 134,124 Q127,128.5 120,129.6 Q113,128.5 106,124 Q102.5,121 101,116 Q99.5,111 98,104 Z" fill="#2a2520" />
+      {/* 鉢巻 */}
+      <path d="M96,86 Q120,77 144,86 L144,90 Q120,82 96,90 Z" fill="#d23a2c" />
+      <path d="M96,90 Q120,82 144,90 L144,92.5 Q120,85 96,92.5 Z" fill="#a82418" />
+      <path d="M143,86 l9,-3 l-2,5 l7,3 l-8,2 l1,-4 Z" fill="#d23a2c" />
+      <path d="M143,89 l8,1 l-7,3 Z" fill="#a82418" />
+      <path d="M104,85 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+      <path d="M118,83 q1,3 0,6" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+      <path d="M132,84 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
+      {/* 眉（表情で変化）*/}
       {no ? (
         <>
-          <path d="M28 31 L36 35" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M52 31 L44 35" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M103,96.5 Q110,93 118,91.5 Q111,95.5 103,96.5 Z" fill="#2a2520" />
+          <path d="M122,91.5 Q130,93 137,96.5 Q130,94.5 122,91.5 Z" fill="#2a2520" />
+        </>
+      ) : yes ? (
+        <>
+          <path d="M103,94.5 Q110,89 118,91 Q111,95 103,94.5 Z" fill="#2a2520" />
+          <path d="M122,91 Q130,89 137,92.5 Q130,94.3 122,91 Z" fill="#2a2520" />
         </>
       ) : (
         <>
-          <path d="M28 33 Q32 30 37 32" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" fill="none" />
-          <path d="M43 32 Q48 30 52 33" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          <path d="M103,96 Q110,90 118,92.5 Q111,96.5 103,96 Z" fill="#2a2520" />
+          <path d="M122,92.5 Q130,90 137,94 Q130,95.8 122,92.5 Z" fill="#2a2520" />
         </>
       )}
-      {/* 目 */}
-      {yes ? (
-        <>
-          <path d="M30 40 Q34 37 38 40" stroke="#2a2520" strokeWidth="2" fill="none" strokeLinecap="round" />
-          <path d="M42 40 Q46 37 50 40" stroke="#2a2520" strokeWidth="2" fill="none" strokeLinecap="round" />
-        </>
-      ) : (
-        <>
-          <circle cx="34" cy="40" r="2.1" fill="#2a2520" />
-          <circle cx="46" cy="40" r="2.1" fill="#2a2520" />
-        </>
-      )}
+      {/* 左目 */}
+      <ellipse cx="111" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
+      <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
+      <circle cx="109.6" cy="102" r="1" fill="#f0e6d2" />
+      <circle cx="112" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
+      {/* 右目 */}
+      <ellipse cx="129" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
+      <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
+      <circle cx="127.6" cy="102" r="1" fill="#f0e6d2" />
+      <circle cx="130" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
       {/* 鼻 */}
-      <path d="M40 42 q-1.5 4 0 5.5" stroke="#2a2520" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      {/* 口 */}
+      <path d="M120.4,103.5 Q118.7,108 120.1,110.2 Q121.4,111 122.6,110.1" fill="none" stroke="#2a2520" strokeWidth="1.1" strokeLinecap="round" />
+      <circle cx="118.4" cy="110.1" r="0.7" fill="#2a2520" />
+      {/* 頬 */}
+      <path d="M101,110 Q105,107.5 109,110 Q106,113.5 105,113.5 Q102,113.5 101,110 Z" fill="#e58a72" />
+      <path d="M131,110 Q135,107.5 139,110 Q136,113.5 135,113.5 Q132,113.5 131,110 Z" fill="#e58a72" />
+      {/* 口（表情で変化）*/}
       {yes ? (
-        <path d="M33 50 Q40 55 47 50" stroke="#2a2520" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+        <path d="M109,116.5 Q120,124 131,116.5 Q120,120.6 109,116.5 Z" fill="#2a2520" />
       ) : no ? (
-        <path d="M34 51 Q40 47 46 51" stroke="#2a2520" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+        <path d="M112,120 Q120,117 128,120 Q120,119.2 112,120 Z" fill="#2a2520" />
       ) : (
-        <path d="M35 51 h10" stroke="#2a2520" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M111,117 Q120,122 129,117 Q120,119.4 111,117 Z" fill="#2a2520" />
       )}
+      {/* 笑い皺 */}
+      <path d="M102.4,105.4 q-2,2.5 -1,4.6" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+      <path d="M103.6,106.8 q-1.8,1.7 -0.8,3.2" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+      <path d="M137.6,105.4 q2,2.5 1,4.6" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
+      <path d="M136.4,106.8 q1.8,1.7 0.8,3.2" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
+      {/* 眼鏡 */}
+      <path d="M104,102.6 Q101,101.4 98.6,101.7" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M136,102.6 Q139,101.4 141.4,101.7" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
+      <ellipse cx="111" cy="103" rx="7" ry="5.8" fill="none" stroke="#2a2520" strokeWidth="1.3" />
+      <ellipse cx="129" cy="103" rx="7" ry="5.8" fill="none" stroke="#2a2520" strokeWidth="1.3" />
+      <path d="M118,102 Q120,99.8 122,102" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M106.2,100.6 L108.6,98.4" fill="none" stroke="#f0e6d2" strokeWidth="1" strokeLinecap="round" />
+      <path d="M124.2,100.6 L126.6,98.4" fill="none" stroke="#f0e6d2" strokeWidth="1" strokeLinecap="round" />
     </svg>
   );
 }
