@@ -129,17 +129,22 @@ function StallWall() {
     <div className="sw-wall" aria-hidden>
       {/* 遠景：奥の壁（ぼかした弱い木目）*/}
       <div className="sw-back" />
-      {/* 遠景：提灯（ぼかし・手前ほど大/明、奥ほど小/暗）*/}
-      <span className="sw-lantern a" />
-      <span className="sw-lantern b" />
-      <span className="sw-lantern c" />
+      {/* 遠景：提灯（トップと同じ本体・骨線・房。奥なので小さく強めにぼかす・左右非対称）*/}
+      <span className="ymt-lantern sw-lan" style={{ top: "1%", left: "11%", transform: "scale(.5)", filter: "blur(2px)" }}>
+        <span className="cord" />
+        <span className="paper" />
+      </span>
+      <span className="ymt-lantern sw-lan" style={{ top: "8%", right: "14%", transform: "scale(.34)", filter: "blur(3px) brightness(.82)" }}>
+        <span className="cord" />
+        <span className="paper" />
+      </span>
       {/* 遠景：提灯の暖色光（上部を照らす）*/}
       <div className="sw-glow" />
       {/* 湯気（札の背後・2〜3筋・非常にゆっくり）*/}
       <span className="sw-steam s1" />
       <span className="sw-steam s2" />
       <span className="sw-steam s3" />
-      {/* 中景：カウンター天板（画面下部・手前へ迫り出す）*/}
+      {/* 中景：カウンター天板（画面下部・手前へ迫り出す・奥へ溶ける）*/}
       <div className="sw-counter" />
     </div>
   );

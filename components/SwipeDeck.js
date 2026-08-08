@@ -35,6 +35,67 @@ function behindCountFor(remaining) {
   return 0;
 }
 
+// 大将の小さな胸像（スワイプ判定で表情が変わる・線画／札より奥・弱いぼかし）
+//  yes=頼む(満足そうにうなずく) / no=見送り(少し残念) / idle=腕を組んで見ている
+function SwMaster({ expr }) {
+  const yes = expr === "yes";
+  const no = expr === "no";
+  return (
+    <svg viewBox="0 0 80 94" fill="none" aria-hidden>
+      {/* 法被（肩）*/}
+      <path d="M12 80 Q40 66 68 80 L72 94 L8 94 Z" fill="#223a58" stroke="#16283d" strokeWidth="1.5" strokeLinejoin="round" />
+      {/* 襟 */}
+      <path d="M34 74 L40 88 L46 74 Z" fill="#e9ddc4" />
+      {/* 腕組み（袖・胸の前でクロス）*/}
+      <path d="M22 82 L50 93" stroke="#26456a" strokeWidth="9" strokeLinecap="round" />
+      <path d="M58 82 L30 93" stroke="#223a58" strokeWidth="9" strokeLinecap="round" />
+      {/* 首 */}
+      <rect x="35.5" y="59" width="9" height="10" fill="#ecc9a0" />
+      {/* 顔 */}
+      <ellipse cx="40" cy="38" rx="19" ry="20" fill="#ecc9a0" stroke="#2a2520" strokeWidth="1.4" />
+      {/* 顎の細い髭輪郭 */}
+      <path d="M26 44 Q28 54 40 57 Q52 54 54 44" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
+      {/* 鉢巻＋結び目 */}
+      <path d="M22 26 Q40 18 58 26 L58 31 Q40 24 22 31 Z" fill="#d23a2c" />
+      <path d="M57 27 l8 -3 l-2 5 l6 2 l-7 2 l1 -4 Z" fill="#d23a2c" />
+      {/* 眉 */}
+      {no ? (
+        <>
+          <path d="M28 31 L36 35" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M52 31 L44 35" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" />
+        </>
+      ) : (
+        <>
+          <path d="M28 33 Q32 30 37 32" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+          <path d="M43 32 Q48 30 52 33" stroke="#2a2520" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+        </>
+      )}
+      {/* 目 */}
+      {yes ? (
+        <>
+          <path d="M30 40 Q34 37 38 40" stroke="#2a2520" strokeWidth="2" fill="none" strokeLinecap="round" />
+          <path d="M42 40 Q46 37 50 40" stroke="#2a2520" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </>
+      ) : (
+        <>
+          <circle cx="34" cy="40" r="2.1" fill="#2a2520" />
+          <circle cx="46" cy="40" r="2.1" fill="#2a2520" />
+        </>
+      )}
+      {/* 鼻 */}
+      <path d="M40 42 q-1.5 4 0 5.5" stroke="#2a2520" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      {/* 口 */}
+      {yes ? (
+        <path d="M33 50 Q40 55 47 50" stroke="#2a2520" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      ) : no ? (
+        <path d="M34 51 Q40 47 46 51" stroke="#2a2520" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      ) : (
+        <path d="M35 51 h10" stroke="#2a2520" strokeWidth="1.8" strokeLinecap="round" />
+      )}
+    </svg>
+  );
+}
+
 // カードの山をスワイプで消化する共通コンポーネント。
 //  右＝「頼む」／左＝「見送り」。矢印キー対応。連打ロック。
 //  stack=true（短冊）：束の厚み・ピンから引っ張られる手応え・頼む＝右上へ飛ぶ／見送り＝裏返り左下へ。
@@ -230,6 +291,11 @@ export function SwipeDeck({
   // 丸ピンの色（カテゴリを示す場合のみ。背景では色分けしない）
   const pinColor = pinColorFor ? pinColorFor(current) : null;
 
+  // 大将の表情（スワイプ判定に連動）：頼む=yes／見送り=no／通常=idle
+  const masterExpr = leaving
+    ? leaving.dir > 0 ? "yes" : "no"
+    : drag.x > 26 ? "yes" : drag.x < -26 ? "no" : "idle";
+
   return (
     <>
       {burst > 0 && (
@@ -244,6 +310,12 @@ export function SwipeDeck({
         {controls && <p className="sd-count mb-4 text-sm font-black">のこり{toKanjiNum(remaining)}枚</p>}
 
         <div className={`relative w-full max-w-sm select-none ${heightClass}`} style={{ opacity: phase === "outro" ? 0 : 1 }}>
+          {/* 大将（中央上の空白・札より奥／弱くぼかす／表情がスワイプに連動）*/}
+          {stack && (
+            <div className="sw-master" data-expr={masterExpr} aria-hidden>
+              <SwMaster expr={masterExpr} />
+            </div>
+          )}
           {stack ? (
             behindNodes
           ) : (

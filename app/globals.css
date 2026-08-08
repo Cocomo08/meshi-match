@@ -727,12 +727,8 @@ body {
   background:
     repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 1px, transparent 1px 23px),
     repeating-linear-gradient(90deg, rgba(255,220,180,.028) 0 1px, transparent 1px 41px); }
-/* 遠景：提灯（簡略・強くぼかす／手前ほど大・明、奥ほど小・暗）*/
-.sw-lantern { position: absolute; z-index: 0; pointer-events: none; border-radius: 50% / 44%;
-  background: radial-gradient(120% 80% at 50% 42%, #ffb457, #e0663f 42%, #9c2a1a 80%); }
-.sw-lantern.a { top: 4%; left: 13%; width: 46px; height: 64px; opacity: .7; filter: blur(2.5px); }
-.sw-lantern.b { top: 7%; right: 15%; width: 33px; height: 47px; opacity: .5; filter: blur(3.5px); }
-.sw-lantern.c { top: 2%; left: 46%; width: 23px; height: 33px; opacity: .32; filter: blur(4.5px); }
+/* 遠景：提灯はトップの .ymt-lantern を流用（奥に置くため小さく＋強めのぼかしはインラインで指定）*/
+.sw-lan { z-index: 0; }
 /* 遠景：提灯から滲む暖色光（上部を照らす・ごくゆっくり揺らぐ）*/
 .sw-glow { position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background:
@@ -755,8 +751,9 @@ body {
   60%  { opacity: .055; transform: translateY(-70px) scaleX(1.15); }
   100% { opacity: 0;   transform: translateY(-150px) scaleX(1.6); }
 }
-/* 中景：カウンター天板（画面下部・遠景より明るく彩度高め・木目20%・上端に明るい1px）*/
-.sw-counter { position: absolute; left: 0; right: 0; bottom: 0; height: 14%; z-index: 0;
+/* 中景：カウンター天板（画面下部）。手前(下)ほど明るく、奥(上)へ向けて暗く溶かして
+   背景との直線的な境界をなくす。マスクで上端をフェードし継ぎ目を消す。木目20%。*/
+.sw-counter { position: absolute; left: 0; right: 0; bottom: 0; height: 17%; z-index: 0;
   background:
     linear-gradient(90deg, transparent 6.4%, rgba(0,0,0,.20) 6.7%, transparent 7.2%),
     linear-gradient(90deg, transparent 17.3%, rgba(0,0,0,.16) 17.6%, transparent 18.2%),
@@ -765,12 +762,22 @@ body {
     linear-gradient(90deg, transparent 58.8%, rgba(0,0,0,.20) 59.2%, transparent 59.9%),
     linear-gradient(90deg, transparent 72.6%, rgba(0,0,0,.17) 72.9%, transparent 73.5%),
     linear-gradient(90deg, transparent 87.4%, rgba(0,0,0,.21) 87.8%, transparent 88.5%),
-    linear-gradient(180deg, #5a3c24 0%, #4a2f1c 42%, #3a2416 100%);
-  box-shadow: inset 0 1px 0 rgba(255,201,140,.5), inset 0 8px 12px -10px rgba(255,190,120,.2); }
+    /* 奥(上)=壁色に近い暗さ → 手前(下)=明るい暖色 */
+    linear-gradient(180deg, #2a1e15 0%, #3f2a19 34%, #533620 70%, #603e24 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 46%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 46%); }
+
+/* 大将（中央上・札より奥・弱いぼかし。表情で軽くうなずく/傾ける）*/
+.sw-master { position: absolute; left: 50%; top: 1%; width: 78px; z-index: 1; pointer-events: none;
+  filter: blur(.7px); transform: translate(-50%, 0); transition: transform .25s ease; }
+.sw-master svg { width: 100%; display: block; }
+.sw-master[data-expr="yes"] { transform: translate(-50%, 3px); }   /* 満足そうにうなずく */
+.sw-master[data-expr="no"] { transform: translate(-50%, 0) rotate(-4deg); } /* 少し残念そうに傾く */
 
 @media (prefers-reduced-motion: reduce) {
   .sw-steam { animation: none; opacity: 0; }
   .sw-glow { animation: none; opacity: 1; }
+  .sw-master { transition: none; transform: translate(-50%, 0) !important; }
 }
 
 /* ── スワイプ画面のUI（木札ボタン・のれん帯・紙の演出）── */
