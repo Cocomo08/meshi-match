@@ -616,10 +616,11 @@ body {
     radial-gradient(circle at 28% 90%, rgba(160,130,50,.05), transparent 9%),
     repeating-linear-gradient(90deg, rgba(120,95,40,.05) 0 1px, transparent 1px 6px),
     repeating-linear-gradient(84deg, rgba(120,95,40,.03) 0 1px, transparent 1px 4px);
-  /* ベベル＋下端の反り（浮いている）＋厚み1pxの明暗 */
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(120,95,40,.35),
-    inset 1px 0 0 rgba(255,255,255,.3), inset -1px 0 0 rgba(120,95,40,.18),
-    inset 0 -6px 7px -4px rgba(90,70,20,.20), 0 9px 13px -6px rgba(0,0,0,.5);
+  /* 空間に馴染ませる：上端に提灯の暖色光／下端をわずかに暗く／真下やや右へ落ち影(35%)*/
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 1px 0 0 rgba(255,255,255,.22), inset -1px 0 0 rgba(120,95,40,.18),
+    inset 0 11px 13px -10px rgba(255,201,140,.55),
+    inset 0 -13px 13px -10px rgba(60,40,20,.42),
+    4px 9px 15px -5px rgba(0,0,0,.35);
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   padding: 9% 0 6%; gap: 3%; }
 /* 料理のライン画（札幅の約58%・文字とぶつからないよう上に配置）*/
@@ -694,10 +695,10 @@ body {
 
 /* 動かない画鋲（束の上・引っ張られる表現／頼むで揺れる）*/
 .sd-pin { position: absolute; top: calc(10% - 9px); left: 50%; transform: translateX(-50%); width: 17px; height: 17px;
-  border-radius: 50%; background: #e0483b; border: 1px solid #9e1b14; z-index: 20; transform-origin: 50% 50%;
-  box-shadow: inset 0 2px 2px rgba(255,255,255,.55), inset 0 -3px 3px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.4); }
+  border-radius: 50%; background: #e0483b; border: 1px solid rgba(0,0,0,.35); z-index: 20; transform-origin: 50% 50%;
+  box-shadow: inset 0 2px 2px rgba(255,255,255,.5), inset 0 -3px 3px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.4); }
 .sd-pin::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%;
-  transform: translate(-50%,-50%); background: #b3241a; box-shadow: inset 0 1px 1px rgba(0,0,0,.5); }
+  transform: translate(-50%,-50%); background: rgba(0,0,0,.3); box-shadow: inset 0 1px 1px rgba(0,0,0,.5); }
 .sd-pin.wob { animation: sdPinWob .5s ease; }
 @keyframes sdPinWob {
   0%   { transform: translateX(-50%) rotate(0deg); }
@@ -715,23 +716,62 @@ body {
 }
 
 /* ============================================================
-   屋台の内壁（スワイプ画面の背景・縦板＋上からの提灯光）
-   低彩度の茶と黒のみ／グラデーションは光の表現だけ／画像なし
+   スワイプ画面の背景：のれん越しに見た店内（3層／CSSのみ・画像なし）
+   ① 手前=札とボタン（別要素） ② 中景=カウンター天板 ③ 遠景=店内の奥
+   暖色のみ・低彩度・奥ほど暗くぼかす。最暗部でも #1A1210 より暗くしない。
    ============================================================ */
-.sw-wall { position: absolute; inset: 0; z-index: 0; overflow: hidden; background-color: #18110d; }
-/* 縦板を横に並べる（継ぎ目＝縦線）*/
-.sw-planks { position: absolute; inset: 0; display: flex; }
-.sw-plank { position: relative; height: 100%; flex: 0 0 auto; background-color: #241a12;
-  border-left: 1px solid rgba(0,0,0,.5); box-shadow: inset -1px 0 0 rgba(255,255,255,.025); }
-/* 薄い木目（縦線・線なのでグラデーション不使用）*/
-.sw-plank::before, .sw-plank::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,.10); }
-.sw-plank::before { left: 33%; }
-.sw-plank::after { left: 69%; opacity: .6; }
-/* 提灯の光（上＝明るい暖色→下＝暗い／短冊まわりだけ少し明るく）*/
-.sw-light { position: absolute; inset: 0; pointer-events: none;
+.sw-wall { position: absolute; inset: 0; z-index: 0; overflow: hidden;
+  background: radial-gradient(130% 96% at 50% 4%, #3a2a20 0%, #2e211a 38%, #241a13 70%, #1a1210 100%); }
+/* 遠景：奥の壁の弱い木目（強くぼかして「遠く」を表現）*/
+.sw-back { position: absolute; inset: -8px; z-index: 0; opacity: .5; filter: blur(2.5px);
   background:
-    radial-gradient(58% 40% at 50% 40%, rgba(255,200,140,.13), transparent 72%),
-    linear-gradient(180deg, rgba(255,186,116,.20) 0%, rgba(255,150,86,.06) 24%, rgba(0,0,0,0) 48%, rgba(0,0,0,.42) 100%); }
+    repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 1px, transparent 1px 23px),
+    repeating-linear-gradient(90deg, rgba(255,220,180,.028) 0 1px, transparent 1px 41px); }
+/* 遠景：提灯（簡略・強くぼかす／手前ほど大・明、奥ほど小・暗）*/
+.sw-lantern { position: absolute; z-index: 0; pointer-events: none; border-radius: 50% / 44%;
+  background: radial-gradient(120% 80% at 50% 42%, #ffb457, #e0663f 42%, #9c2a1a 80%); }
+.sw-lantern.a { top: 4%; left: 13%; width: 46px; height: 64px; opacity: .7; filter: blur(2.5px); }
+.sw-lantern.b { top: 7%; right: 15%; width: 33px; height: 47px; opacity: .5; filter: blur(3.5px); }
+.sw-lantern.c { top: 2%; left: 46%; width: 23px; height: 33px; opacity: .32; filter: blur(4.5px); }
+/* 遠景：提灯から滲む暖色光（上部を照らす・ごくゆっくり揺らぐ）*/
+.sw-glow { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(58% 32% at 20% 5%, rgba(255,178,110,.30), transparent 70%),
+    radial-gradient(44% 26% at 82% 8%, rgba(255,166,98,.20), transparent 70%),
+    linear-gradient(180deg, rgba(255,170,100,.13) 0%, transparent 34%);
+  animation: swGlow 7s ease-in-out infinite; }
+@keyframes swGlow { 0%,100% { opacity: .92; } 50% { opacity: 1; } }
+/* 湯気（札の背後・白10%以下・大きくぼかし上へ広がって消える・1周期14s）*/
+.sw-steam { position: absolute; bottom: 33%; width: 26px; height: 150px; border-radius: 50%; z-index: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0));
+  filter: blur(10px); opacity: 0; transform-origin: bottom;
+  animation: swSteam 14s ease-in-out infinite; }
+.sw-steam.s1 { left: 38%; animation-delay: 0s; }
+.sw-steam.s2 { left: 56%; height: 130px; animation-delay: 5s; }
+.sw-steam.s3 { left: 48%; height: 172px; animation-delay: 9s; }
+@keyframes swSteam {
+  0%   { opacity: 0;   transform: translateY(20px) scaleX(.7); }
+  22%  { opacity: .09; }
+  60%  { opacity: .055; transform: translateY(-70px) scaleX(1.15); }
+  100% { opacity: 0;   transform: translateY(-150px) scaleX(1.6); }
+}
+/* 中景：カウンター天板（画面下部・遠景より明るく彩度高め・木目20%・上端に明るい1px）*/
+.sw-counter { position: absolute; left: 0; right: 0; bottom: 0; height: 14%; z-index: 0;
+  background:
+    linear-gradient(90deg, transparent 6.4%, rgba(0,0,0,.20) 6.7%, transparent 7.2%),
+    linear-gradient(90deg, transparent 17.3%, rgba(0,0,0,.16) 17.6%, transparent 18.2%),
+    linear-gradient(90deg, transparent 31.5%, rgba(0,0,0,.22) 31.9%, transparent 32.6%),
+    linear-gradient(90deg, transparent 45.2%, rgba(0,0,0,.15) 45.5%, transparent 46%),
+    linear-gradient(90deg, transparent 58.8%, rgba(0,0,0,.20) 59.2%, transparent 59.9%),
+    linear-gradient(90deg, transparent 72.6%, rgba(0,0,0,.17) 72.9%, transparent 73.5%),
+    linear-gradient(90deg, transparent 87.4%, rgba(0,0,0,.21) 87.8%, transparent 88.5%),
+    linear-gradient(180deg, #5a3c24 0%, #4a2f1c 42%, #3a2416 100%);
+  box-shadow: inset 0 1px 0 rgba(255,201,140,.5), inset 0 8px 12px -10px rgba(255,190,120,.2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-steam { animation: none; opacity: 0; }
+  .sw-glow { animation: none; opacity: 1; }
+}
 
 /* ── スワイプ画面のUI（木札ボタン・のれん帯・紙の演出）── */
 /* 操作ボタン＝横長の木札（ベベル・押下で反転＋2px沈む）*/

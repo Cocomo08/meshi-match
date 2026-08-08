@@ -114,31 +114,33 @@ function NightStall() {
   );
 }
 
-// 屋台の内壁：不揃いな縦板（幅を大きくばらけさせる）＋板ごとの微妙な明度差（±5%）。決め打ちで安定。
-const PLANKS = [
-  { w: 52, b: 3 }, { w: 104, b: -2 }, { w: 68, b: 4 }, { w: 118, b: -4 }, { w: 46, b: 2 }, { w: 88, b: -3 },
-  { w: 132, b: 1 }, { w: 60, b: 5 }, { w: 96, b: -1 }, { w: 44, b: 3 }, { w: 112, b: -5 }, { w: 74, b: 2 },
-  { w: 58, b: -3 }, { w: 126, b: 4 }, { w: 50, b: -1 }, { w: 90, b: 3 }, { w: 108, b: -4 }, { w: 64, b: 5 },
-  { w: 100, b: -2 }, { w: 48, b: 1 }, { w: 120, b: 3 }, { w: 72, b: -3 }, { w: 84, b: 2 }, { w: 56, b: -1 },
-];
+// カテゴリ→丸ピンの色（背景では色分けしない。暖色のみ）
+const CATEGORY_PIN = {
+  "和食": "#e0483b",
+  "洋食": "#d98a2b",
+  "アジア・エスニック": "#c8622a",
+  "がっつり・ごちそう": "#b23b2e",
+};
+const pinColorFor = (card) => CATEGORY_PIN[card?.category] || "#e0483b";
 
-// 低彩度の茶を板ごとにわずかに明度変化（±5%以内）。filterを使わず背景色で（軽量）。
-function plankColor(b) {
-  const s = 1 + b / 100;
-  const c = (v) => Math.max(0, Math.min(255, Math.round(v * s)));
-  return `rgb(${c(29)}, ${c(21)}, ${c(14)})`; // 基準（旧#241a12から明度-20%）
-}
-
-// スワイプ画面の背景（屋台の内壁・すべてCSS描画／画像なし）
+// スワイプ画面の背景（のれん越しに見た店内・3層：遠景／中景／手前）。すべてCSS/SVG・画像なし
 function StallWall() {
   return (
     <div className="sw-wall" aria-hidden>
-      <div className="sw-planks">
-        {PLANKS.map((p, i) => (
-          <div key={i} className="sw-plank" style={{ width: `${p.w}px`, backgroundColor: plankColor(p.b) }} />
-        ))}
-      </div>
-      <div className="sw-light" />
+      {/* 遠景：奥の壁（ぼかした弱い木目）*/}
+      <div className="sw-back" />
+      {/* 遠景：提灯（ぼかし・手前ほど大/明、奥ほど小/暗）*/}
+      <span className="sw-lantern a" />
+      <span className="sw-lantern b" />
+      <span className="sw-lantern c" />
+      {/* 遠景：提灯の暖色光（上部を照らす）*/}
+      <div className="sw-glow" />
+      {/* 湯気（札の背後・2〜3筋・非常にゆっくり）*/}
+      <span className="sw-steam s1" />
+      <span className="sw-steam s2" />
+      <span className="sw-steam s3" />
+      {/* 中景：カウンター天板（画面下部・手前へ迫り出す）*/}
+      <div className="sw-counter" />
     </div>
   );
 }
@@ -758,6 +760,7 @@ export default function MeshiMatchPage() {
                   likeLabel="頼む"
                   nopeLabel="見送り"
                   stampNo="見送り"
+                  pinColorFor={pinColorFor}
                   onFinish={(liked) => update({ likes: liked, phase: "done" })}
                 />
               </div>

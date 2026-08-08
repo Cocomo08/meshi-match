@@ -49,6 +49,7 @@ export function SwipeDeck({
   loop = false,
   controls = true,
   stack = false,
+  pinColorFor = null,
   heightClass = "h-[60vh] max-h-[560px] min-h-[400px]",
 }) {
   const [index, setIndex] = useState(0);
@@ -226,12 +227,11 @@ export function SwipeDeck({
 
   const next = cards[index + 1] ?? (loop ? cards[0] : undefined);
 
+  // 丸ピンの色（カテゴリを示す場合のみ。背景では色分けしない）
+  const pinColor = pinColorFor ? pinColorFor(current) : null;
+
   return (
     <>
-      {/* 画面全体が方向に応じて色づく */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-l from-emerald-400/30 via-emerald-300/5 to-transparent" style={{ opacity: yesOp }} />
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-r from-rose-400/30 via-rose-300/5 to-transparent" style={{ opacity: noOp }} />
-
       {burst > 0 && (
         <div key={burst} aria-hidden className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
           <div className="relative flex items-center justify-center">
@@ -288,9 +288,14 @@ export function SwipeDeck({
             {pressed && <span className={`sd-press ${isRed ? "still" : ""}`} aria-hidden />}
           </div>
 
-          {/* 動かない画鋲（短冊が引っ張られている表現／頼むで揺れる）*/}
+          {/* 動かない画鋲（短冊が引っ張られている表現／頼むで揺れる・色はカテゴリ）*/}
           {stack && (
-            <span key={`pin-${pinWobble}`} className={`sd-pin ${pinWobble > 0 ? "wob" : ""}`} aria-hidden />
+            <span
+              key={`pin-${pinWobble}`}
+              className={`sd-pin ${pinWobble > 0 ? "wob" : ""}`}
+              style={pinColor ? { background: pinColor } : undefined}
+              aria-hidden
+            />
           )}
         </div>
 
