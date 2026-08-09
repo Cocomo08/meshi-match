@@ -1078,10 +1078,12 @@ export default function MeshiMatchPage() {
       {view === "room" && decidedGenre && !ticketAcked && (
         <MealTicket
           genre={getGenre(decidedGenre)?.label}
-          genres={GENRES.map((g) => g.label)}
           ticketNo={room?.ticketNo || 0}
           issuedAt={room?.issuedAt ? new Date(room.issuedAt) : undefined}
           nicknames={[myName, oppName]}
+          matchCount={matchIds.length}
+          totalCount={SWIPE_GENRE_COUNT}
+          matchedLabels={matchIds.map((id) => getGenre(id)?.label).filter(Boolean)}
           ctaLabel="お店をさがす"
           onNext={() => setTicketAcked(true)}
         />
