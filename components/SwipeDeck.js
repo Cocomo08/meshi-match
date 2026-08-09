@@ -38,7 +38,7 @@ function behindCountFor(remaining) {
 // 大将の胸像（スワイプ待機画面 CookWait と同じ顔＝線画・鉢巻・細い髭）。
 //  スワイプ判定で眉と口だけ変える： yes=頼む(満足) / no=見送り(残念) / idle=通常
 //  ※顔のパーツ座標は CookWait.js の顔グループと同一（同じ大将に見えるように）
-function SwMaster({ expr }) {
+export function SwMaster({ expr }) {
   const yes = expr === "yes";
   const no = expr === "no";
   return (
@@ -157,6 +157,9 @@ export function SwipeDeck({
   const [screenW, setScreenW] = useState(0);
   const [phase, setPhase] = useState("live"); // live | outro（入場の降下演出は廃止）
   const likedRef = useRef([]);
+  // 選定演出用の記録：頼んだ札ごとに「何枚目で出たか(order)」「スワイプまでの秒数(sec)」
+  const metaRef = useRef({});
+  const shownAtRef = useRef(null); // 今の札が表示された時刻
   const startRef = useRef(null);
   const lockRef = useRef(false);
   const hapticRef = useRef(false); // このドラッグで判定振動を1度だけ
@@ -174,6 +177,11 @@ export function SwipeDeck({
   }, []);
   const threshold = (screenW || 390) * 0.25;
 
+  // 今の札が表示された時刻を記録（スワイプ所要時間の測定用）
+  useEffect(() => {
+    shownAtRef.current = Date.now();
+  }, [index]);
+
   const afterLeave = () => {
     setLeaving(null);
     setDrag({ x: 0, y: 0, active: false });
@@ -182,9 +190,9 @@ export function SwipeDeck({
       if (loop) setIndex(0);
       else if (stack) {
         setPhase("outro");
-        setTimeout(() => onFinish(likedRef.current), isRed ? 250 : 500);
+        setTimeout(() => onFinish(likedRef.current, metaRef.current), isRed ? 250 : 500);
       } else {
-        onFinish(likedRef.current);
+        onFinish(likedRef.current, metaRef.current);
       }
     } else {
       setIndex(index + 1);
@@ -197,7 +205,13 @@ export function SwipeDeck({
     if (!current || phase !== "live" || lockRef.current) return;
     lockRef.current = true;
     const sx = drag.x, sy = drag.y * 0.25, srot = drag.x / 14;
-    if (liked) { likedRef.current.push(current.id); playLike(); } else { playNope(); }
+    if (liked) {
+      likedRef.current.push(current.id);
+      // この札を「頼む」で選んだ記録：出た順(1始まり)と、表示から確定までの秒数
+      const sec = shownAtRef.current ? Math.max(0, (Date.now() - shownAtRef.current) / 1000) : 0;
+      metaRef.current[current.id] = { order: index + 1, sec: Math.round(sec * 10) / 10 };
+      playLike();
+    } else { playNope(); }
     if (liked && !stack) setBurst((b) => b + 1); // 店スワイプはハート
     setLeaving({ dir: liked ? 1 : -1, sx, sy, srot });
     const dur = isRed ? 250 : stack ? (liked ? 450 : 500) : liked ? 350 : 500;

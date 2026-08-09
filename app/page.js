@@ -21,6 +21,7 @@ import { NorenWipe, useNorenWipe } from "@/components/NorenWipe";
 import VsIntro from "@/components/VsIntro";
 import GamePicker from "@/components/GamePicker";
 import CookWait from "@/components/CookWait";
+import MatchReveal, { chooseMatch } from "@/components/MatchReveal";
 
 // スワイプ画面の短冊枚数（1箇所で管理・あとから調整可）
 const SWIPE_GENRE_COUNT = 12;
@@ -462,6 +463,23 @@ export default function MeshiMatchPage() {
   const bothDone = opponentPresent && meDone && oppDone;
   const matches = bothDone ? (me.likes || []).filter((id) => (opp.likes || []).includes(id)) : [];
   const noMatch = bothDone && matches.length === 0;
+  // 成立ジャンルを canonical（デッキ順＝両端末で同一）に整列し、大将が選ぶ一枚を決定
+  const matchIds = bothDone
+    ? genreCards.map((c) => c.id).filter((id) => (me.likes || []).includes(id) && (opp.likes || []).includes(id))
+    : [];
+  const hostPlayer = players[ids.find((id) => players[id]?.role === "host")];
+  const guestPlayer = players[ids.find((id) => players[id]?.role === "guest")];
+  const chosen =
+    matchIds.length > 0
+      ? chooseMatch({
+          ids: matchIds,
+          likesH: hostPlayer?.likes || [],
+          likesG: guestPlayer?.likes || [],
+          metaH: hostPlayer?.likeMeta || {},
+          metaG: guestPlayer?.likeMeta || {},
+          seed: room?.round || 0,
+        })
+      : null;
   const myRole = me?.role || "host";
   const game = room?.game || null;
 
@@ -498,7 +516,7 @@ export default function MeshiMatchPage() {
     const r = room.round || 0;
     if (r !== seenRound.current) {
       seenRound.current = r;
-      if (r !== 0) update({ phase: "swiping", likes: [], storePhase: "swiping", storeLikes: [] });
+      if (r !== 0) update({ phase: "swiping", likes: [], likeMeta: {}, storePhase: "swiping", storeLikes: [] });
     }
   }, [room, view, update]);
 
@@ -604,7 +622,7 @@ export default function MeshiMatchPage() {
       {view === "home" || view === "join" || (view === "room" && stage === "waiting") ? (
         <NightStall />
       ) : view === "room" &&
-        (["swipe", "swipeWait", "storeSwipe", "storeWait"].includes(stage) || (stage === "result" && noMatch)) ? (
+        (["swipe", "swipeWait", "storeSwipe", "storeWait"].includes(stage) || stage === "result") ? (
         <StallWall />
       ) : (
         <div className="mm-lines" aria-hidden />
@@ -815,7 +833,7 @@ export default function MeshiMatchPage() {
                   nopeLabel="見送り"
                   stampNo="見送り"
                   pinColorFor={pinColorFor}
-                  onFinish={(liked) => update({ likes: liked, phase: "done" })}
+                  onFinish={(liked, meta) => update({ likes: liked, likeMeta: meta || {}, phase: "done" })}
                 />
               </div>
             )}
@@ -825,42 +843,19 @@ export default function MeshiMatchPage() {
               <CookWait title="きみの注文は通った" sub="相手がスワイプ中…" onLeave={leaveRoom} />
             )}
 
-            {/* 結果：マッチ成立 */}
-            {stage === "result" && matches.length > 0 && (
-              <div className="flex w-full flex-col items-center text-center">
-                <span className="text-6xl drop-shadow-lg">🎉</span>
-                <h2 className="mt-4 text-3xl font-black italic text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
-                  マッチ<span className="mm-gold">成立</span>！
-                </h2>
-                <p className="mt-2 text-sm font-medium text-white/70">
-                  タップして、このジャンルのお店を決めよう
-                </p>
-                <div className="mt-6 flex w-full flex-col gap-3">
-                  {matches.map((id) => {
-                    const g = getGenre(id);
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => { playPush(); decideGenre(id); }}
-                        className={`group relative flex items-center justify-between overflow-hidden rounded-2xl border-[3px] border-white bg-gradient-to-r ${g.gradient} px-6 py-4 text-white shadow-[0_6px_0_0_rgba(0,0,0,0.5),0_0_20px_rgba(255,255,255,0.12)] transition-all active:translate-y-[4px] active:shadow-[0_2px_0_0_rgba(0,0,0,0.5)]`}
-                      >
-                        <span className="btn-shine pointer-events-none absolute inset-0" />
-                        <span className="relative text-lg font-black italic">{g.emoji} {g.label}</span>
-                        <span className="relative -skew-x-6 text-xs font-black tracking-widest text-white/95">この店へ ▶</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="mt-8 flex w-full flex-col gap-3">
-                  <Button3D tone="neutral" onClick={playAgain} className="w-full px-8 text-sm">
-                    もう一回（ジャンルから）
-                  </Button3D>
-                  <Button3D tone="neutral" onClick={leaveRoom} className="w-full px-8 text-sm">
-                    部屋を出る
-                  </Button3D>
-                </div>
-              </div>
+            {/* 結果：マッチ成立（大将が一枚を選ぶ・夜の屋台テーマ）*/}
+            {stage === "result" && matchIds.length > 0 && chosen && (
+              <MatchReveal
+                key={`reveal-${room?.round || 0}-${matchIds.join(",")}`}
+                ids={matchIds}
+                selectedId={chosen.id}
+                reasonKey={chosen.reason}
+                getGenre={getGenre}
+                renderArt={(id) => <GenreArt id={id} />}
+                onDecide={(id) => { playPush(); decideGenre(id); }}
+                onReplay={() => { playPush(); playAgain(); }}
+                onLeave={leaveRoom}
+              />
             )}
 
             {/* 結果：不成立 → 券売機で勝負のしかたを選ぶ（夜の屋台テーマ）*/}
