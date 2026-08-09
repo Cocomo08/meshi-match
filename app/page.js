@@ -31,6 +31,8 @@ const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const genCode = () =>
   Array.from({ length: 4 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join("");
+// 部屋コード入力の正規化（1か所だけ）：英数字以外を除去 → 大文字化 → 4文字で切る
+const normalizeCode = (s) => (s || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 4);
 
 // スマブラ風の立体ボタン（斜体・白フチ・グロー＋押し込み）
 const BTN_TONES = {
@@ -399,6 +401,44 @@ export default function MeshiMatchPage() {
   const [showVs, setShowVs] = useState(false);
   const vsSeenRef = useRef(false);
   const seenRound = useRef(0);
+  // 部屋コード入力：IME未確定中は加工しない／カーソル位置を保つ
+  const codeInputRef = useRef(null);
+  const composingRef = useRef(false);
+  const caretRef = useRef(null);
+
+  // 加工後にカーソル位置を復元（値が変わってもカーソルが飛ばないように）
+  useEffect(() => {
+    if (caretRef.current == null) return;
+    const el = codeInputRef.current;
+    if (el) { try { el.setSelectionRange(caretRef.current, caretRef.current); } catch { /* noop */ } }
+    caretRef.current = null;
+  });
+
+  const onCodeChange = (e) => {
+    const el = e.target;
+    // IME変換中は一切加工せず、値をそのまま通す（確定時にまとめて加工）
+    if (composingRef.current) { setJoinCode(el.value); return; }
+    const raw = el.value;
+    const caret = el.selectionStart ?? raw.length;
+    const next = normalizeCode(raw);
+    // 加工で減った文字数ぶんだけカーソルを戻す
+    caretRef.current = Math.max(0, caret - (raw.length - next.length));
+    setJoinCode(next);
+  };
+  const onCodeCompositionStart = () => { composingRef.current = true; };
+  const onCodeCompositionEnd = (e) => {
+    composingRef.current = false;
+    caretRef.current = null;
+    setJoinCode(normalizeCode(e.target.value));
+  };
+  const onCodePaste = (e) => {
+    e.preventDefault();
+    const el = e.target;
+    const text = (e.clipboardData || (typeof window !== "undefined" && window.clipboardData))?.getData("text") || "";
+    const start = el.selectionStart ?? joinCode.length;
+    const end = el.selectionEnd ?? joinCode.length;
+    setJoinCode(normalizeCode(joinCode.slice(0, start) + text + joinCode.slice(end)));
+  };
 
   // クライアントでのみバナー判定（SSRとの不一致を防ぐ）
   // ニックネームは毎回空から入力する（以前の値は復元しない）
@@ -672,13 +712,22 @@ export default function MeshiMatchPage() {
             </h2>
             <p className="mt-2 text-xs font-bold text-[#f0e6d2]/60">相手から聞いた4文字を入れてね</p>
 
-            {/* 投入口のような凹んだコード入力 */}
+            {/* 投入口のような凹んだコード入力（英数4文字のみ・IMEは起動させない）*/}
             <input
+              ref={codeInputRef}
               value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 4))}
+              onChange={onCodeChange}
+              onCompositionStart={onCodeCompositionStart}
+              onCompositionEnd={onCodeCompositionEnd}
+              onPaste={onCodePaste}
               onKeyDown={(e) => e.key === "Enter" && joinRoom()}
-              inputMode="text"
+              type="text"
+              inputMode="latin"
               autoCapitalize="characters"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={4}
               placeholder="ABCD"
               className="ymt-slot-input mt-6"
             />
