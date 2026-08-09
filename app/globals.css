@@ -700,7 +700,7 @@ body {
 .sd-press.still { animation: none; opacity: 1; }
 
 /* 留めピン（顔と重ならないよう右上に寄せる）*/
-.sd-pin { position: absolute; top: calc(10% - 7px); left: 50%; transform: translateX(34px); width: 16px; height: 16px;
+.sd-pin { position: absolute; top: calc(10% - 7px); left: 50%; transform: translateX(42px); width: 16px; height: 16px;
   border-radius: 50%; background: #e0483b; border: 1px solid rgba(0,0,0,.35); z-index: 20; transform-origin: 50% 50%;
   box-shadow: inset 0 2px 2px rgba(255,255,255,.5), inset 0 -3px 3px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.4); }
 .sd-pin::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%;
@@ -775,14 +775,14 @@ body {
 
 /* 大将の顔（札より奥・わずかに暗い・弱いぼかし）。目から上だけ札の上端から覗く位置。
    外側でごく緩やかに上下に覗く(±1.5px/5s)、内側(fig)で傾き・うなずき・引っ込みを担う。
-   顔は中央よりやや左に寄せ、右上のピンと重ならないようにする。 */
-.sw-master { position: absolute; left: 50%; margin-left: -42px; top: -5%; width: 64px; z-index: 1;
+   横位置は中央（width64pxの半分だけ戻す）。ピンは重ならないよう右上へ寄せる。 */
+.sw-master { position: absolute; left: 50%; margin-left: -32px; top: -5%; width: 64px; z-index: 1;
   pointer-events: none; filter: blur(.6px) brightness(.9); animation: swPeek 5s ease-in-out infinite; }
 .sw-master svg { width: 100%; display: block; }
 .sw-master-fig { transform-origin: 50% 100%; transition: transform .28s ease; }
 @keyframes swPeek { 0%,100% { transform: translateY(1.5px); } 50% { transform: translateY(-1.5px); } }
-/* 大将が札の上端に落とす影（札より手前・顔の下・薄い）*/
-.sw-mshadow { position: absolute; left: 50%; top: 9.6%; width: 74px; height: 12px; transform: translateX(-42px);
+/* 大将が札の上端に落とす影（札より手前・顔の下・薄い・顔と同じく中央）*/
+.sw-mshadow { position: absolute; left: 50%; top: 9.6%; width: 74px; height: 12px; transform: translateX(-37px);
   z-index: 16; border-radius: 50%; background: rgba(20,12,8,.3); filter: blur(5px); pointer-events: none; }
 
 @media (prefers-reduced-motion: reduce) {
