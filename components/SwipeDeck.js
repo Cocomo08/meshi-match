@@ -94,20 +94,16 @@ function SwMaster({ expr }) {
       ) : no ? (
         <>
           <ellipse cx="108.8" cy="104.6" rx="2.8" ry="3.6" fill="#2a2520" />
-          <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
           <circle cx="107.7" cy="103.4" r="0.9" fill="#f0e6d2" />
           <ellipse cx="126.8" cy="104.6" rx="2.8" ry="3.6" fill="#2a2520" />
-          <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
           <circle cx="125.7" cy="103.4" r="0.9" fill="#f0e6d2" />
         </>
       ) : (
         <>
           <ellipse cx="111" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
-          <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
           <circle cx="109.6" cy="102" r="1" fill="#f0e6d2" />
           <circle cx="112" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
           <ellipse cx="129" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
-          <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
           <circle cx="127.6" cy="102" r="1" fill="#f0e6d2" />
           <circle cx="130" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
         </>
