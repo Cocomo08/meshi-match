@@ -65,33 +65,53 @@ function SwMaster({ expr }) {
       <path d="M104,85 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
       <path d="M118,83 q1,3 0,6" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
       <path d="M132,84 q1,3 0,5" fill="none" stroke="#a82418" strokeWidth="0.7" strokeLinecap="round" />
-      {/* 眉（表情で変化）*/}
+      {/* 眉（小さくても分かるよう角度をはっきり変える）*/}
       {no ? (
+        // 見送り：眉が下がる（八の字の困り眉）
         <>
-          <path d="M103,96.5 Q110,93 118,91.5 Q111,95.5 103,96.5 Z" fill="#2a2520" />
-          <path d="M122,91.5 Q130,93 137,96.5 Q130,94.5 122,91.5 Z" fill="#2a2520" />
+          <path d="M103,94 Q110,96.5 118,98 Q111,97 103,96 Z" fill="#2a2520" />
+          <path d="M122,98 Q130,96.5 137,94 Q129,97 122,96 Z" fill="#2a2520" />
         </>
       ) : yes ? (
+        // 頼む：眉が上がる（弧を描いて持ち上がる）
         <>
-          <path d="M103,94.5 Q110,89 118,91 Q111,95 103,94.5 Z" fill="#2a2520" />
-          <path d="M122,91 Q130,89 137,92.5 Q130,94.3 122,91 Z" fill="#2a2520" />
+          <path d="M103,92 Q110,86.5 118,89.5 Q111,92.5 103,92 Z" fill="#2a2520" />
+          <path d="M122,89.5 Q130,86.5 137,92 Q130,92.5 122,89.5 Z" fill="#2a2520" />
+        </>
+      ) : (
+        // 通常：まっすぐ
+        <>
+          <path d="M103,94.5 Q110,93.8 118,94.2 Q111,96 103,95.4 Z" fill="#2a2520" />
+          <path d="M122,94.2 Q130,93.8 137,94.5 Q129,96 122,95.4 Z" fill="#2a2520" />
+        </>
+      )}
+      {/* 目（表情で変化。通常=ふつう／頼む=細めて笑う／見送り=目線をそらす）*/}
+      {yes ? (
+        <>
+          <path d="M107.4,105 Q111,101.4 114.6,105" fill="none" stroke="#2a2520" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M125.4,105 Q129,101.4 132.6,105" fill="none" stroke="#2a2520" strokeWidth="2.2" strokeLinecap="round" />
+        </>
+      ) : no ? (
+        <>
+          <ellipse cx="108.8" cy="104.6" rx="2.8" ry="3.6" fill="#2a2520" />
+          <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
+          <circle cx="107.7" cy="103.4" r="0.9" fill="#f0e6d2" />
+          <ellipse cx="126.8" cy="104.6" rx="2.8" ry="3.6" fill="#2a2520" />
+          <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
+          <circle cx="125.7" cy="103.4" r="0.9" fill="#f0e6d2" />
         </>
       ) : (
         <>
-          <path d="M103,96 Q110,90 118,92.5 Q111,96.5 103,96 Z" fill="#2a2520" />
-          <path d="M122,92.5 Q130,90 137,94 Q130,95.8 122,92.5 Z" fill="#2a2520" />
+          <ellipse cx="111" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
+          <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
+          <circle cx="109.6" cy="102" r="1" fill="#f0e6d2" />
+          <circle cx="112" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
+          <ellipse cx="129" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
+          <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
+          <circle cx="127.6" cy="102" r="1" fill="#f0e6d2" />
+          <circle cx="130" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
         </>
       )}
-      {/* 左目 */}
-      <ellipse cx="111" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
-      <path d="M118,100 Q111,100.4 104,104 Q110,103 117,101.6 Z" fill="#2a2520" />
-      <circle cx="109.6" cy="102" r="1" fill="#f0e6d2" />
-      <circle cx="112" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
-      {/* 右目 */}
-      <ellipse cx="129" cy="103.5" rx="3" ry="3.8" fill="#2a2520" />
-      <path d="M122,100 Q129,100.4 136,104 Q130,103 123,101.6 Z" fill="#2a2520" />
-      <circle cx="127.6" cy="102" r="1" fill="#f0e6d2" />
-      <circle cx="130" cy="105.4" r="0.8" fill="#f0e6d2" opacity="0.5" />
       {/* 鼻 */}
       <path d="M120.4,103.5 Q118.7,108 120.1,110.2 Q121.4,111 122.6,110.1" fill="none" stroke="#2a2520" strokeWidth="1.1" strokeLinecap="round" />
       <circle cx="118.4" cy="110.1" r="0.7" fill="#2a2520" />
