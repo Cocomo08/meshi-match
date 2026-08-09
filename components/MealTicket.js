@@ -94,7 +94,7 @@ const CSS = `
   box-shadow:inset 0 3px 6px rgba(0,0,0,.6)}
 
 /* ── 券そのもの（生成りの紙・墨の印字・落ち影）── */
-.tf{position:relative;width:250px;color:#2a2520;border-radius:3px 6px 4px 7px;overflow:hidden;
+.tf{position:relative;width:250px;min-height:236px;display:flex;flex-direction:column;color:#2a2520;border-radius:3px 6px 4px 7px;overflow:hidden;
   background-color:#efe3c3;
   background-image:
     radial-gradient(circle at 20% 12%, rgba(150,120,40,.07), transparent 9%),
@@ -109,25 +109,22 @@ const CSS = `
   background:#e3d5b2;color:#6b5f42;font-size:10.5px;letter-spacing:.14em;font-weight:800;
   font-family:var(--font-klee),var(--font-zen-maru),sans-serif}
 .tf-perf{border-top:2px dashed #b8ac8c}
-.tf-body{padding:7px 14px 12px;text-align:center}
-.tf-no{font-size:10.5px;letter-spacing:.08em;color:#7a6f52;text-align:right}
-.tf-cap{font-size:9px;letter-spacing:.34em;color:#8a7f60;margin-top:1px}
-.tf-genre{line-height:1.04;font-weight:800;letter-spacing:.03em;margin:3px 0 6px;color:#221f18;
+/* 3段のみ（ジャンル→名前→一致/杯目）。余白を広げて各段を明確に離す。強調は墨に統一 */
+.tf-body{flex:1;padding:22px 16px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.tf-genre{line-height:1.05;font-weight:800;letter-spacing:.03em;color:#221f18;
   font-family:var(--font-klee),var(--font-zen-maru),sans-serif}
-.tf-names{color:#3a352a;letter-spacing:.04em;font-weight:700;white-space:nowrap;overflow:hidden}
-.tf-names .sep{opacity:.5;margin:0 .35em;font-weight:400}
-.tf-date{font-size:9px;color:#8a7f60;margin-top:4px}
-/* 記録欄（印刷物らしく小さく詰める）*/
-.tf-rec{margin-top:9px;padding-top:8px;border-top:1px solid #cabf9d;display:flex;flex-direction:column;gap:4px}
-.tf-row{display:flex;align-items:baseline;justify-content:center;gap:6px;font-size:10.5px;color:#4a453a;letter-spacing:.02em}
-.tf-row .k{color:#8a7f60;font-size:9px;letter-spacing:.08em;white-space:nowrap}
-.tf-row .hit{font-weight:800;color:#221f18;font-size:12px;letter-spacing:.04em;
+.tf-names{color:#2a2520;letter-spacing:.04em;font-weight:600;white-space:nowrap;overflow:hidden}
+.tf-names .sep{opacity:.45;margin:0 .4em;font-weight:400}
+/* 3段目：一致 と 杯目 を横1行に。色の強調は「杯目の数字」1箇所のみ */
+.tf-stat{display:flex;align-items:baseline;justify-content:center;gap:16px;font-size:11px;color:#2a2520;letter-spacing:.03em}
+.tf-hit{color:#2a2520;font-weight:400}
+.tf-hit b{font-weight:400;font-size:1.35em}
+.tf-ord{color:#2a2520;font-weight:400}
+.tf-ord b{color:#a83a1c;font-weight:800;font-size:1.35em;
   font-family:var(--font-klee),var(--font-zen-maru),sans-serif}
-/* 二人が選んだジャンル：ラベルを上、一覧を下に（語の途中で折れない）*/
-.tf-reclist{display:flex;flex-direction:column;align-items:center;gap:1px}
-.tf-list{font-weight:700;color:#3a352a;font-size:10.5px;line-height:1.3;text-align:center}
-.tf-ord{font-weight:800;color:#8a3b1e;letter-spacing:.04em;
-  font-family:var(--font-klee),var(--font-zen-maru),sans-serif}
+.tf-ord.first{color:#a83a1c;font-weight:800;font-family:var(--font-klee),var(--font-zen-maru),sans-serif}
+/* 発行日時：3段目のさらに下・極小・薄いグレー */
+.tf-date{font-size:9px;color:#a49a80;letter-spacing:.04em;margin-top:2px}
 
 /* 保存用の書き出しカード（正方形・券のみを暖色地に中央配置。画面外に配置して撮る）*/
 .mt-export{position:fixed;left:-9999px;top:0;width:360px;height:360px;display:flex;align-items:center;justify-content:center;
@@ -173,20 +170,14 @@ const CSS = `
 }
 `;
 
-// 券面（機内表示・書き出し共通）
-function TicketFace({ no, cap, genre, name0, name1, date, matchCount, totalCount, matchedLabels, ordinal }) {
+// 券面（機内表示・書き出し共通）。情報は3段のみ：ジャンル→名前→一致/杯目。
+function TicketFace({ genre, name0, name1, date, matchCount, totalCount, ordinal }) {
   const nlen = Math.max((name0 || "").length, (name1 || "").length);
   const nameSize = nameFont(nlen);
   const gSize = genreFont((genre || "").length);
 
-  // 同時に選んだジャンル：上位3つ＋「ほか」
-  const list = (matchedLabels || []).filter(Boolean);
-  const listText = list.length ? list.slice(0, 3).join("・") + (list.length > 3 ? " ほか" : "") : "";
-
   const showHit = matchCount != null && matchCount > 0;
-  const showList = list.length > 0;
   const showOrd = ordinal != null && ordinal > 0;
-  const ordText = ordinal >= 2 ? `二人の ${ordinal} 杯目` : "はじめての一杯";
 
   return (
     <div className="tf">
@@ -196,35 +187,27 @@ function TicketFace({ no, cap, genre, name0, name1, date, matchCount, totalCount
       </div>
       <div className="tf-perf" />
       <div className="tf-body">
-        {no && <div className="tf-no">{no}</div>}
-        <div className="tf-cap">{cap}</div>
+        {/* 1段目：ジャンル名（最大・墨）*/}
         <div className="tf-genre" style={{ fontSize: gSize }}>{genre}</div>
+        {/* 2段目：二人の名前（中・墨）*/}
         <div className="tf-names" style={{ fontSize: nameSize }}>
           {name0}<span className="sep">×</span>{name1}
         </div>
-        {date && <div className="tf-date">発行 {date}</div>}
-
-        {(showHit || showList || showOrd) && (
-          <div className="tf-rec">
+        {/* 3段目：一致 と 杯目 を横1行（小・墨／色は杯目の数字のみ）*/}
+        {(showHit || showOrd) && (
+          <div className="tf-stat">
             {showHit && (
-              <div className="tf-row">
-                <span className="k">一致</span>
-                <span className="hit">{matchCount} / {totalCount}</span>
-              </div>
-            )}
-            {showList && (
-              <div className="tf-reclist">
-                <span className="k">二人が選んだ</span>
-                <span className="tf-list">{listText}</span>
-              </div>
+              <span className="tf-hit">一致 <b>{matchCount}</b> / {totalCount}</span>
             )}
             {showOrd && (
-              <div className="tf-row">
-                <span className="tf-ord">{ordText}</span>
-              </div>
+              ordinal >= 2
+                ? <span className="tf-ord">二人の <b>{ordinal}</b> 杯目</span>
+                : <span className="tf-ord first">はじめての一杯</span>
             )}
           </div>
         )}
+        {/* 発行日時：さらに下・極小・薄いグレー */}
+        {date && <div className="tf-date">発行 {date}</div>}
       </div>
     </div>
   );
