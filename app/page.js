@@ -441,6 +441,21 @@ export default function MeshiMatchPage() {
     setJoinCode(normalizeCode(joinCode.slice(0, start) + text + joinCode.slice(end)));
   };
 
+  // ニックネーム入力：日本語IMEの未確定中は加工しない（1文字に切れる不具合の対策）。
+  //  確定時にだけ12文字に丸める。value を未確定文字のまま通すことで変換が途切れない。
+  const nickComposingRef = useRef(false);
+  const clampNick = (s) => (s || "").slice(0, 12);
+  const onNickChange = (e) => {
+    setNickWarn(false);
+    if (nickComposingRef.current) { setNick(e.target.value); return; }
+    setNick(clampNick(e.target.value));
+  };
+  const onNickCompositionStart = () => { nickComposingRef.current = true; };
+  const onNickCompositionEnd = (e) => {
+    nickComposingRef.current = false;
+    setNick(clampNick(e.target.value));
+  };
+
   // クライアントでのみバナー判定（SSRとの不一致を防ぐ）
   // ニックネームは毎回空から入力する（以前の値は復元しない）
   // 見本食券の券番号（ランダム7桁ゼロ埋め）と発行日（本日）もここで生成
@@ -672,8 +687,10 @@ export default function MeshiMatchPage() {
               <span className="ymt-field-tag">ニックネーム</span>
               <input
                 value={nick}
-                onChange={(e) => { setNick(e.target.value.slice(0, 12)); setNickWarn(false); }}
-                placeholder="例）たろ"
+                onChange={onNickChange}
+                onCompositionStart={onNickCompositionStart}
+                onCompositionEnd={onNickCompositionEnd}
+                placeholder="例）たろう"
                 maxLength={12}
                 className="ymt-input"
               />
@@ -1078,12 +1095,12 @@ export default function MeshiMatchPage() {
       {view === "room" && decidedGenre && !ticketAcked && (
         <MealTicket
           genre={getGenre(decidedGenre)?.label}
+          art={<GenreArt id={decidedGenre} />}
           ticketNo={room?.ticketNo || 0}
           issuedAt={room?.issuedAt ? new Date(room.issuedAt) : undefined}
           nicknames={[myName, oppName]}
           matchCount={matchIds.length}
           totalCount={SWIPE_GENRE_COUNT}
-          matchedLabels={matchIds.map((id) => getGenre(id)?.label).filter(Boolean)}
           ctaLabel="お店をさがす"
           onNext={() => setTicketAcked(true)}
         />

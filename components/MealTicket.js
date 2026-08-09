@@ -94,16 +94,21 @@ const CSS = `
   box-shadow:inset 0 3px 6px rgba(0,0,0,.6)}
 
 /* ── 券そのもの（生成りの紙・墨の印字・落ち影）── */
-.tf{position:relative;width:250px;min-height:236px;display:flex;flex-direction:column;color:#2a2520;border-radius:3px 6px 4px 7px;overflow:hidden;
+.tf{position:relative;width:250px;min-height:250px;display:flex;flex-direction:column;color:#2a2520;border-radius:3px 6px 4px 7px;overflow:hidden;
   background-color:#efe3c3;
+  /* 生成りの微細ムラ ＋ ごく薄い地紋（幾何学の繰り返し・不透明度5%以下）*/
   background-image:
-    radial-gradient(circle at 20% 12%, rgba(150,120,40,.07), transparent 9%),
-    radial-gradient(circle at 74% 22%, rgba(160,130,50,.06), transparent 8%),
+    repeating-linear-gradient(45deg, rgba(90,70,30,.035) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(-45deg, rgba(90,70,30,.03) 0 1px, transparent 1px 11px),
+    radial-gradient(circle at 20% 12%, rgba(150,120,40,.06), transparent 9%),
+    radial-gradient(circle at 74% 22%, rgba(160,130,50,.05), transparent 8%),
     radial-gradient(circle at 44% 52%, rgba(150,120,40,.05), transparent 10%),
     radial-gradient(circle at 82% 74%, rgba(140,110,40,.05), transparent 8%),
     radial-gradient(circle at 22% 84%, rgba(160,130,50,.05), transparent 9%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 0 1px rgba(120,95,40,.14),
     0 10px 16px -6px rgba(0,0,0,.55)}
+/* 縁に沿う二重罫線（内側の細い枠）*/
+.tf-frame{position:absolute;inset:5px;border:1px solid rgba(120,95,40,.34);border-radius:3px;pointer-events:none;z-index:1}
 /* 半券（上部の帯）*/
 .tf-stub{height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;
   background:#e3d5b2;color:#6b5f42;font-size:10.5px;letter-spacing:.14em;font-weight:800;
@@ -125,6 +130,16 @@ const CSS = `
 .tf-ord.first{color:#a83a1c;font-weight:800;font-family:var(--font-klee),var(--font-zen-maru),sans-serif}
 /* 発行日時：3段目のさらに下・極小・薄いグレー */
 .tf-date{font-size:9px;color:#a49a80;letter-spacing:.04em;margin-top:2px}
+/* ジャンルの墨線画（スワイプ画面と同じ描き味・小さく・主役より弱く）*/
+.tf-art{width:46px;height:34px;opacity:.72;margin-bottom:-2px}
+.tf-art svg{width:100%;height:100%;display:block}
+/* 但し書き（読ませない・薄墨）*/
+.tf-note{font-size:8px;color:#9a8f72;letter-spacing:.06em;margin-top:6px}
+/* 朱印（右下・手描きらしく歪ませる・主役より弱く薄い朱）*/
+.tf-seal{position:absolute;right:14px;bottom:12px;width:38px;height:38px;z-index:2;
+  display:flex;align-items:center;justify-content:center;transform:rotate(-9deg);
+  color:#b5533a;opacity:.5;border:2px solid #b5533a;border-radius:46% 54% 47% 53% / 52% 46% 54% 48%;
+  font-family:var(--font-klee),var(--font-zen-maru),sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em}
 
 /* 保存用の書き出しカード（正方形・券のみを暖色地に中央配置。画面外に配置して撮る）*/
 .mt-export{position:fixed;left:-9999px;top:0;width:360px;height:360px;display:flex;align-items:center;justify-content:center;
@@ -170,8 +185,9 @@ const CSS = `
 }
 `;
 
-// 券面（機内表示・書き出し共通）。情報は3段のみ：ジャンル→名前→一致/杯目。
-function TicketFace({ genre, name0, name1, date, matchCount, totalCount, ordinal }) {
+// 券面（機内表示・書き出し共通）。情報は3段：ジャンル→名前→一致/杯目。
+//  印刷物らしい装飾（線画・二重罫線・地紋・但し書き・朱印）を主役より弱く添える。
+function TicketFace({ genre, art, name0, name1, date, matchCount, totalCount, ordinal }) {
   const nlen = Math.max((name0 || "").length, (name1 || "").length);
   const nameSize = nameFont(nlen);
   const gSize = genreFont((genre || "").length);
@@ -181,12 +197,15 @@ function TicketFace({ genre, name0, name1, date, matchCount, totalCount, ordinal
 
   return (
     <div className="tf">
+      <div className="tf-frame" aria-hidden />
       <div className="tf-stub">
         <span>半券</span>
         <span>MESHI-MACHI</span>
       </div>
       <div className="tf-perf" />
       <div className="tf-body">
+        {/* ジャンルの墨線画（小・弱く）*/}
+        {art && <div className="tf-art" aria-hidden>{art}</div>}
         {/* 1段目：ジャンル名（最大・墨）*/}
         <div className="tf-genre" style={{ fontSize: gSize }}>{genre}</div>
         {/* 2段目：二人の名前（中・墨）*/}
@@ -206,21 +225,25 @@ function TicketFace({ genre, name0, name1, date, matchCount, totalCount, ordinal
             )}
           </div>
         )}
-        {/* 発行日時：さらに下・極小・薄いグレー */}
+        {/* 発行日時：極小・薄いグレー */}
         {date && <div className="tf-date">発行 {date}</div>}
+        {/* 但し書き（読ませない・薄墨）*/}
+        <div className="tf-note">本券は当日限り有効・再発行不可</div>
       </div>
+      {/* 朱印（右下・手描き風・弱く）*/}
+      <span className="tf-seal" aria-hidden>承</span>
     </div>
   );
 }
 
 export default function MealTicket({
   genre,
+  art,
   ticketNo,
   issuedAt,
   nicknames = [],
   matchCount = 0,
   totalCount = 12,
-  matchedLabels = [],
   onNext,
   ctaLabel = "お店をさがす",
 }) {
@@ -254,7 +277,7 @@ export default function MealTicket({
       b: name1,
       ticketNo,
       matchCount,
-      genres: matchedLabels,
+      genres: [genre].filter(Boolean),
       at: typeof issuedAt === "number" ? issuedAt : Date.now(),
     });
     setOrdinal(n);
@@ -270,15 +293,13 @@ export default function MealTicket({
   });
 
   const faceProps = {
-    no,
-    cap: "本日のマッチ",
     genre,
+    art,
     name0,
     name1,
     date,
     matchCount,
     totalCount,
-    matchedLabels,
     ordinal,
   };
 
