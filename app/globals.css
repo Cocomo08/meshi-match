@@ -776,7 +776,7 @@ body {
 /* 大将の顔（札より奥・わずかに暗い・弱いぼかし）。目から上だけ札の上端から覗く位置。
    外側でごく緩やかに上下に覗く(±1.5px/5s)、内側(fig)で傾き・うなずき・引っ込みを担う。
    顔は中央よりやや左に寄せ、右上のピンと重ならないようにする。 */
-.sw-master { position: absolute; left: 50%; margin-left: -42px; top: -1%; width: 64px; z-index: 1;
+.sw-master { position: absolute; left: 50%; margin-left: -42px; top: -5%; width: 64px; z-index: 1;
   pointer-events: none; filter: blur(.6px) brightness(.9); animation: swPeek 5s ease-in-out infinite; }
 .sw-master svg { width: 100%; display: block; }
 .sw-master-fig { transform-origin: 50% 100%; transition: transform .28s ease; }

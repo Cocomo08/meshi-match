@@ -166,7 +166,7 @@ export function SwipeDeck({
   const [burst, setBurst] = useState(0);
   const [focusSide, setFocusSide] = useState(null); // reduced-motion：ボタンフォーカスで文字表示
   const [screenW, setScreenW] = useState(0);
-  const [phase, setPhase] = useState(stack ? "intro" : "live"); // intro | live | outro
+  const [phase, setPhase] = useState("live"); // live | outro（入場の降下演出は廃止）
   const likedRef = useRef([]);
   const startRef = useRef(null);
   const lockRef = useRef(false);
@@ -184,14 +184,6 @@ export function SwipeDeck({
     return () => window.removeEventListener("resize", upd);
   }, []);
   const threshold = (screenW || 390) * 0.25;
-
-  // 入場ロック解除（降下0.6s／reduced-motionは即）
-  useEffect(() => {
-    if (phase !== "intro") return;
-    const t = setTimeout(() => setPhase("live"), isRed ? 200 : 600);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
 
   const afterLeave = () => {
     setLeaving(null);
@@ -286,13 +278,8 @@ export function SwipeDeck({
         : leaving.dir > 0 ? "sd-leave-order" : "sd-leave-decline"
     : "";
 
-  // 入場の降下ラッパ（短冊のみ・マウント時1回）
-  const drop = (node, delay, rot) =>
-    stack ? (
-      <div className="sd-drop" style={{ animationDelay: `${delay}s`, "--dropRot": rot }}>{node}</div>
-    ) : (
-      node
-    );
+  // 入場の降下演出は廃止（そのまま表示）
+  const drop = (node) => node;
 
   // 束の厚み（後ろに重なる札・残り枚数と一致）※stack時のみ構築（store等の無駄な再描画を防ぐ）
   const behindCount = stack ? behindCountFor(remaining) : 0;
