@@ -79,15 +79,36 @@ const CSS = `
   box-shadow:inset 0 1px 0 #fff3d0, 0 0 14px rgba(255,190,90,.7), 0 2px 0 #a9772f;transform:translateY(1px)}
 .mt-btn.lit .prc{color:#6b4a1c;opacity:1;font-weight:700}
 
-/* ── 受け取り口（券が下へ垂れ下がる）── */
-.mt-outlet{position:relative;flex:0 0 auto;height:270px;overflow:hidden;margin-top:12px;border-radius:5px;
-  background:linear-gradient(180deg,#3f2a15,#2c1c0d);
-  box-shadow:inset 0 6px 8px -3px rgba(0,0,0,.7)}
-.mt-slit{position:absolute;top:0;left:12px;right:12px;height:5px;background:#120c06;border-radius:0 0 3px 3px;z-index:3}
+/* ── 受け取り口（実寸の券が奥から手前へ出てくる・スロットに厚み）── */
+.mt-outlet{position:relative;flex:0 0 auto;height:180px;overflow:hidden;margin-top:12px;border-radius:5px;
+  background:linear-gradient(180deg,#2a1a0c,#180e06);
+  box-shadow:inset 0 8px 10px -3px rgba(0,0,0,.8)}
+/* スロット（券幅ぶんの開口・3Dの縁）*/
+.mt-slot{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:100px;height:11px;z-index:4;
+  background:#0a0705;border-radius:2px;
+  box-shadow:inset 0 3px 4px rgba(0,0,0,.9), 0 2px 0 rgba(255,224,170,.16), 0 4px 5px rgba(0,0,0,.5)}
 
-/* 機内でのせり出し（券は natural サイズ）*/
-.mt-ticket{position:absolute;left:50%;top:-46px;transform:translateX(-50%);transform-origin:50% 0;z-index:2}
-.mt-ticket.grab{cursor:grab}.mt-ticket.grabbing{cursor:grabbing}
+/* 小さい券（スロット幅の約85%・実寸の約1/3）。奥から手前へ出てくる */
+.mt-small-pos{position:absolute;top:7px;left:50%;margin-left:-42.5px;width:85px;z-index:3;will-change:transform}
+.mt-small-sway{transform-origin:50% 0}
+/* 出てすぐは反っている（湾曲）。手元では平らにする */
+.mt-small{width:85px;height:92px;overflow:hidden;position:relative;transform-origin:50% 0;
+  transform:perspective(320px) rotateX(7deg);filter:drop-shadow(0 9px 9px rgba(0,0,0,.6))}
+.mt-small-inner{width:250px;transform:scale(.34);transform-origin:top left}
+/* 口の縁が券の上端に落とす影（差し込まれている表現）*/
+.mt-small::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;z-index:5;
+  background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);pointer-events:none}
+.mt-small-pos.grab{cursor:grab}.mt-small-pos.grabbing{cursor:grabbing}
+/* 引き抜き案内 */
+.mt-pull-hint{position:absolute;left:0;right:0;bottom:14px;text-align:center;z-index:3;pointer-events:none;
+  font-size:11px;letter-spacing:.12em;color:#dcc9a5;opacity:.82;font-family:var(--font-zen-maru),sans-serif}
+
+/* ── 手元（拡大）：券売機を暗くして券だけに焦点 ── */
+.mt-dim{position:fixed;inset:0;z-index:70;background:rgba(6,4,2,.72);animation:mtFade .4s ease both}
+.mt-hand{position:fixed;left:50%;top:42%;z-index:71;transform:translate(-50%,-50%);will-change:transform}
+.mt-hand-grow{animation:mtToHand .5s cubic-bezier(.2,.7,.3,1) both}
+.mt-hand-tilt{transform-origin:50% 42%;touch-action:none;cursor:grab}
+.mt-hand-tilt.spring{transition:transform .32s cubic-bezier(.34,1.5,.5,1)}
 
 /* 釣り銭口 */
 .mt-tray{flex:0 0 auto;height:16px;margin-top:12px;border-radius:4px;background:#3a2614;
@@ -145,8 +166,10 @@ const CSS = `
 .mt-export{position:fixed;left:-9999px;top:0;width:360px;height:360px;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(120% 90% at 50% 20%, #3a2a1b, #201509);}
 
-/* 導線 */
-.mt-actions{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;max-width:300px}
+/* 導線（手元＝拡大後にだけ表示・最前面）*/
+.mt-actions{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:72;
+  display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;max-width:300px;padding:0 16px;
+  animation:mtFade .35s ease .35s both}
 .mt-cta{width:100%;background:#efe3c3;color:#2a2520;border:1px solid #b0a37d;border-radius:6px;padding:12px 20px;
   font-family:var(--font-klee),var(--font-zen-maru),sans-serif;font-size:15px;font-weight:900;letter-spacing:.08em;cursor:pointer;
   box-shadow:inset 0 1px 0 #fffdf5, 0 4px 0 #a9772f}
@@ -160,28 +183,38 @@ const CSS = `
 .mt-preview{display:flex;flex-direction:column;align-items:center;gap:6px}
 .mt-preview img{width:200px;max-width:70vw;border-radius:6px;box-shadow:0 8px 18px rgba(0,0,0,.5)}
 .mt-preview span{font-size:11px;color:#e6d9bd;opacity:.85}
-.mt-skip{font-size:11px;letter-spacing:.2em;color:#b7a988}
 
-/* ── アニメーション（.anim のときだけ）── */
-.mt-root.anim .mt-btn.lit{animation:mtPress .2s ease .3s both}
-.mt-root.anim .mt-ticket{animation:mtEmerge .9s .5s both}
-.mt-root.anim .tf-body,.mt-root.anim .tf-stub{animation:mtFade .35s ease 1.4s both}
+/* ── アニメーション ── */
+/* 発券：ボタンが軽く押し込まれ、小さい券がスロットから押し出される（途中で引っかかり→ストン）*/
+.mt-dispense .mt-btn.lit{animation:mtPress .2s ease .2s both}
+.mt-dispense .mt-small-pos{animation:mtEject .6s .35s both}
+.mt-dispense .mt-small{animation:mtCurl .6s .35s both}
+/* 引き抜き待ち：わずかに左右へ揺れる（1度以内）。無操作が続くと上下に促す */
+.mt-await .mt-small-sway{animation:mtSway 2.6s ease-in-out infinite}
+.mt-await .mt-small-pos.nudge{animation:mtNudge 1.4s ease-in-out infinite}
 @keyframes mtPress{0%{transform:translateY(0)}55%{transform:translateY(3px)}100%{transform:translateY(1px)}}
-@keyframes mtEmerge{
-  0%{transform:translate(-50%,-150px);animation-timing-function:cubic-bezier(.15,.75,.3,1)}
-  55%{transform:translate(-50%,6px);animation-timing-function:ease-in-out}
-  70%{transform:translate(-50%,-4px) rotate(-.8deg)}
-  84%{transform:translate(-50%,3px) rotate(.6deg)}
-  94%{transform:translate(-50%,-1px) rotate(-.2deg)}
-  100%{transform:translate(-50%,0) rotate(0)}
+@keyframes mtEject{
+  0%{transform:translateY(-118%);animation-timing-function:cubic-bezier(.2,.72,.3,1)}
+  46%{transform:translateY(-40%)}
+  63%{transform:translateY(-40%)}                                   /* わずかに引っかかる */
+  100%{transform:translateY(0);animation-timing-function:cubic-bezier(.55,.06,.62,1)} /* ストンと出る */
 }
+@keyframes mtCurl{from{transform:perspective(320px) rotateX(13deg)}to{transform:perspective(320px) rotateX(7deg)}}
+@keyframes mtSway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1deg)}}
+@keyframes mtNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+/* 手元：小さいスロット位置から画面中央へ移動しつつ拡大 */
+@keyframes mtToHand{0%{transform:translateY(-70px) scale(.34);opacity:.5}100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes mtFade{from{opacity:0}to{opacity:1}}
 
 @media (prefers-reduced-motion: reduce){
-  /* 発券はフェードに置換。ボタンの灯りは残すが点滅させない */
-  .mt-root.anim .mt-btn.lit{animation:none}
-  .mt-root.anim .mt-ticket{animation:mtFade .4s ease both}
-  .mt-root.anim .tf-body,.mt-root.anim .tf-stub{animation:mtFade .4s ease both}
+  /* 排出と拡大はフェード。灯りは残すが点滅なし。湾曲・揺れは無効 */
+  .mt-dispense .mt-btn.lit{animation:none}
+  .mt-dispense .mt-small-pos{animation:mtFade .4s ease both}
+  .mt-dispense .mt-small{animation:none;transform:none}
+  .mt-await .mt-small-sway{animation:none}
+  .mt-await .mt-small-pos.nudge{animation:none}
+  .mt-small{transform:none}
+  .mt-hand-grow{animation:mtFade .35s ease both}
 }
 `;
 
@@ -249,21 +282,55 @@ export default function MealTicket({
 }) {
   const reduced =
     typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const [mode, setMode] = useState(() => (reduced ? "done" : "run")); // run | done | gone
+
+  // 状態：発券中 → 引き抜き待ち → 引き抜き中 → 手元（拡大）
+  //  画面を離れて戻っても、手元まで進んでいれば手元から再開する
+  const handKey = `mt-hand-${ticketNo}`;
+  const resumedHand =
+    typeof window !== "undefined" && (() => { try { return sessionStorage.getItem(handKey) === "1"; } catch { return false; } })();
+  const [stage, setStage] = useState(resumedHand ? "hand" : "dispense"); // dispense | await | pulling | hand
   const [dragY, setDragY] = useState(0);
-  const [dragging, setDragging] = useState(false);
+  const [nudge, setNudge] = useState(false);
+  const [tilt, setTilt] = useState(0);
+  const [tiltSpring, setTiltSpring] = useState(false);
   const [ordinal, setOrdinal] = useState(0);
   const [saving, setSaving] = useState(false);
   const [imgSrc, setImgSrc] = useState(null);
   const [note, setNote] = useState("");
   const startRef = useRef(0);
+  const movedRef = useRef(0);
+  const draggingRef = useRef(false);
+  const idleRef = useRef(null);
+  const tiltElRef = useRef(null);
   const exportRef = useRef(null);
 
+  const SMALL_H = 92;
+  const PULL_THRESHOLD = SMALL_H * 0.6; // 券の高さの60%引いたら自動で抜ける
+
+  // 発券アニメーション（0.6s＋わずかな遅延）→ 引き抜き待ちへ
   useEffect(() => {
-    if (mode !== "run") return;
-    const t = setTimeout(() => setMode("done"), 1500);
+    if (stage !== "dispense") return;
+    const t = setTimeout(() => setStage("await"), reduced ? 450 : 1000);
     return () => clearTimeout(t);
-  }, [mode]);
+  }, [stage, reduced]);
+
+  // 引き抜き待ちで無操作が続いたら、券を上下させて促す
+  const armIdle = () => {
+    if (idleRef.current) clearTimeout(idleRef.current);
+    setNudge(false);
+    idleRef.current = setTimeout(() => setNudge(true), 3500);
+  };
+  useEffect(() => {
+    if (stage === "await") armIdle();
+    return () => { if (idleRef.current) clearTimeout(idleRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
+
+  // 手元に到達したら記録（再開用）
+  useEffect(() => {
+    if (stage === "hand") { try { sessionStorage.setItem(handKey, "1"); } catch { /* noop */ } }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
 
   const no = typeof ticketNo === "number" ? "No." + String(ticketNo).padStart(7, "0") : ticketNo || "";
   const date = fmtDate(issuedAt);
@@ -303,34 +370,75 @@ export default function MealTicket({
     ordinal,
   };
 
-  const extract = () => {
-    if (mode === "gone") return;
-    setMode("gone");
-    setTimeout(() => onNext?.(), 340);
+  // 引き抜き完了 → 手元（拡大）へ
+  const completePull = () => {
+    if (idleRef.current) clearTimeout(idleRef.current);
+    draggingRef.current = false;
+    setNudge(false);
+    setDragY(0);
+    setStage("hand");
   };
 
-  const onDown = (e) => {
-    if (mode === "gone") return;
-    if (mode === "run") setMode("done");
+  // 券をドラッグ／スワイプで引き抜く（指に追従・60%で自動排出・タップでも可）
+  const onPullDown = (e) => {
+    if (stage !== "await" && stage !== "pulling") return; // 発券中は受け付けない
+    if (idleRef.current) clearTimeout(idleRef.current);
+    setNudge(false);
+    if (reduced) { completePull(); return; } // reduced：追従せず1タップで完了
     startRef.current = e.clientY;
-    setDragging(true);
+    movedRef.current = 0;
+    draggingRef.current = true;
+    setStage("pulling");
     e.currentTarget.setPointerCapture?.(e.pointerId);
     e.stopPropagation();
   };
-  const onMove = (e) => {
-    if (!dragging) return;
-    setDragY(Math.min(Math.max(0, e.clientY - startRef.current), 320));
+  const onPullMove = (e) => {
+    if (!draggingRef.current) return;
+    const dy = Math.min(Math.max(0, e.clientY - startRef.current), 240);
+    movedRef.current = Math.max(movedRef.current, dy);
+    setDragY(dy);
+    if (dy >= PULL_THRESHOLD) completePull();
   };
-  const onUp = (e) => {
-    if (!dragging) return;
-    setDragging(false);
+  const onPullUp = (e) => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
     e.stopPropagation();
-    if (dragY >= 80) extract();
-    else setDragY(0);
+    if (dragY >= PULL_THRESHOLD || movedRef.current < 6) {
+      completePull(); // 60%到達 or ほぼ動かさずタップ → 完了
+    } else {
+      setDragY(0); // 途中で放したら戻る
+      setStage("await");
+    }
   };
-  const onRoot = () => {
-    if (mode === "run") setMode("done");
+
+  // 手元の券：タップ／ドラッグでわずかに傾く（トップの食券と同じ挙動・最大5度）
+  const onTiltDown = (e) => {
+    if (reduced) return;
+    setTiltSpring(false);
+    tiltElRef.current = e.currentTarget;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    trackTilt(e.clientX);
   };
+  const onTiltMove = (e) => {
+    if (!tiltElRef.current) return;
+    trackTilt(e.clientX);
+  };
+  const trackTilt = (clientX) => {
+    const el = tiltElRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    setTilt(Math.max(-5, Math.min(5, ((clientX - cx) / (r.width / 2)) * 5)));
+  };
+  const onTiltUp = () => {
+    if (!tiltElRef.current) return;
+    tiltElRef.current = null;
+    setTiltSpring(true);
+    setTilt(0);
+  };
+
+  // 次の画面へ（手元でのみ）
+  const goNext = () => onNext?.();
 
   // 券を画像として書き出す（券だけ・正方形に近い比率）
   const saveTicket = async (e) => {
@@ -365,19 +473,21 @@ export default function MealTicket({
     }
   };
 
-  const ticketStyle =
-    mode === "run"
-      ? undefined
-      : {
-          transform: `translateX(-50%) translateY(${mode === "gone" ? 340 : dragY}px)`,
-          opacity: mode === "gone" ? 0 : 1,
-          transition: dragging ? "none" : "transform .35s cubic-bezier(.2,.7,.3,1), opacity .3s ease",
-        };
+  const inSlot = stage === "dispense" || stage === "await" || stage === "pulling";
+  // dispense はCSSアニメが transform を担うので inline は付けない。
+  // await/pulling は指追従＋放したときの戻りを滑らかにする。
+  const posStyle =
+    stage === "pulling"
+      ? { transform: `translateY(${dragY}px)`, transition: "none" }
+      : stage === "await"
+        ? { transform: `translateY(${dragY}px)`, transition: "transform .3s cubic-bezier(.2,.7,.3,1)" }
+        : undefined;
 
   return (
-    <div className={`mt-root ${mode === "run" ? "anim" : ""}`} onClick={onRoot} role="dialog" aria-label={`思い出の食券：${genre}`}>
+    <div className={`mt-root mt-${stage}`} role="dialog" aria-label={`思い出の食券：${genre}`}>
       <style>{CSS}</style>
 
+      {/* 券売機（デザインは変更しない）*/}
       <div className="mt-kb">
         <div className="mt-head"><span>めしまち券売機</span></div>
 
@@ -391,40 +501,66 @@ export default function MealTicket({
         </div>
 
         <div className="mt-outlet">
-          <div className="mt-slit" aria-hidden />
-          <div
-            className={`mt-ticket ${mode !== "run" && mode !== "gone" ? "grab" : ""} ${dragging ? "grabbing" : ""}`}
-            style={ticketStyle}
-            onPointerDown={onDown}
-            onPointerMove={onMove}
-            onPointerUp={onUp}
-            onPointerCancel={onUp}
-          >
-            <TicketFace {...faceProps} />
-          </div>
+          <div className="mt-slot" aria-hidden />
+          {inSlot && (
+            <div
+              className={`mt-small-pos ${stage !== "dispense" ? "grab" : ""} ${nudge ? "nudge" : ""} ${stage === "pulling" ? "grabbing" : ""}`}
+              style={posStyle}
+              onPointerDown={onPullDown}
+              onPointerMove={onPullMove}
+              onPointerUp={onPullUp}
+              onPointerCancel={onPullUp}
+            >
+              <div className="mt-small-sway">
+                <div className="mt-small">
+                  <div className="mt-small-inner"><TicketFace {...faceProps} /></div>
+                </div>
+              </div>
+            </div>
+          )}
+          {(stage === "await" || stage === "pulling") && (
+            <div className="mt-pull-hint">引き抜いてください</div>
+          )}
         </div>
 
         <div className="mt-tray" aria-hidden />
       </div>
 
-      {mode === "run" ? (
-        <div className="mt-skip">タップでスキップ</div>
-      ) : (
-        <div className="mt-actions" onClick={(e) => e.stopPropagation()}>
-          <button className="mt-save" onClick={saveTicket} disabled={saving}>
-            {saving ? "書き出し中…" : "この券を保存"}
-          </button>
-          {note && <div className="mt-note">{note}</div>}
-          {imgSrc && (
-            <div className="mt-preview">
-              <img src={imgSrc} alt="思い出の食券" />
-              <span>長押しで保存できます</span>
+      {/* 手元（拡大）：券売機を暗くして券だけに焦点。導線もここでだけ表示 */}
+      {stage === "hand" && (
+        <>
+          <div className="mt-dim" aria-hidden />
+          <div className="mt-hand">
+            <div className="mt-hand-grow">
+              <div
+                className={`mt-hand-tilt ${tiltSpring ? "spring" : ""}`}
+                style={{ transform: `rotate(${tilt}deg)` }}
+                onPointerDown={onTiltDown}
+                onPointerMove={onTiltMove}
+                onPointerUp={onTiltUp}
+                onPointerCancel={onTiltUp}
+              >
+                <TicketFace {...faceProps} />
+              </div>
             </div>
-          )}
-          <button className="mt-cta" onClick={(e) => { e.stopPropagation(); extract(); }}>
-            {ctaLabel} ↓
-          </button>
-        </div>
+          </div>
+
+          <div className="mt-actions">
+            <button className="mt-save" onClick={saveTicket} disabled={saving}>
+              {saving ? "書き出し中…" : "この券を保存"}
+            </button>
+            {note && <div className="mt-note">{note}</div>}
+            {imgSrc && (
+              <div className="mt-preview">
+                <img src={imgSrc} alt="思い出の食券" />
+                <span>長押しで保存できます</span>
+              </div>
+            )}
+            <button className="mt-cta" onClick={goNext}>
+              {ctaLabel} ↓
+            </button>
+          </div>
+        </>
       )}
 
       {/* 保存用（画面外・正方形・券のみ）*/}
