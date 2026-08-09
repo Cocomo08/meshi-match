@@ -42,15 +42,8 @@ function SwMaster({ expr }) {
   const yes = expr === "yes";
   const no = expr === "no";
   return (
-    <svg viewBox="80 66 80 110" fill="none" aria-hidden>
-      {/* ── 胴（法被・腕組み）※待機画面は鍋だが、ここでは腕を組んで見ている ── */}
-      <path d="M88,137 Q120,127 152,137 L158,176 L82,176 Z" fill="#223a58" stroke="#16283d" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M113,133 L120,151 L127,133 Z" fill="#e9ddc4" />
-      <path d="M98,151 L138,176" stroke="#26456a" strokeWidth="12" strokeLinecap="round" />
-      <path d="M142,151 L102,176" stroke="#223a58" strokeWidth="12" strokeLinecap="round" />
-      <path d="M114,129 q6,3 12,0 l0,6 q-6,3 -12,0 Z" fill="#ecc9a0" />
-
-      {/* ── 顔（CookWait と同一）── */}
+    <svg viewBox="92 68 56 66" fill="none" aria-hidden>
+      {/* ── 顔（CookWait と同一・頭部のみ。口から下は札の裏に隠れる想定）── */}
       {/* 髪 */}
       <path d="M97,88 Q95,75 108,72 Q120,70 132,72 Q145,75 143,88 Q120,81 97,88 Z" fill="#2a2520" />
       {/* 耳 */}
@@ -151,8 +144,6 @@ export function SwipeDeck({
   const [drag, setDrag] = useState({ x: 0, y: 0, active: false });
   const [leaving, setLeaving] = useState(null); // { dir, sx, sy, srot }
   const [burst, setBurst] = useState(0);
-  const [pressed, setPressed] = useState(false); // 頼む：朱色の丸印を押す（stack）
-  const [pinWobble, setPinWobble] = useState(0);
   const [focusSide, setFocusSide] = useState(null); // reduced-motion：ボタンフォーカスで文字表示
   const [screenW, setScreenW] = useState(0);
   const [phase, setPhase] = useState(stack ? "intro" : "live"); // intro | live | outro
@@ -184,7 +175,6 @@ export function SwipeDeck({
 
   const afterLeave = () => {
     setLeaving(null);
-    setPressed(false);
     setDrag({ x: 0, y: 0, active: false });
     lockRef.current = false;
     if (index + 1 >= cards.length) {
@@ -207,23 +197,10 @@ export function SwipeDeck({
     lockRef.current = true;
     const sx = drag.x, sy = drag.y * 0.25, srot = drag.x / 14;
     if (liked) { likedRef.current.push(current.id); playLike(); } else { playNope(); }
-
-    const fly = () => {
-      setLeaving({ dir: liked ? 1 : -1, sx, sy, srot });
-      if (liked && stack) setPinWobble((w) => w + 1);
-      const dur = isRed ? 250 : stack ? (liked ? 450 : 500) : liked ? 350 : 500;
-      setTimeout(() => afterLeaveRef.current(), dur);
-    };
-
-    if (liked && stack) {
-      // 朱色の丸印を押す（0.15s／reduced-motionは静止表示）→ 飛ぶ
-      setPressed(true);
-      if (isRed) fly();
-      else setTimeout(fly, 150);
-    } else {
-      if (liked && !stack) setBurst((b) => b + 1); // 店スワイプはハート
-      fly();
-    }
+    if (liked && !stack) setBurst((b) => b + 1); // 店スワイプはハート
+    setLeaving({ dir: liked ? 1 : -1, sx, sy, srot });
+    const dur = isRed ? 250 : stack ? (liked ? 450 : 500) : liked ? 350 : 500;
+    setTimeout(() => afterLeaveRef.current(), dur);
   };
 
   const commitRef = useRef(commit);
@@ -329,6 +306,14 @@ export function SwipeDeck({
   const masterExpr = leaving
     ? leaving.dir > 0 ? "yes" : "no"
     : drag.x > 26 ? "yes" : drag.x < -26 ? "no" : "idle";
+  // 顔の動き（reduced-motionでは動かさず表情のみ）：
+  //  スワイプ中=傾ける／頼む確定=大きく顔を出す／見送り確定=札の裏へ引っ込む
+  let masterFig = "";
+  if (!isRed) {
+    if (leaving && masterExpr === "yes") masterFig = "translateY(-8px)";
+    else if (leaving && masterExpr === "no") masterFig = "translateY(20px)";
+    else if (drag.x) masterFig = `rotate(${Math.max(-7, Math.min(7, drag.x / 16))}deg)`;
+  }
 
   return (
     <>
@@ -344,10 +329,12 @@ export function SwipeDeck({
         {controls && <p className="sd-count mb-4 text-sm font-black">のこり{toKanjiNum(remaining)}枚</p>}
 
         <div className={`relative w-full max-w-sm select-none ${heightClass}`} style={{ opacity: phase === "outro" ? 0 : 1 }}>
-          {/* 大将（中央上の空白・札より奥／弱くぼかす／表情がスワイプに連動）*/}
+          {/* 大将の顔（札より奥・わずかに暗い／目から上だけ札の上端から覗く）*/}
           {stack && (
             <div className="sw-master" data-expr={masterExpr} aria-hidden>
-              <SwMaster expr={masterExpr} />
+              <div className="sw-master-fig" style={{ transform: masterFig || undefined }}>
+                <SwMaster expr={masterExpr} />
+              </div>
             </div>
           )}
           {stack ? (
@@ -387,21 +374,19 @@ export function SwipeDeck({
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
           >
-            {drop(renderCard(current), 0.1, "-3deg")}
-            <span className="sd-stamp yes" aria-hidden style={{ opacity: yesOp }}>{stampYes}</span>
-            <span className="sd-stamp no" aria-hidden style={{ opacity: noOp }}>{stampNo}</span>
-            {/* 頼む：朱色の丸印（押印）*/}
-            {pressed && <span className={`sd-press ${isRed ? "still" : ""}`} aria-hidden />}
+            {/* 最前面の1枚。判定印はこのカードの内部だけに描く（indexでキーして札ごとに独立）*/}
+            <div key={`front-${index}`} className="sd-front">
+              {drop(renderCard(current), 0.1, "-3deg")}
+              <span className="sd-stamp yes" aria-hidden style={{ opacity: yesOp }}>{stampYes}</span>
+              <span className="sd-stamp no" aria-hidden style={{ opacity: noOp }}>{stampNo}</span>
+            </div>
           </div>
 
-          {/* 動かない画鋲（短冊が引っ張られている表現／頼むで揺れる・色はカテゴリ）*/}
+          {/* 大将が札の上端に落とす影（札より手前・顔より手前）*/}
+          {stack && <div className="sw-mshadow" aria-hidden />}
+          {/* 留めピン（顔と重ならないよう右上に寄せる・色はカテゴリ）*/}
           {stack && (
-            <span
-              key={`pin-${pinWobble}`}
-              className={`sd-pin ${pinWobble > 0 ? "wob" : ""}`}
-              style={pinColor ? { background: pinColor } : undefined}
-              aria-hidden
-            />
+            <span className="sd-pin" style={pinColor ? { background: pinColor } : undefined} aria-hidden />
           )}
         </div>
 

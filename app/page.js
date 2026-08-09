@@ -129,12 +129,12 @@ function StallWall() {
     <div className="sw-wall" aria-hidden>
       {/* 遠景：奥の壁（ぼかした弱い木目）*/}
       <div className="sw-back" />
-      {/* 遠景：提灯（トップと同じ本体・骨線・房。奥なので小さく強めにぼかす・左右非対称）*/}
-      <span className="ymt-lantern sw-lan" style={{ top: "1%", left: "11%", transform: "scale(.5)", filter: "blur(2px)" }}>
+      {/* 遠景：提灯（トップと同じ本体・骨線・房・暖色光。左右で大きさ・高さをはっきり変える）*/}
+      <span className="ymt-lantern sw-lan" style={{ top: "1%", left: "8%", transform: "scale(.92)", filter: "blur(1px)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
-      <span className="ymt-lantern sw-lan" style={{ top: "8%", right: "14%", transform: "scale(.34)", filter: "blur(3px) brightness(.82)" }}>
+      <span className="ymt-lantern sw-lan" style={{ top: "11%", right: "10%", transform: "scale(.56)", filter: "blur(1.8px) brightness(.8)" }}>
         <span className="cord" />
         <span className="paper" />
       </span>
