@@ -35,7 +35,7 @@ function behindCountFor(remaining) {
   return 0;
 }
 
-// 大将の胸像（スワイプ待機画面 CookWait と同じ顔＝線画・鉢巻・眼鏡・細い髭）。
+// 大将の胸像（スワイプ待機画面 CookWait と同じ顔＝線画・鉢巻・細い髭）。
 //  スワイプ判定で眉と口だけ変える： yes=頼む(満足) / no=見送り(残念) / idle=通常
 //  ※顔のパーツ座標は CookWait.js の顔グループと同一（同じ大将に見えるように）
 function SwMaster({ expr }) {
@@ -131,14 +131,7 @@ function SwMaster({ expr }) {
       <path d="M103.6,106.8 q-1.8,1.7 -0.8,3.2" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
       <path d="M137.6,105.4 q2,2.5 1,4.6" fill="none" stroke="#2a2520" strokeWidth="0.75" strokeLinecap="round" />
       <path d="M136.4,106.8 q1.8,1.7 0.8,3.2" fill="none" stroke="#2a2520" strokeWidth="0.7" strokeLinecap="round" />
-      {/* 眼鏡 */}
-      <path d="M104,102.6 Q101,101.4 98.6,101.7" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
-      <path d="M136,102.6 Q139,101.4 141.4,101.7" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
-      <ellipse cx="111" cy="103" rx="7" ry="5.8" fill="none" stroke="#2a2520" strokeWidth="1.3" />
-      <ellipse cx="129" cy="103" rx="7" ry="5.8" fill="none" stroke="#2a2520" strokeWidth="1.3" />
-      <path d="M118,102 Q120,99.8 122,102" fill="none" stroke="#2a2520" strokeWidth="1.3" strokeLinecap="round" />
-      <path d="M106.2,100.6 L108.6,98.4" fill="none" stroke="#f0e6d2" strokeWidth="1" strokeLinecap="round" />
-      <path d="M124.2,100.6 L126.6,98.4" fill="none" stroke="#f0e6d2" strokeWidth="1" strokeLinecap="round" />
+      {/* 眼鏡は削除（他のパーツは変更なし）*/}
     </svg>
   );
 }
