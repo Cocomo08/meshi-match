@@ -222,7 +222,7 @@ const CSS = `
 .mt-preview img{width:190px;max-width:66vw;border-radius:6px;box-shadow:0 8px 18px rgba(0,0,0,.5)}
 .mt-preview span{font-size:11px;color:#e6d9bd;opacity:.85}
 /* ちぎる案内 */
-.mt-tear-hint{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:73;font-size:12px;letter-spacing:.06em;color:#e6d9bd;opacity:.85;font-family:var(--font-zen-maru),sans-serif;text-align:center;padding:0 16px}
+.mt-tear-hint{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:73;pointer-events:none;font-size:12px;letter-spacing:.06em;color:#e6d9bd;opacity:.85;font-family:var(--font-zen-maru),sans-serif;text-align:center;padding:0 16px}
 
 /* ── アニメーション ── */
 .mt-dispense .mt-btn.lit{animation:mtPress .2s ease .2s both}
@@ -365,13 +365,14 @@ export default function MealTicket({
   const exportRef = useRef(null);
   const tearStartRef = useRef(0);
   const lastYRef = useRef(0);
+  const amtRef = useRef(0);
   const tearArmRef = useRef(false);
   const pressTimerRef = useRef(null);
   const autoTimerRef = useRef(null);
 
   const SMALL_H = 86;
   const PULL_THRESHOLD = SMALL_H * 0.6;
-  const TEAR_DIST = 100; // 券高の約40%
+  const TEAR_DIST = 70; // 下へ約70px引けば裂ける（少しの引きで切れるよう緩め）
 
   useEffect(() => {
     if (stage !== "dispense") return;
@@ -478,24 +479,26 @@ export default function MealTicket({
   };
   const applyTear = (clientY) => {
     const amt = Math.min(Math.max(clientY - tearStartRef.current, 0) / TEAR_DIST, 1);
+    amtRef.current = amt;
     setTearAmt(amt);
     if (amt >= 1) completeTear();
   };
   const onTearDown = (e) => {
     if (torn) return;
+    e.preventDefault?.(); // 長押しの選択/コールアウト等の既定動作を抑止
     tearStartRef.current = e.clientY;
     lastYRef.current = e.clientY;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    // 長押し0.4sで「ミシン目の予告」→ 以降ドラッグで裂ける。長押しのみでも1.2sで完了。
-    //  ※スクロールは touch-action:none で抑止済みなので、動いても長押しはキャンセルしない
-    //   （押し込みながら引くごく自然な操作でちぎれるように）。
+    amtRef.current = 0;
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* noop */ }
+    // 0.3sの長押しでミシン目が濃くなる（予告）→ 以降ドラッグ少しで裂ける。
+    //  長押しのみでも合計約0.8sで自動切離し。スクロールは touch-action:none で抑止済み。
     pressTimerRef.current = setTimeout(() => {
       if (reduced) { completeTear(); return; }
       tearArmRef.current = true;
       setArmed(true);
       applyTear(lastYRef.current); // 押し込み中に既に引いていれば即反映
-      autoTimerRef.current = setTimeout(() => completeTear(), 800);
-    }, 400);
+      autoTimerRef.current = setTimeout(() => completeTear(), 500);
+    }, 300);
   };
   const onTearMove = (e) => {
     lastYRef.current = e.clientY;
@@ -505,8 +508,14 @@ export default function MealTicket({
   const onTearUp = () => {
     if (torn) return;
     clearTimeout(pressTimerRef.current);
-    if (tearArmRef.current) cancelTear(); // 裂け始めて放したら元に戻す
+    if (tearArmRef.current) {
+      // 予告後：少しでも下へ引いていれば切離し、ほぼ引いていなければ元に戻す
+      if (amtRef.current >= 0.3) completeTear();
+      else cancelTear();
+    }
   };
+  // ブラウザがジェスチャを奪って pointercancel を出しても、ちぎるのは中断しない
+  const onTearCancel = () => { /* 何もしない：長押しの自動切離しに委ねる */ };
 
   const goNext = () => onNext?.();
 
@@ -603,7 +612,9 @@ export default function MealTicket({
               <div className="mt-hand-grow">
                 <div
                   className={`mt-tear ${armed ? "grabbing" : ""}`}
-                  onPointerDown={onTearDown} onPointerMove={onTearMove} onPointerUp={onTearUp} onPointerCancel={onTearUp}
+                  style={{ touchAction: "none" }}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onPointerDown={onTearDown} onPointerMove={onTearMove} onPointerUp={onTearUp} onPointerCancel={onTearCancel}
                 >
                   {/* 本券 */}
                   <div className="seg seg-main">
