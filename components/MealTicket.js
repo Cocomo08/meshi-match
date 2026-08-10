@@ -247,7 +247,8 @@ function TicketFace({ genre, art, name0, name1, date, matchCount, totalCount, or
   const nameSize = nameFont(nlen);
   const gSize = genreFont((genre || "").length);
 
-  const showHit = matchCount != null && matchCount > 0;
+  // 一致数の行は常に表示する（記録が残らないと券の意味が失われるため／今後も削除しない）
+  const hit = Number.isFinite(matchCount) ? matchCount : 0;
   const showOrd = ordinal != null && ordinal > 0;
 
   return (
@@ -267,19 +268,15 @@ function TicketFace({ genre, art, name0, name1, date, matchCount, totalCount, or
         <div className="tf-names" style={{ fontSize: nameSize }}>
           {name0}<span className="sep">×</span>{name1}
         </div>
-        {/* 3段目：一致 と 杯目 を横1行（小・墨／色は杯目の数字のみ）*/}
-        {(showHit || showOrd) && (
-          <div className="tf-stat">
-            {showHit && (
-              <span className="tf-hit">一致 <b>{matchCount}</b> / {totalCount}</span>
-            )}
-            {showOrd && (
-              ordinal >= 2
-                ? <span className="tf-ord">二人の <b>{ordinal}</b> 杯目</span>
-                : <span className="tf-ord first">はじめての一杯</span>
-            )}
-          </div>
-        )}
+        {/* 3段目：一致 と 杯目 を横1行（小・墨／色は杯目の数字のみ）。一致は常に表示 */}
+        <div className="tf-stat">
+          <span className="tf-hit">一致 <b>{hit}</b> / {totalCount}</span>
+          {showOrd && (
+            ordinal >= 2
+              ? <span className="tf-ord">二人の <b>{ordinal}</b> 杯目</span>
+              : <span className="tf-ord first">はじめての一杯</span>
+          )}
+        </div>
         {/* 発行日時：極小・薄いグレー */}
         {date && <div className="tf-date">発行 {date}</div>}
         {/* 但し書き（読ませない・薄墨）*/}
@@ -356,8 +353,9 @@ export default function MealTicket({
 
   const no = typeof ticketNo === "number" ? "No." + String(ticketNo).padStart(7, "0") : ticketNo || "";
   const date = fmtDate(issuedAt);
-  const name0 = (nicknames[0] || "").trim() || "きみ";
-  const name1 = (nicknames[1] || "").trim() || "あいて";
+  // 名前が取れないときは「あいて」等の正常に見える語ではなく「なまえ未設定」を出す
+  const name0 = (nicknames[0] || "").trim() || "なまえ未設定";
+  const name1 = (nicknames[1] || "").trim() || "なまえ未設定";
 
   // 通算回数を記録し「何杯目か」を得る（同じ ticketNo は二重計上しない・保存先は keepsake に集約）
   useEffect(() => {

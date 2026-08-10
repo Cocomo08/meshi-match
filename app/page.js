@@ -482,6 +482,12 @@ export default function MeshiMatchPage() {
   const matchIds = bothDone
     ? genreCards.map((c) => c.id).filter((id) => (me.likes || []).includes(id) && (opp.likes || []).includes(id))
     : [];
+  // 券に載せる一致数：bothDone のゲートに依存せず、両者の likes が揃っていれば実データから算出
+  //  （券は成立後に出るため常に1以上になる想定。行を消さないための堅牢な供給源）
+  const ticketMatchCount =
+    me?.likes && opp?.likes
+      ? me.likes.filter((id) => (opp.likes || []).includes(id)).length
+      : matchIds.length;
   const hostPlayer = players[ids.find((id) => players[id]?.role === "host")];
   const guestPlayer = players[ids.find((id) => players[id]?.role === "guest")];
   const chosen =
@@ -700,8 +706,8 @@ export default function MeshiMatchPage() {
               {/* 点灯している選択済みボタン（クリーム面／墨色） */}
               <button
                 type="button"
-                onClick={() => { playPush(); if (!nick.trim()) { setNickWarn(true); return; } createRoom(); }}
-                disabled={busy}
+                onClick={() => { playPush(); createRoom(); }}
+                disabled={busy || !nick.trim()}
                 className="ymt-btn lit"
               >
                 部屋をつくる
@@ -709,14 +715,15 @@ export default function MeshiMatchPage() {
               {/* 消灯しているボタン */}
               <button
                 type="button"
-                onClick={() => { playPush(); if (!nick.trim()) { setNickWarn(true); return; } wipe(() => setView("join")); }}
+                onClick={() => { playPush(); wipe(() => setView("join")); }}
+                disabled={!nick.trim()}
                 className="ymt-btn dim sub"
               >
                 部屋に入る
               </button>
             </div>
-            {nickWarn && !nick.trim() && (
-              <p className="mt-3 text-center text-[11px] font-bold text-[#e0483b]">
+            {!nick.trim() && (
+              <p className="mt-3 text-center text-[11px] font-bold text-[#f0e6d2]/60">
                 まずニックネームを入れてね
               </p>
             )}
@@ -773,7 +780,7 @@ export default function MeshiMatchPage() {
               <button
                 type="button"
                 onClick={() => { playPush(); joinRoom(); }}
-                disabled={busy || joinCode.length < 4}
+                disabled={busy || joinCode.length < 4 || !nick.trim()}
                 className="ymt-btn lit"
               >
                 {busy ? "接続中…" : "入る"}
@@ -1098,8 +1105,8 @@ export default function MeshiMatchPage() {
           art={<GenreArt id={decidedGenre} />}
           ticketNo={room?.ticketNo || 0}
           issuedAt={room?.issuedAt ? new Date(room.issuedAt) : undefined}
-          nicknames={[myName, oppName]}
-          matchCount={matchIds.length}
+          nicknames={[me?.name, opp?.name]}
+          matchCount={ticketMatchCount}
           totalCount={SWIPE_GENRE_COUNT}
           ctaLabel="お店をさがす"
           onNext={() => setTicketAcked(true)}
