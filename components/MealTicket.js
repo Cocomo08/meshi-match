@@ -110,14 +110,19 @@ const CSS = `
   background:linear-gradient(180deg,#1a1008 0%, #050302 55%, #0c0704 100%);
   box-shadow:inset 0 3px 6px rgba(0,0,0,.95), inset 0 9px 7px -6px rgba(0,0,0,.9), 0 -1px 0 rgba(255,224,170,.28), 0 6px 7px rgba(0,0,0,.6)}
 .mt-slot::before{content:"";position:absolute;left:-3px;right:-3px;top:-3px;height:3px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,rgba(255,228,182,.32),rgba(120,90,50,.18))}
-.mt-small-pos{position:absolute;top:40px;left:50%;margin-left:-42.5px;width:85px;z-index:3;will-change:transform}
+/* 口の内側（クリップ領域）：券はこの中を上から下へ動く。口の枠(z6)より奥(z3)。
+   幅は口の開口より狭く（券幅 < 口幅）、上端(=口の上端)より上は完全に隠す */
+.mt-slotclip{position:absolute;top:30px;left:50%;transform:translateX(-50%);width:94px;height:120px;overflow:hidden;z-index:3;border-radius:0 0 4px 4px}
+/* 口の縁が券へ落とす影（枠の下端から下へ・約5px）*/
+.mt-slotclip::after{content:"";position:absolute;left:0;right:0;top:24px;height:6px;z-index:5;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.2) 60%,transparent)}
+.mt-small-pos{position:absolute;top:9px;left:50%;margin-left:-42.5px;width:85px;will-change:transform}
 .mt-small-sway{transform-origin:50% 0}
 .mt-small{width:85px;height:86px;overflow:hidden;position:relative;transform-origin:50% 0;
   transform:perspective(340px) rotateX(-6deg) rotate(1.4deg);filter:drop-shadow(0 10px 9px rgba(0,0,0,.6))}
 .mt-small-inner{width:250px;transform:scale(.34);transform-origin:top left}
-.mt-small::before{content:"";position:absolute;left:0;right:0;top:0;height:22px;z-index:5;background:linear-gradient(180deg,rgba(0,0,0,.62),rgba(0,0,0,.28) 45%,transparent);pointer-events:none}
 .mt-small-pos.grab{cursor:grab}.mt-small-pos.grabbing{cursor:grabbing}
-.mt-pull-hint{position:absolute;left:0;right:0;top:132px;text-align:center;z-index:3;pointer-events:none;font-size:11px;letter-spacing:.1em;color:#dcc9a5;opacity:.8;font-family:var(--font-zen-maru),sans-serif}
+.mt-pull-hint{position:absolute;left:0;right:0;top:126px;text-align:center;z-index:4;pointer-events:none;font-size:11px;letter-spacing:.1em;color:#dcc9a5;opacity:.8;font-family:var(--font-zen-maru),sans-serif}
 
 /* ── 手元（拡大）── */
 .mt-dim{position:fixed;inset:0;z-index:70;background:rgba(6,4,2,.74);animation:mtFade .4s ease both}
@@ -561,18 +566,22 @@ export default function MealTicket({
         <div className="mt-money" aria-hidden><span className="mt-coin" /><span className="mt-bill" /></div>
 
         <div className="mt-outlet">
-          <div className="mt-slot" aria-hidden />
+          {/* 口の内側でクリップ（券は枠より奥・口幅を超えない）*/}
           {inSlot && (
-            <div
-              className={`mt-small-pos ${stage !== "dispense" ? "grab" : ""} ${nudge ? "nudge" : ""} ${stage === "pulling" ? "grabbing" : ""}`}
-              style={posStyle}
-              onPointerDown={onPullDown} onPointerMove={onPullMove} onPointerUp={onPullUp} onPointerCancel={onPullUp}
-            >
-              <div className="mt-small-sway">
-                <div className="mt-small"><div className="mt-small-inner"><TicketFace {...faceProps} /></div></div>
+            <div className="mt-slotclip" aria-hidden={false}>
+              <div
+                className={`mt-small-pos ${stage !== "dispense" ? "grab" : ""} ${nudge ? "nudge" : ""} ${stage === "pulling" ? "grabbing" : ""}`}
+                style={posStyle}
+                onPointerDown={onPullDown} onPointerMove={onPullMove} onPointerUp={onPullUp} onPointerCancel={onPullUp}
+              >
+                <div className="mt-small-sway">
+                  <div className="mt-small"><div className="mt-small-inner"><TicketFace {...faceProps} /></div></div>
+                </div>
               </div>
             </div>
           )}
+          {/* 受け取り口の枠（黒）は券より手前 */}
+          <div className="mt-slot" aria-hidden />
           {(stage === "await" || stage === "pulling") && <div className="mt-pull-hint">引き抜いてください</div>}
         </div>
 
