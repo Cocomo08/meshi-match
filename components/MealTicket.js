@@ -364,6 +364,7 @@ export default function MealTicket({
   const idleRef = useRef(null);
   const exportRef = useRef(null);
   const tearStartRef = useRef(0);
+  const lastYRef = useRef(0);
   const tearArmRef = useRef(false);
   const pressTimerRef = useRef(null);
   const autoTimerRef = useRef(null);
@@ -475,27 +476,31 @@ export default function MealTicket({
     setArmed(false);
     setTearAmt(0);
   };
+  const applyTear = (clientY) => {
+    const amt = Math.min(Math.max(clientY - tearStartRef.current, 0) / TEAR_DIST, 1);
+    setTearAmt(amt);
+    if (amt >= 1) completeTear();
+  };
   const onTearDown = (e) => {
     if (torn) return;
     tearStartRef.current = e.clientY;
+    lastYRef.current = e.clientY;
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    // 長押し0.4sで「ミシン目の予告」→ 以降ドラッグで裂ける。長押しのみでも1.2sで完了
+    // 長押し0.4sで「ミシン目の予告」→ 以降ドラッグで裂ける。長押しのみでも1.2sで完了。
+    //  ※スクロールは touch-action:none で抑止済みなので、動いても長押しはキャンセルしない
+    //   （押し込みながら引くごく自然な操作でちぎれるように）。
     pressTimerRef.current = setTimeout(() => {
       if (reduced) { completeTear(); return; }
       tearArmRef.current = true;
       setArmed(true);
+      applyTear(lastYRef.current); // 押し込み中に既に引いていれば即反映
       autoTimerRef.current = setTimeout(() => completeTear(), 800);
     }, 400);
   };
   const onTearMove = (e) => {
-    const dy = e.clientY - tearStartRef.current;
-    if (!tearArmRef.current) {
-      if (Math.abs(dy) > 12) cancelTear(); // 予告前に大きく動いたら長押し不成立（スクロール等と競合させない）
-      return;
-    }
-    const amt = Math.min(Math.max(dy, 0) / TEAR_DIST, 1);
-    setTearAmt(amt);
-    if (amt >= 1) completeTear();
+    lastYRef.current = e.clientY;
+    if (!tearArmRef.current) return; // 予告前は追従しない（が、キャンセルもしない）
+    applyTear(e.clientY);
   };
   const onTearUp = () => {
     if (torn) return;
