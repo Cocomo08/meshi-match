@@ -66,7 +66,28 @@ const CSS = `
   padding:2px 2px 9px;border-bottom:2px solid rgba(0,0,0,.35);font-family:var(--font-klee),var(--font-zen-maru),sans-serif}
 .mt-head::before,.mt-head::after{content:"";width:8px;height:8px;border-radius:50%;background:#e0483b;box-shadow:0 0 6px rgba(224,72,59,.7)}
 
-.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+/* 操作パネル（ボタン群を濃い木のフレームで囲む・装飾）*/
+.mt-panel{position:relative;margin-top:10px;padding:9px;border-radius:7px;
+  background:linear-gradient(180deg,#4a331f,#38260f);border:1px solid #241708;
+  box-shadow:inset 0 1px 0 rgba(255,220,170,.14), inset 0 -3px 5px rgba(0,0,0,.45)}
+.mt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+/* 上部の表示灯（点灯・控えめ）：ヘッダー左に配置しボタンと重ねない */
+.mt-lamp{position:absolute;top:13px;left:15px;width:9px;height:9px;border-radius:50%;z-index:3;
+  background:radial-gradient(circle at 40% 35%, #b6e0b0, #6fae72 70%);
+  box-shadow:0 0 7px rgba(130,200,140,.7), inset 0 -1px 1px rgba(0,0,0,.3)}
+/* 硬貨投入口（縦スリット）＋ お札挿入口（横スリット）：ボタンの右側・控えめ */
+.mt-money{display:flex;justify-content:flex-end;align-items:center;gap:11px;margin-top:9px;padding:0 4px}
+.mt-money .lab{font-size:8px;letter-spacing:.1em;color:#a98f6c;opacity:.7}
+.mt-coin{width:5px;height:24px;border-radius:3px;background:#241708;
+  box-shadow:inset 0 0 3px #000, 0 1px 0 rgba(255,224,170,.12)}
+.mt-bill{width:60px;height:8px;border-radius:3px;background:#241708;
+  box-shadow:inset 0 1px 3px #000, 0 1px 0 rgba(255,224,170,.12)}
+/* 釣り銭返却口（窪み）＋ 返却レバー */
+.mt-return{display:flex;align-items:center;gap:9px;margin-top:12px}
+.mt-return-slot{flex:1;height:16px;border-radius:4px;background:#20140a;
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.7), inset 0 -1px 0 rgba(255,224,170,.08)}
+.mt-lever{width:26px;height:16px;border-radius:4px;background:linear-gradient(180deg,#5a4632,#3a2a1a);
+  border:1px solid #241708;box-shadow:inset 0 1px 0 rgba(255,224,170,.18)}
 /* ボタン＝琺瑯風のフラットな札（金属光沢・グラデーションノイズなし）*/
 .mt-btn{height:40px;border-radius:4px;background:#efe3c3;color:#4a4636;
   border:1px solid #b0a37d;box-shadow:inset 0 1px 0 #fffdf5, 0 2px 0 #705227;
@@ -79,29 +100,33 @@ const CSS = `
   box-shadow:inset 0 1px 0 #fff3d0, 0 0 14px rgba(255,190,90,.7), 0 2px 0 #a9772f;transform:translateY(1px)}
 .mt-btn.lit .prc{color:#6b4a1c;opacity:1;font-weight:700}
 
-/* ── 受け取り口（実寸の券が奥から手前へ出てくる・スロットに厚み）── */
-.mt-outlet{position:relative;flex:0 0 auto;height:180px;overflow:hidden;margin-top:12px;border-radius:5px;
-  background:linear-gradient(180deg,#2a1a0c,#180e06);
-  box-shadow:inset 0 8px 10px -3px rgba(0,0,0,.8)}
-/* スロット（券幅ぶんの開口・3Dの縁）*/
-.mt-slot{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:100px;height:11px;z-index:4;
-  background:#0a0705;border-radius:2px;
-  box-shadow:inset 0 3px 4px rgba(0,0,0,.9), 0 2px 0 rgba(255,224,170,.16), 0 4px 5px rgba(0,0,0,.5)}
+/* ── 受け取り口（実寸の券が奥から手前へ出てくる）── */
+.mt-outlet{position:relative;flex:0 0 auto;height:150px;overflow:hidden;margin-top:10px;border-radius:5px;
+  background:linear-gradient(180deg,#241608,#130a03);
+  box-shadow:inset 0 10px 12px -4px rgba(0,0,0,.85)}
+/* 受け取り口の開口（高さ2倍・厚み・凹み・内部は券より暗い）*/
+.mt-slot{position:absolute;top:30px;left:50%;transform:translateX(-50%);width:104px;height:24px;z-index:6;border-radius:3px;
+  background:linear-gradient(180deg,#1a1008 0%, #050302 55%, #0c0704 100%);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.95), inset 0 9px 7px -6px rgba(0,0,0,.9),
+    0 -1px 0 rgba(255,224,170,.28), 0 6px 7px rgba(0,0,0,.6)}
+/* 口の手前の厚み（明るい縁）*/
+.mt-slot::before{content:"";position:absolute;left:-3px;right:-3px;top:-3px;height:3px;border-radius:3px 3px 0 0;
+  background:linear-gradient(180deg,rgba(255,228,182,.32),rgba(120,90,50,.18))}
 
-/* 小さい券（スロット幅の約85%・実寸の約1/3）。奥から手前へ出てくる */
-.mt-small-pos{position:absolute;top:7px;left:50%;margin-left:-42.5px;width:85px;z-index:3;will-change:transform}
+/* 小さい券（口幅の約82%・実寸の約1/3）。上端は口の内側に隠れる（口 > 券）*/
+.mt-small-pos{position:absolute;top:40px;left:50%;margin-left:-42.5px;width:85px;z-index:3;will-change:transform}
 .mt-small-sway{transform-origin:50% 0}
-/* 出てすぐは反っている（湾曲）。手元では平らにする */
+/* 排出直後の紙の癖：わずかに傾き＋下部が手前へ反る。手元では平らにする */
 .mt-small{width:85px;height:92px;overflow:hidden;position:relative;transform-origin:50% 0;
-  transform:perspective(320px) rotateX(7deg);filter:drop-shadow(0 9px 9px rgba(0,0,0,.6))}
+  transform:perspective(340px) rotateX(-6deg) rotate(1.4deg);filter:drop-shadow(0 10px 9px rgba(0,0,0,.6))}
 .mt-small-inner{width:250px;transform:scale(.34);transform-origin:top left}
-/* 口の縁が券の上端に落とす影（差し込まれている表現）*/
-.mt-small::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;z-index:5;
-  background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);pointer-events:none}
+/* 口の縁が券の上部へ落とす影（差し込まれている表現）*/
+.mt-small::before{content:"";position:absolute;left:0;right:0;top:0;height:22px;z-index:5;
+  background:linear-gradient(180deg,rgba(0,0,0,.62),rgba(0,0,0,.28) 45%,transparent);pointer-events:none}
 .mt-small-pos.grab{cursor:grab}.mt-small-pos.grabbing{cursor:grabbing}
-/* 引き抜き案内 */
-.mt-pull-hint{position:absolute;left:0;right:0;bottom:14px;text-align:center;z-index:3;pointer-events:none;
-  font-size:11px;letter-spacing:.12em;color:#dcc9a5;opacity:.82;font-family:var(--font-zen-maru),sans-serif}
+/* 引き抜き案内：券のすぐ下に小さく */
+.mt-pull-hint{position:absolute;left:0;right:0;top:132px;text-align:center;z-index:3;pointer-events:none;
+  font-size:11px;letter-spacing:.1em;color:#dcc9a5;opacity:.8;font-family:var(--font-zen-maru),sans-serif}
 
 /* ── 手元（拡大）：券売機を暗くして券だけに焦点 ── */
 .mt-dim{position:fixed;inset:0;z-index:70;background:rgba(6,4,2,.72);animation:mtFade .4s ease both}
@@ -110,9 +135,6 @@ const CSS = `
 .mt-hand-tilt{transform-origin:50% 42%;touch-action:none;cursor:grab}
 .mt-hand-tilt.spring{transition:transform .32s cubic-bezier(.34,1.5,.5,1)}
 
-/* 釣り銭口 */
-.mt-tray{flex:0 0 auto;height:16px;margin-top:12px;border-radius:4px;background:#3a2614;
-  box-shadow:inset 0 3px 6px rgba(0,0,0,.6)}
 
 /* ── 券そのもの（生成りの紙・墨の印字・落ち影）── */
 .tf{position:relative;width:250px;min-height:250px;display:flex;flex-direction:column;color:#2a2520;border-radius:3px 6px 4px 7px;overflow:hidden;
@@ -199,7 +221,7 @@ const CSS = `
   63%{transform:translateY(-40%)}                                   /* わずかに引っかかる */
   100%{transform:translateY(0);animation-timing-function:cubic-bezier(.55,.06,.62,1)} /* ストンと出る */
 }
-@keyframes mtCurl{from{transform:perspective(320px) rotateX(13deg)}to{transform:perspective(320px) rotateX(7deg)}}
+@keyframes mtCurl{from{transform:perspective(340px) rotateX(-15deg) rotate(1.4deg)}to{transform:perspective(340px) rotateX(-6deg) rotate(1.4deg)}}
 @keyframes mtSway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1deg)}}
 @keyframes mtNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
 /* 手元：小さいスロット位置から画面中央へ移動しつつ拡大 */
@@ -487,17 +509,27 @@ export default function MealTicket({
     <div className={`mt-root mt-${stage}`} role="dialog" aria-label={`思い出の食券：${genre}`}>
       <style>{CSS}</style>
 
-      {/* 券売機（デザインは変更しない）*/}
+      {/* 券売機（ボタン配置は変更しない。周辺の部品は装飾）*/}
       <div className="mt-kb">
+        <span className="mt-lamp" aria-hidden />
         <div className="mt-head"><span>めしまち券売機</span></div>
 
-        <div className="mt-grid" aria-hidden>
-          {cells.map((c, i) => (
-            <div key={i} className={`mt-btn ${c.active ? "lit" : ""}`}>
-              <span className="lbl">{c.label}</span>
-              <span className="prc">{c.active ? "本日のマッチ" : c.price}</span>
-            </div>
-          ))}
+        {/* 操作パネル：ボタン群をフレームで囲む */}
+        <div className="mt-panel">
+          <div className="mt-grid" aria-hidden>
+            {cells.map((c, i) => (
+              <div key={i} className={`mt-btn ${c.active ? "lit" : ""}`}>
+                <span className="lbl">{c.label}</span>
+                <span className="prc">{c.active ? "本日のマッチ" : c.price}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 硬貨投入口（縦）＋ お札挿入口（横）：ボタンの右側 */}
+        <div className="mt-money" aria-hidden>
+          <span className="mt-coin" />
+          <span className="mt-bill" />
         </div>
 
         <div className="mt-outlet">
@@ -523,7 +555,11 @@ export default function MealTicket({
           )}
         </div>
 
-        <div className="mt-tray" aria-hidden />
+        {/* 釣り銭返却口（窪み）＋ 返却レバー */}
+        <div className="mt-return" aria-hidden>
+          <div className="mt-return-slot" />
+          <div className="mt-lever" />
+        </div>
       </div>
 
       {/* 手元（拡大）：券売機を暗くして券だけに焦点。導線もここでだけ表示 */}
